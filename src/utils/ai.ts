@@ -45,11 +45,23 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
     
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent(params);
       
-      // If successful, update the current key index so we keep using the working key
-      currentKeyIndex = keyIndex;
-      return response;
+      try {
+        const response = await ai.models.generateContent(params);
+        currentKeyIndex = keyIndex;
+        return response;
+      } catch (modelError: any) {
+        // If the primary model is overloaded (503), try the fallback model
+        const errorMessage = modelError?.message?.toLowerCase() || '';
+        if (errorMessage.includes('503') || errorMessage.includes('unavailable') || errorMessage.includes('high demand')) {
+          console.warn('Primary model overloaded, trying fallback model gemini-2.5-flash...');
+          const fallbackParams = { ...params, model: 'gemini-2.5-flash' };
+          const fallbackResponse = await ai.models.generateContent(fallbackParams);
+          currentKeyIndex = keyIndex;
+          return fallbackResponse;
+        }
+        throw modelError; // Re-throw to be caught by the outer catch block
+      }
     } catch (error: any) {
       console.warn(`API Key ${keyIndex + 1} failed:`, error.message || error);
       lastError = error;
@@ -61,7 +73,9 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
         errorMessage.includes('too many requests') || 
         errorMessage.includes('quota') || 
         errorMessage.includes('exhausted') ||
-        errorMessage.includes('403')
+        errorMessage.includes('403') ||
+        errorMessage.includes('503') ||
+        errorMessage.includes('unavailable')
       ) {
         continue; // Try next key
       }
@@ -90,15 +104,28 @@ export const generateContentStreamWithFallback = async function* (params: Genera
     
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const stream = await ai.models.generateContentStream(params);
       
-      // If we successfully get the stream, update current key index
-      currentKeyIndex = keyIndex;
-      
-      for await (const chunk of stream) {
-        yield chunk;
+      try {
+        const stream = await ai.models.generateContentStream(params);
+        currentKeyIndex = keyIndex;
+        for await (const chunk of stream) {
+          yield chunk;
+        }
+        return;
+      } catch (modelError: any) {
+        const errorMessage = modelError?.message?.toLowerCase() || '';
+        if (errorMessage.includes('503') || errorMessage.includes('unavailable') || errorMessage.includes('high demand')) {
+          console.warn('Primary model overloaded for stream, trying fallback model gemini-2.5-flash...');
+          const fallbackParams = { ...params, model: 'gemini-2.5-flash' };
+          const fallbackStream = await ai.models.generateContentStream(fallbackParams);
+          currentKeyIndex = keyIndex;
+          for await (const chunk of fallbackStream) {
+            yield chunk;
+          }
+          return;
+        }
+        throw modelError;
       }
-      return; // Successfully completed the stream
     } catch (error: any) {
       console.warn(`API Key ${keyIndex + 1} failed for stream:`, error.message || error);
       lastError = error;
@@ -109,7 +136,9 @@ export const generateContentStreamWithFallback = async function* (params: Genera
         errorMessage.includes('too many requests') || 
         errorMessage.includes('quota') || 
         errorMessage.includes('exhausted') ||
-        errorMessage.includes('403')
+        errorMessage.includes('403') ||
+        errorMessage.includes('503') ||
+        errorMessage.includes('unavailable')
       ) {
         continue; // Try next key
       }

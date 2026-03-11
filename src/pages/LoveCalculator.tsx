@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Share2, RefreshCw, Download } from 'lucide-react';
+import { Heart, Share2, RefreshCw, Download, AlertCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useSearchParams } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { downloadAsImage } from '../utils/downloadImage';
+import { generateContentWithFallback } from '../utils/ai';
 
 export function LoveCalculator() {
   const [searchParams] = useSearchParams();
@@ -15,30 +16,69 @@ export function LoveCalculator() {
   const [name2, setName2] = useState(initialCrush);
   const [isCalculating, setIsCalculating] = useState(false);
   const [result, setResult] = useState<{ score: number; message: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const calculateLove = (e: React.FormEvent) => {
+  const calculateLove = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name1.trim() || !name2.trim()) return;
 
     setIsCalculating(true);
     setResult(null);
+    setError(null);
 
-    // Simulate calculation delay
-    setTimeout(() => {
-      // Simple deterministic algorithm based on names
+    try {
+      // Try to use the AI for a personalized reading
+      const prompt = `Calculate the love compatibility between "${name1}" and "${name2}". 
+      Return ONLY a JSON object with two fields:
+      1. "score": a number between 1 and 100 representing their compatibility percentage. Make it somewhat random but based on the names.
+      2. "message": A short, fun, 1-2 sentence explanation of why they got this score.
+      Do not include markdown formatting or backticks, just the raw JSON.`;
+
+      const response = await generateContentWithFallback({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+
+      const text = response.text || "{}";
+      const data = JSON.parse(text);
+      
+      const score = data.score || Math.floor(Math.random() * 100) + 1;
+      const message = data.message || "You two have a unique connection!";
+
+      setResult({ score, message });
+      
+      if (score > 75) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ff69b4', '#ff1493', '#ffc0cb']
+        });
+      }
+    } catch (err: any) {
+      console.error("AI Calculation Error:", err);
+      
+      // Check if it's an API key error
+      if (err.message?.includes('API key') || err.message?.includes('No Gemini API keys')) {
+        setError("AI features are currently unavailable because the API key is missing or invalid. Please check your .env file.");
+      } else {
+        setError("The AI is currently taking a nap. We used our backup math algorithm instead!");
+      }
+
+      // Fallback to deterministic algorithm so the user still gets a result
       const combined = (name1.toLowerCase() + name2.toLowerCase()).replace(/[^a-z]/g, '');
       let sum = 0;
       for (let i = 0; i < combined.length; i++) {
         sum += combined.charCodeAt(i);
       }
-      
-      // Add some randomness based on today's date so it changes daily
       const today = new Date().toDateString();
       for (let i = 0; i < today.length; i++) {
         sum += today.charCodeAt(i);
       }
-
-      const score = (sum % 100) + 1; // 1 to 100
+      const score = (sum % 100) + 1;
       
       let message = "";
       if (score > 90) message = "Soulmates! You two are meant to be together forever. 💖";
@@ -48,8 +88,7 @@ export function LoveCalculator() {
       else message = "Oof. Maybe look elsewhere? Or prove the calculator wrong! 💔";
 
       setResult({ score, message });
-      setIsCalculating(false);
-
+      
       if (score > 75) {
         confetti({
           particleCount: 100,
@@ -58,7 +97,9 @@ export function LoveCalculator() {
           colors: ['#ff69b4', '#ff1493', '#ffc0cb']
         });
       }
-    }, 2000);
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handleShare = async () => {
@@ -146,6 +187,20 @@ export function LoveCalculator() {
           </Button>
         </form>
       </Card>
+
+      <AnimatePresence>
+        {error && !isCalculating && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-xl p-4 flex items-start gap-3"
+          >
+            <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-orange-800 dark:text-orange-200">{error}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {result && !isCalculating && (
