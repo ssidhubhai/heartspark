@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { MessageCircle, AlertCircle, Send, ShieldCheck, Loader2, ChevronDown, ChevronUp, Plus, X, Flag, Trash2, Shield, CheckCircle2 } from 'lucide-react';
+import { MessageCircle, AlertCircle, Send, ShieldCheck, Loader2, ChevronDown, ChevronUp, Plus, X, Flag, Trash2, Shield, CheckCircle2, Share2 } from 'lucide-react';
 import { generateContentWithFallback } from '../utils/ai';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -45,8 +45,8 @@ export function CommunityStories() {
   const [moderating, setModerating] = useState(false);
   const { user, isConfigured } = useAuth();
 
-  // Admin Check (Disabled to prevent normal users from seeing admin controls)
-  const isAdmin = false;
+  // Admin Check
+  const isAdmin = user?.email === 'shubh656577@gmail.com';
 
   // Comment state per story
   const [expandedStory, setExpandedStory] = useState<string | null>(null);
@@ -63,6 +63,8 @@ export function CommunityStories() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const [showReportedOnly, setShowReportedOnly] = useState(false);
 
   // Real-time comments listener
   useEffect(() => {
@@ -86,7 +88,15 @@ export function CommunityStories() {
   useEffect(() => {
     if (!db) return;
 
-    const q = query(collection(db, 'community_stories'), orderBy('createdAt', 'desc'), limit(100));
+    setLoadingStories(true);
+    
+    let q;
+    if (showReportedOnly) {
+      q = query(collection(db, 'community_stories'), where('reportCount', '>', 0), orderBy('reportCount', 'desc'), limit(50));
+    } else {
+      q = query(collection(db, 'community_stories'), orderBy('createdAt', 'desc'), limit(100));
+    }
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const storyData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -97,7 +107,27 @@ export function CommunityStories() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [showReportedOnly]);
+
+  // Scroll to specific story if ID is in URL
+  useEffect(() => {
+    if (!loadingStories && stories.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const storyId = urlParams.get('id');
+      if (storyId) {
+        const element = document.getElementById(`story-${storyId}`);
+        if (element) {
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('ring-4', 'ring-indigo-500', 'ring-opacity-50', 'transition-all', 'duration-1000');
+            setTimeout(() => {
+              element.classList.remove('ring-4', 'ring-indigo-500', 'ring-opacity-50');
+            }, 3000);
+          }, 500);
+        }
+      }
+    }
+  }, [loadingStories, stories]);
 
   const hasLinks = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/[^\s]*)?)/i;
@@ -185,42 +215,62 @@ export function CommunityStories() {
     }
   };
 
-  const handleReaction = async (story: Story, reactionType: string) => {
+  const COOL_EMOJIS = ['💀', '😭', '💅', '🚩', '☕', '🤡', '🐐', '👀', '💯', '🫶', '🔥', '🥺', '💔', '👑'];
+  const [activeReactionStoryId, setActiveReactionStoryId] = useState<string | null>(null);
+
+  const handleReaction = async (story: Story, emoji: string) => {
     if (!db) return;
     if (!user) {
       showToast("Please login to react to stories!", "info");
       return;
     }
     
-    if (story.reactedUsers?.includes(user.uid)) {
-      showToast("You have already reacted to this story!", "info");
-      return;
-    }
+    const userReactionKey = `${user.uid}_${emoji}`;
+    const hasReacted = story.reactedUsers?.includes(userReactionKey);
 
     // Optimistic UI update
     setStories(prev => prev.map(s => {
       if (s.id === story.id) {
+        const currentCount = (s.reactions as any)?.[emoji] || 0;
+        const newReactions = { ...s.reactions };
+        
+        if (hasReacted) {
+          newReactions[emoji] = Math.max(0, currentCount - 1);
+        } else {
+          newReactions[emoji] = currentCount + 1;
+        }
+
+        const newReactedUsers = hasReacted 
+          ? (s.reactedUsers || []).filter(u => u !== userReactionKey)
+          : [...(s.reactedUsers || []), userReactionKey];
+
         return {
           ...s,
-          reactions: {
-            ...s.reactions,
-            [reactionType]: (s.reactions as any)[reactionType] + 1
-          },
-          reactedUsers: [...(s.reactedUsers || []), user.uid]
+          reactions: newReactions,
+          reactedUsers: newReactedUsers
         };
       }
       return s;
     }));
 
+    setActiveReactionStoryId(null);
+
     try {
       const storyRef = doc(db, 'community_stories', story.id);
-      await updateDoc(storyRef, {
-        [`reactions.${reactionType}`]: increment(1),
-        reactedUsers: arrayUnion(user.uid)
-      });
+      if (hasReacted) {
+        await updateDoc(storyRef, {
+          [`reactions.${emoji}`]: increment(-1),
+          reactedUsers: arrayRemove(userReactionKey)
+        });
+      } else {
+        await updateDoc(storyRef, {
+          [`reactions.${emoji}`]: increment(1),
+          reactedUsers: arrayUnion(userReactionKey)
+        });
+      }
     } catch (error) {
-      console.error("Error adding reaction: ", error);
-      showToast("Failed to add reaction.", "error");
+      console.error("Error updating reaction: ", error);
+      showToast("Failed to update reaction.", "error");
     }
   };
 
@@ -347,6 +397,20 @@ export function CommunityStories() {
         commentCount: increment(1)
       });
 
+      // Find the story to get the author's userId
+      const story = stories.find(s => s.id === storyId);
+      if (story && story.userId && story.userId !== user.uid) {
+        // Create notification for the story author
+        await addDoc(collection(db, 'notifications'), {
+          userId: story.userId,
+          type: 'comment',
+          storyId: storyId,
+          message: `${user.displayName || 'Someone'} commented on your story: "${story.title}"`,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
+
     } catch (error) {
       console.error("Error posting comment:", error);
       showToast("Failed to post comment.", "error");
@@ -398,6 +462,26 @@ export function CommunityStories() {
             <ShieldCheck className="w-4 h-4" /> Protected by AI Moderation
           </span>
         </p>
+        
+        {/* Toggle for Reported Stories */}
+        {isAdmin && (
+          <div className="flex justify-center mt-4">
+            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl inline-flex">
+              <button
+                onClick={() => setShowReportedOnly(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!showReportedOnly ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+              >
+                All Stories
+              </button>
+              <button
+                onClick={() => setShowReportedOnly(true)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${showReportedOnly ? 'bg-white dark:bg-slate-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+              >
+                <Flag className="w-4 h-4" /> Reported
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Floating Action Button for Posting */}
@@ -516,7 +600,7 @@ export function CommunityStories() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="hover:shadow-md transition-shadow overflow-hidden relative border-slate-200 dark:border-slate-700">
+                <Card id={`story-${story.id}`} className="hover:shadow-md transition-shadow overflow-hidden relative border-slate-200 dark:border-slate-700">
               
               {/* Admin Warning Banner */}
               {isAdmin && (story.reportCount || 0) > 0 && (
@@ -528,58 +612,123 @@ export function CommunityStories() {
 
               <div className={`space-y-3 ${isAdmin && (story.reportCount || 0) > 0 ? 'mt-4' : ''}`}>
                 <div className="flex justify-between items-start">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white pr-8">{story.title}</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg shadow-sm border border-indigo-50 dark:border-indigo-800">
+                      {story.author.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 dark:text-white">{story.author}</span>
+                        {user && user.uid === story.userId && (
+                          <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-[10px] rounded-full font-bold uppercase tracking-wider">
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {story.createdAt ? new Date(story.createdAt.toMillis()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Just now'}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Delete Own Post Button */}
                   {user && user.uid === story.userId && !isAdmin && (
                     <button 
                       onClick={() => handleDeletePost(story.id)} 
-                      className={`flex items-center gap-1 px-2 py-1.5 rounded-full text-xs transition-colors shrink-0 ${
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors shrink-0 ${
                         deletingPostId === story.id 
-                          ? 'bg-red-500 text-white hover:bg-red-600' 
+                          ? 'bg-red-500 text-white hover:bg-red-600 shadow-md' 
                           : 'text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30'
                       }`}
                       title="Delete your post"
                     >
                       <Trash2 className="w-4 h-4" />
-                      {deletingPostId === story.id && <span className="font-bold">Confirm?</span>}
+                      {deletingPostId === story.id && <span>Confirm?</span>}
                     </button>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
-                    {story.author.charAt(0).toUpperCase()}
+                
+                <div className="pt-2">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{story.title}</h3>
+                  <div className="relative">
+                    <p className={`text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed ${expandedStory !== story.id ? 'line-clamp-4' : ''}`}>
+                      {story.content}
+                    </p>
+                    {story.content.length > 200 && expandedStory !== story.id && (
+                      <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white dark:from-slate-800 to-transparent pointer-events-none" />
+                    )}
                   </div>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">{story.author}</span>
-                  {user && user.uid === story.userId && (
-                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-[10px] rounded-full font-bold uppercase tracking-wider">
-                      You
-                    </span>
+                  {story.content.length > 200 && (
+                    <button 
+                      onClick={() => toggleComments(story.id)}
+                      className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold mt-1 hover:underline focus:outline-none"
+                    >
+                      {expandedStory === story.id ? 'Show less' : 'Read more'}
+                    </button>
                   )}
-                  <span>•</span>
-                  <span>{story.createdAt ? new Date(story.createdAt.toMillis()).toLocaleDateString() : 'Just now'}</span>
                 </div>
-                <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed mt-4">
-                  {story.content}
-                </p>
               </div>
 
               {/* Reactions & Actions */}
-              <div className="flex flex-wrap items-center gap-2 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <button onClick={() => handleReaction(story, 'aww')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${story.reactedUsers?.includes(user?.uid || '') ? 'bg-pink-100 dark:bg-pink-900/30 border border-pink-200 dark:border-pink-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-pink-50 dark:hover:bg-slate-700'}`}>
-                  🥺 <span className="font-medium text-slate-600 dark:text-slate-300">{story.reactions?.aww || 0}</span>
-                </button>
-                <button onClick={() => handleReaction(story, 'redFlag')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${story.reactedUsers?.includes(user?.uid || '') ? 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-slate-700'}`}>
-                  🚩 <span className="font-medium text-slate-600 dark:text-slate-300">{story.reactions?.redFlag || 0}</span>
-                </button>
-                <button onClick={() => handleReaction(story, 'drama')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${story.reactedUsers?.includes(user?.uid || '') ? 'bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-yellow-50 dark:hover:bg-slate-700'}`}>
-                  🍿 <span className="font-medium text-slate-600 dark:text-slate-300">{story.reactions?.drama || 0}</span>
-                </button>
-                <button onClick={() => handleReaction(story, 'heartbreak')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${story.reactedUsers?.includes(user?.uid || '') ? 'bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-slate-700'}`}>
-                  💔 <span className="font-medium text-slate-600 dark:text-slate-300">{story.reactions?.heartbreak || 0}</span>
-                </button>
-                <button onClick={() => handleReaction(story, 'slay')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${story.reactedUsers?.includes(user?.uid || '') ? 'bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-orange-50 dark:hover:bg-slate-700'}`}>
-                  👑 <span className="font-medium text-slate-600 dark:text-slate-300">{story.reactions?.slay || 0}</span>
-                </button>
+              <div className="flex flex-wrap items-center gap-2 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 relative">
+                
+                {/* Render active reactions */}
+                {Object.entries(story.reactions || {})
+                  .filter(([_, count]) => count > 0)
+                  .map(([emoji, count]) => {
+                    // Handle legacy reaction keys
+                    let displayEmoji = emoji;
+                    if (emoji === 'aww') displayEmoji = '🥺';
+                    if (emoji === 'redFlag') displayEmoji = '🚩';
+                    if (emoji === 'drama') displayEmoji = '🍿';
+                    if (emoji === 'heartbreak') displayEmoji = '💔';
+                    if (emoji === 'slay') displayEmoji = '👑';
+
+                    const userReactionKey = `${user?.uid}_${emoji}`;
+                    // Also check legacy format for backward compatibility
+                    const hasReacted = story.reactedUsers?.includes(userReactionKey) || story.reactedUsers?.includes(user?.uid || '');
+
+                    return (
+                      <button 
+                        key={emoji}
+                        onClick={() => handleReaction(story, emoji)} 
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${hasReacted ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                      >
+                        {displayEmoji} <span className="font-medium text-slate-600 dark:text-slate-300">{count}</span>
+                      </button>
+                    );
+                  })}
+
+                {/* Add Reaction Button */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setActiveReactionStoryId(activeReactionStoryId === story.id ? null : story.id)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+
+                  <AnimatePresence>
+                    {activeReactionStoryId === story.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                        className="absolute bottom-full left-0 mb-2 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-2 z-10 w-64 flex flex-wrap gap-1"
+                      >
+                        {COOL_EMOJIS.map(emoji => (
+                          <button
+                            key={emoji}
+                            onClick={() => handleReaction(story, emoji)}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-lg"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <div className="flex-1"></div>
 
@@ -604,6 +753,19 @@ export function CommunityStories() {
                 >
                   <Flag className="w-3 h-3" />
                   {reportingPostId === story.id && <span className="font-bold">Confirm?</span>}
+                </button>
+
+                {/* Share Button */}
+                <button 
+                  onClick={() => {
+                    const url = `${window.location.origin}/stories?id=${story.id}`;
+                    navigator.clipboard.writeText(url);
+                    showToast("Story link copied to clipboard!", "success");
+                  }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-full text-xs transition-colors ml-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  title="Share this story"
+                >
+                  <Share2 className="w-4 h-4" />
                 </button>
               </div>
 

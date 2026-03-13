@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Flame, RefreshCw, Share2, Sparkles, Download } from 'lucide-react';
-import { downloadAsImage } from '../utils/downloadImage';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const fortunes = [
   "A surprise message will make your heart skip a beat today.",
@@ -38,17 +38,8 @@ export function DailyFortune() {
   };
 
   const handleShare = async () => {
-    const text = `My Daily Love Fortune: "${fortune}" Get yours at HeartSpark! ${window.location.href}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Daily Love Fortune', text, url: window.location.href });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Result copied to clipboard!');
-    }
+    const text = `My Daily Love Fortune: "${fortune}" Get yours at HeartSpark!`;
+    await shareAsImage('fortune-result', 'Daily Love Fortune', text);
   };
 
   const handleDownload = () => {

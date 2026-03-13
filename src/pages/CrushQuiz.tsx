@@ -5,7 +5,7 @@ import { Button } from '../components/Button';
 import { Share2, RefreshCw, CheckCircle2, Wand2, Loader2, Sparkles, Download } from 'lucide-react';
 import { generateContentWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
-import { downloadAsImage } from '../utils/downloadImage';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const questions = [
   {
@@ -194,22 +194,8 @@ export function CrushQuiz() {
 
   const handleShare = async () => {
     const result = calculateResult();
-    const text = `I just took the Crush Likelihood Quiz and got: ${result.title}! Take the quiz at HeartSpark to find out if your crush likes you back! ${window.location.href}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Crush Quiz Result',
-          text,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Result copied to clipboard!');
-    }
+    const text = `I just took the Crush Likelihood Quiz and got: ${result.title}! Take the quiz at HeartSpark to find out if your crush likes you back!`;
+    await shareAsImage('quiz-result', 'Crush Quiz Result', text);
   };
 
   const handleDownload = () => {
@@ -262,7 +248,7 @@ export function CrushQuiz() {
                     value={customSituation}
                     onChange={(e) => setCustomSituation(e.target.value)}
                     placeholder="e.g., We work together in the same office and always get coffee at 10am, but they recently started acting distant..."
-                    className="w-full h-32 p-4 rounded-xl border-2 border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-purple-500 outline-none resize-none transition-all"
+                    className="w-full h-32 p-4 rounded-xl border-2 border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-purple-500 outline-none resize-none transition-all"
                     required
                   />
                 </div>

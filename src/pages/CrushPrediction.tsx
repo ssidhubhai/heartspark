@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Star, RefreshCw, Share2 } from 'lucide-react';
+import { Star, RefreshCw, Share2, Download } from 'lucide-react';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const predictions = [
   "They will text you exactly at 11:11 PM tonight.",
@@ -43,16 +44,11 @@ export function CrushPrediction() {
 
   const handleShare = async () => {
     const text = `My Crush Prediction with ${crush}: "${prediction}" (Probability: ${probability}%) Get yours at HeartSpark!`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Crush Prediction', text, url: window.location.href });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Result copied to clipboard!');
-    }
+    await shareAsImage('prediction-result', 'Crush Prediction', text);
+  };
+
+  const handleDownload = () => {
+    downloadAsImage('prediction-result', 'crush-prediction');
   };
 
   return (
@@ -75,7 +71,7 @@ export function CrushPrediction() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 outline-none transition-all"
                 required
               />
             </div>
@@ -85,7 +81,7 @@ export function CrushPrediction() {
                 type="text"
                 value={crush}
                 onChange={(e) => setCrush(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 outline-none transition-all"
                 required
               />
             </div>
@@ -114,7 +110,7 @@ export function CrushPrediction() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
           >
-            <Card className="text-center space-y-6 bg-gradient-to-b from-white to-yellow-50 dark:from-slate-800 dark:to-slate-800/50 border-yellow-200 dark:border-yellow-900/50">
+            <Card id="prediction-result" className="text-center space-y-6 bg-gradient-to-b from-white to-yellow-50 dark:from-slate-800 dark:to-slate-800/50 border-yellow-200 dark:border-yellow-900/50">
               <div className="inline-block p-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 mb-2">
                 <Star className="w-8 h-8 text-yellow-500" />
               </div>
@@ -134,12 +130,15 @@ export function CrushPrediction() {
                 </div>
               </div>
 
-              <div className="flex justify-center gap-4 pt-4">
+              <div className="flex flex-wrap justify-center gap-4 pt-4" data-html2canvas-ignore>
                 <Button variant="outline" onClick={() => setPrediction('')}>
                   <RefreshCw className="w-4 h-4 mr-2" /> Try Again
                 </Button>
                 <Button onClick={handleShare} className="bg-yellow-500 hover:bg-yellow-600 border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
+                </Button>
+                <Button variant="outline" onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               </div>
             </Card>

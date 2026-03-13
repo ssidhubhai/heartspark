@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Share2, RefreshCw, Flame, Download } from 'lucide-react';
-import { downloadAsImage } from '../utils/downloadImage';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const questions = [
   {
@@ -86,22 +86,8 @@ export function FlirtingTest() {
 
   const handleShare = async () => {
     const result = getResult();
-    const text = `I just took the Flirting Skill Test and got: ${result.level}! Test your flirting skills at HeartSpark! ${window.location.href}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Flirting Skill Test',
-          text,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Result copied to clipboard!');
-    }
+    const text = `I just took the Flirting Skill Test and got: ${result.level}! Test your flirting skills at HeartSpark!`;
+    await shareAsImage('flirting-result', 'Flirting Skill Test', text);
   };
 
   const handleDownload = () => {

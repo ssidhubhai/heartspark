@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X } from 'lucide-react';
-import { generateContentWithFallback } from '../utils/ai';
+import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
 interface Message {
@@ -109,7 +109,7 @@ export function AstrologyAI() {
 
     setLoading(true);
 
-    const initialPrompt = `My name is ${name}. I was born on ${dob} at ${time || 'unknown time'} in ${place}. Today's date is ${new Date().toLocaleDateString()}. Please provide a detailed advanced astrological reading for me, focusing on my personality, love life, and future. Act as a professional, mystical, and insightful astrologer.`;
+    const initialPrompt = `My name is ${name}. I was born on ${dob} at ${time || 'unknown time'} in ${place}. Today's date is ${new Date().toLocaleDateString()}. Please provide an astrological reading for me, focusing on my personality, love life, and future. Act as a mystical but friendly astrologer. Use simple, easy-to-understand language (no confusing jargon). Keep it concise but insightful. At the very end, suggest 2 short follow-up questions I can ask you next.`;
 
     const userMsg: Message = { role: 'user', text: initialPrompt };
     
@@ -125,7 +125,7 @@ export function AstrologyAI() {
     setActiveThreadId(newThread.id);
 
     try {
-      const response = await generateContentWithFallback({
+      const stream = await generateContentStreamWithFallback({
         model: 'gemini-3-flash-preview',
         contents: initialPrompt
       });
@@ -134,12 +134,29 @@ export function AstrologyAI() {
         if (t.id === newThread.id) {
           return {
             ...t,
-            messages: [...t.messages, { role: 'model', text: response.text || 'The stars are clouded right now.' }],
+            messages: [...t.messages, { role: 'model', text: '' }],
             updatedAt: Date.now()
           };
         }
         return t;
       }));
+
+      let fullResponse = '';
+      for await (const chunk of stream) {
+        fullResponse += chunk.text || '';
+        setThreads(prev => prev.map(t => {
+          if (t.id === newThread.id) {
+            const newMessages = [...t.messages];
+            newMessages[newMessages.length - 1] = { role: 'model', text: fullResponse };
+            return {
+              ...t,
+              messages: newMessages,
+              updatedAt: Date.now()
+            };
+          }
+          return t;
+        }));
+      }
     } catch (error) {
       console.error('Error:', error);
       setThreads(prev => prev.map(t => {
@@ -175,12 +192,16 @@ export function AstrologyAI() {
 
     try {
       const currentMessages = [...activeThread.messages, userMsg];
-      let context = currentMessages.slice(-10).map(m => `${m.role === 'user' ? 'User' : 'Astrologer'}: ${m.text}`).join('\n');
+      // Reduce context to last 6 messages (3 turns) to save input tokens
+      let context = currentMessages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Astrologer'}: ${m.text}`).join('\n');
 
       const prompt = `
-        You are an advanced, mystical, and professional AI Astrologer.
+        You are a mystical but friendly AI Astrologer.
         You are doing a reading for ${activeThread.details.name} born on ${activeThread.details.dob} in ${activeThread.details.place}.
         Today's date is ${new Date().toLocaleDateString()}.
+        
+        Use simple, everyday language. Avoid overly complex astrology jargon. Keep your answers concise but helpful to save tokens.
+        IMPORTANT: At the very end of your response, always suggest 2 short follow-up questions the user can ask you next.
         
         Recent conversation context:
         ${context}
@@ -188,7 +209,7 @@ export function AstrologyAI() {
         User's new question: ${userMsg.text}
       `;
 
-      const response = await generateContentWithFallback({
+      const stream = await generateContentStreamWithFallback({
         model: 'gemini-3-flash-preview',
         contents: prompt
       });
@@ -197,12 +218,29 @@ export function AstrologyAI() {
         if (t.id === activeThreadId) {
           return {
             ...t,
-            messages: [...t.messages, { role: 'model', text: response.text || 'The stars are silent.' }],
+            messages: [...t.messages, { role: 'model', text: '' }],
             updatedAt: Date.now()
           };
         }
         return t;
       }));
+
+      let fullResponse = '';
+      for await (const chunk of stream) {
+        fullResponse += chunk.text || '';
+        setThreads(prev => prev.map(t => {
+          if (t.id === activeThreadId) {
+            const newMessages = [...t.messages];
+            newMessages[newMessages.length - 1] = { role: 'model', text: fullResponse };
+            return {
+              ...t,
+              messages: newMessages,
+              updatedAt: Date.now()
+            };
+          }
+          return t;
+        }));
+      }
     } catch (error) {
       console.error('Error:', error);
       setThreads(prev => prev.map(t => {
@@ -312,7 +350,7 @@ export function AstrologyAI() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-yellow-500 outline-none"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 outline-none"
                     required
                   />
                 </div>
@@ -323,7 +361,7 @@ export function AstrologyAI() {
                       type="date"
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
-                      className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-yellow-500 outline-none"
+                      className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 outline-none"
                       required
                     />
                   </div>
@@ -333,7 +371,7 @@ export function AstrologyAI() {
                       type="time"
                       value={time}
                       onChange={(e) => setTime(e.target.value)}
-                      className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-yellow-500 outline-none"
+                      className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 outline-none"
                     />
                   </div>
                 </div>
@@ -344,7 +382,7 @@ export function AstrologyAI() {
                     value={place}
                     onChange={(e) => setPlace(e.target.value)}
                     placeholder="City, Country"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-yellow-500 outline-none"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 outline-none"
                     required
                   />
                 </div>

@@ -1,0 +1,23 @@
+{
+  "name": "Love AI - Relationship & Dating Tools",
+  "short_name": "LoveAI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "description": "AI-powered dating advice, perfect replies, and community stories.",
+  "icons": [
+    {
+      "src": "https://api.iconify.design/lucide:heart.svg?color=%234f46e5",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api.iconify.design/lucide:heart.svg?color=%234f46e5",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

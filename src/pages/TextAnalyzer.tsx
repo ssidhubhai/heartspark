@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MessageSquare, Sparkles, Brain, Loader2, Image as ImageIcon, Trash2, Share2, Download } from 'lucide-react';
-import { generateContentWithFallback } from '../utils/ai';
+import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
-import { downloadAsImage } from '../utils/downloadImage';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 export function TextAnalyzer() {
   const [message, setMessage] = useState('');
@@ -41,10 +41,12 @@ export function TextAnalyzer() {
         ${message ? `The text message: "${message}"` : ''}
         ${image ? `I have also attached a screenshot of our conversation or their profile.` : ''}
         
-        Please provide a detailed analysis broken down into these sections. Use markdown formatting to make it look nice and engaging. Use emojis!:
-        1. **Hidden Meaning**: What are they actually trying to say?
-        2. **Interest Level**: Cold, Friendly, or Flirting? (Explain why)
-        3. **Suggested Reply**: Give me 2-3 options for exactly what I should reply to keep the conversation going or escalate it.
+        Please provide a concise analysis broken down into these sections. Use simple, everyday language (like talking to a friend). Use markdown formatting and emojis:
+        1. **Hidden Meaning**: What are they actually trying to say? (Keep it brief)
+        2. **Interest Level**: Cold, Friendly, or Flirting? (Briefly explain why)
+        3. **Suggested Reply**: Give me 2 short options for exactly what I should reply.
+        
+        IMPORTANT: At the very end, suggest 1 or 2 follow-up questions the user can ask you next (e.g., "Should we analyze their previous text too?").
       `;
 
       const parts: any[] = [{ text: prompt }];
@@ -61,12 +63,17 @@ export function TextAnalyzer() {
         }
       }
 
-      const response = await generateContentWithFallback({
+      const stream = await generateContentStreamWithFallback({
         model: 'gemini-3-flash-preview',
         contents: { parts },
       });
 
-      setAnalysis(response.text || 'Could not analyze the text.');
+      setAnalysis('');
+      let fullResponse = '';
+      for await (const chunk of stream) {
+        fullResponse += chunk.text || '';
+        setAnalysis(fullResponse);
+      }
 
     } catch (error) {
       console.error('Error analyzing text:', error);
@@ -77,17 +84,8 @@ export function TextAnalyzer() {
   };
 
   const handleShare = async () => {
-    const text = `I just decoded a text message using HeartSpark's AI Text Analyzer! Try it out: ${window.location.href}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Text Analyzer Result', text, url: window.location.href });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Result copied to clipboard!');
-    }
+    const text = `I just decoded a text message using HeartSpark's AI Text Analyzer! Try it out:`;
+    await shareAsImage('analysis-result', 'Text Analyzer Result', text);
   };
 
   const handleDownload = () => {
@@ -115,7 +113,7 @@ export function TextAnalyzer() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="e.g., 'haha okay' or 'what are you up to later?'"
-              className="w-full h-32 p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none resize-none transition-all"
+              className="w-full h-32 p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-indigo-500 outline-none resize-none transition-all"
             />
             
             <div className="flex items-center gap-4 mt-2">
@@ -158,7 +156,7 @@ export function TextAnalyzer() {
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="e.g., We just met yesterday, or We've been friends for 3 years"
-              className="w-full h-12 px-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none transition-all"
+              className="w-full h-12 px-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-indigo-500 outline-none transition-all"
             />
           </div>
 

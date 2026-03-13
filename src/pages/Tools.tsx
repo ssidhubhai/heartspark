@@ -1,17 +1,10 @@
 import { motion } from 'motion/react';
 import { Card } from '../components/Card';
 import { Link } from 'react-router-dom';
-import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Mail, MessageCircle, Bot } from 'lucide-react';
+import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Bot } from 'lucide-react';
 
 export function Tools() {
   const tools = [
-    {
-      title: "Secret Link",
-      description: "Get anonymous messages from your secret admirers.",
-      icon: <Mail className="w-6 h-6 text-rose-500" />,
-      path: "/secret",
-      color: "bg-rose-100 dark:bg-rose-900/30",
-    },
     {
       title: "LoveGPT",
       description: "Talk to your personal AI relationship coach. Ask advice, send screenshots, and get help.",
@@ -26,13 +19,6 @@ export function Tools() {
       icon: <Brain className="w-6 h-6 text-indigo-500" />,
       path: "/analyzer",
       color: "bg-indigo-100 dark:bg-indigo-900/30",
-    },
-    {
-      title: "Confession Wall",
-      description: "Drop a secret message for your crush anonymously.",
-      icon: <MessageCircle className="w-6 h-6 text-pink-500" />,
-      path: "/confessions",
-      color: "bg-pink-100 dark:bg-pink-900/30",
     },
     {
       title: "Crush Prediction",
@@ -90,8 +76,13 @@ export function Tools() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * index }}
           >
-            <Link to={tool.path} className="block h-full">
-              <Card className="h-full flex flex-col hover:border-pink-300 dark:hover:border-pink-700 transition-colors">
+            <Link to={tool.path} className="block h-full relative">
+              <Card className="h-full flex flex-col hover:border-pink-300 dark:hover:border-pink-700 transition-colors relative overflow-hidden">
+                {tool.badge && (
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    {tool.badge}
+                  </div>
+                )}
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${tool.color}`}>
                   {tool.icon}
                 </div>

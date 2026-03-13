@@ -1,55 +1,59 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 
-interface Heart {
+interface Particle {
   id: number;
   x: number;
   y: number;
   size: number;
   duration: number;
   delay: number;
+  emoji: string;
 }
 
 export function ParticleBackground() {
-  const [hearts, setHearts] = useState<Heart[]>([]);
+  const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
-    const generateHearts = () => {
-      const newHearts = Array.from({ length: 20 }).map((_, i) => ({
+    const emojis = ['❤', '✨', '⭐', '💖', '💫'];
+    const generateParticles = () => {
+      const newParticles = Array.from({ length: 25 }).map((_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100 + 100, // Start below screen
-        size: Math.random() * 20 + 10,
-        duration: Math.random() * 10 + 10,
-        delay: Math.random() * 5,
+        size: Math.random() * 15 + 10,
+        duration: Math.random() * 15 + 15, // Slower, more graceful
+        delay: Math.random() * 10,
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
       }));
-      setHearts(newHearts);
+      setParticles(newParticles);
     };
 
-    generateHearts();
+    generateParticles();
   }, []);
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1]">
-      {hearts.map((heart) => (
+      {particles.map((particle) => (
         <motion.div
-          key={heart.id}
-          initial={{ opacity: 0, y: `${heart.y}vh`, x: `${heart.x}vw` }}
+          key={particle.id}
+          initial={{ opacity: 0, y: `${particle.y}vh`, x: `${particle.x}vw` }}
           animate={{
-            opacity: [0, 0.5, 0],
+            opacity: [0, 0.4, 0],
             y: `-20vh`,
-            x: `${heart.x + (Math.random() * 10 - 5)}vw`,
+            x: `${particle.x + (Math.random() * 15 - 7.5)}vw`,
+            rotate: [0, 180, 360],
           }}
           transition={{
-            duration: heart.duration,
-            delay: heart.delay,
+            duration: particle.duration,
+            delay: particle.delay,
             repeat: Infinity,
             ease: "linear",
           }}
-          className="absolute text-pink-300/30"
-          style={{ fontSize: heart.size }}
+          className="absolute text-pink-300/40 dark:text-pink-400/20"
+          style={{ fontSize: particle.size }}
         >
-          ❤
+          {particle.emoji}
         </motion.div>
       ))}
     </div>

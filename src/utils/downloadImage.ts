@@ -1,10 +1,6 @@
 import * as htmlToImage from 'html-to-image';
 
-export const downloadAsImage = async (elementId: string, filename: string) => {
-  const element = document.getElementById(elementId);
-  if (!element) return;
-
-  // Create a beautiful watermark element
+const addWatermark = (element: HTMLElement) => {
   const watermark = document.createElement('div');
   watermark.id = 'heartspark-watermark';
   watermark.innerHTML = `
@@ -24,25 +20,34 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
   watermark.style.borderTop = '2px dashed rgba(236, 72, 153, 0.2)';
   watermark.style.width = '100%';
   
-  // Append to the element before taking the snapshot
   element.appendChild(watermark);
+  return watermark;
+};
+
+const getHtmlToImageOptions = () => ({
+  backgroundColor: 'transparent',
+  pixelRatio: 2, // Higher resolution
+  style: {
+    transform: 'scale(1)',
+    transformOrigin: 'top left'
+  },
+  filter: (node: HTMLElement) => {
+    // Ignore elements with data-html2canvas-ignore attribute (for backward compatibility)
+    if (node instanceof HTMLElement && node.dataset.html2canvasIgnore !== undefined) {
+      return false;
+    }
+    return true;
+  }
+});
+
+export const downloadAsImage = async (elementId: string, filename: string) => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  const watermark = addWatermark(element);
 
   try {
-    const dataUrl = await htmlToImage.toPng(element, {
-      backgroundColor: 'transparent',
-      pixelRatio: 2, // Higher resolution
-      style: {
-        transform: 'scale(1)',
-        transformOrigin: 'top left'
-      },
-      filter: (node) => {
-        // Ignore elements with data-html2canvas-ignore attribute (for backward compatibility)
-        if (node instanceof HTMLElement && node.dataset.html2canvasIgnore !== undefined) {
-          return false;
-        }
-        return true;
-      }
-    });
+    const dataUrl = await htmlToImage.toPng(element, getHtmlToImageOptions());
 
     const link = document.createElement('a');
     link.download = `${filename}.png`;
@@ -52,7 +57,45 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
     console.error('Error downloading image:', error);
     alert('Failed to download image. Please try again.');
   } finally {
-    // Remove the watermark so the live UI goes back to normal
+    if (element.contains(watermark)) {
+      element.removeChild(watermark);
+    }
+  }
+};
+
+export const shareAsImage = async (elementId: string, title: string, text: string) => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  const watermark = addWatermark(element);
+
+  try {
+    const dataUrl = await htmlToImage.toPng(element, getHtmlToImageOptions());
+    
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], 'heartspark-result.png', { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title,
+        text,
+        files: [file],
+      });
+    } else if (navigator.share) {
+      await navigator.share({
+        title,
+        text,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(text + " " + window.location.href);
+      alert('Result copied to clipboard!');
+    }
+  } catch (error) {
+    console.error('Error sharing image:', error);
+    alert('Failed to share image. Please try again.');
+  } finally {
     if (element.contains(watermark)) {
       element.removeChild(watermark);
     }

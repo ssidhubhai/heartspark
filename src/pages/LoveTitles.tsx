@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Wand2, RefreshCw, Share2, Download } from 'lucide-react';
-import { downloadAsImage } from '../utils/downloadImage';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const titles = [
   "Certified Heart Thief",
@@ -42,17 +42,8 @@ export function LoveTitles() {
   };
 
   const handleShare = async () => {
-    const text = `My official love title is: "${title}"! Get yours at HeartSpark! ${window.location.href}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Love Title', text, url: window.location.href });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Result copied to clipboard!');
-    }
+    const text = `My official love title is: "${title}"! Get yours at HeartSpark!`;
+    await shareAsImage('title-result', 'Love Title', text);
   };
 
   const handleDownload = () => {
@@ -78,7 +69,7 @@ export function LoveTitles() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border-2 border-purple-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900 outline-none transition-all"
+              className="w-full h-12 px-4 rounded-xl border-2 border-purple-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900 outline-none transition-all"
               required
             />
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X } from 'lucide-react';
-import { generateContentWithFallback } from '../utils/ai';
+import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
 interface Message {
@@ -147,12 +147,18 @@ export function LoveGPT() {
 
     try {
       const currentMessages = [...activeThread.messages, userMsg];
-      let context = currentMessages.slice(-10).map(m => `${m.role === 'user' ? 'User' : 'LoveGPT'}: ${m.text}`).join('\n');
+      // Reduce context to last 6 messages (3 turns) to save input tokens
+      let context = currentMessages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'LoveGPT'}: ${m.text}`).join('\n');
 
       const prompt = `
-        You are LoveGPT, a friendly, empathetic, and expert dating/relationship coach.
-        You give great advice, decode texts, and help people navigate their love lives.
-        Be conversational, use emojis, and be supportive.
+        You are LoveGPT, a friendly, empathetic dating/relationship coach.
+        CRITICAL INSTRUCTIONS:
+        1. Use VERY simple, everyday language. Talk like a normal friend texting. No big words, no complex psychology terms.
+        2. Keep your response SHORT (under 100 words if possible) to save tokens, but be helpful.
+        3. At the very end of your response, provide exactly 2 suggested follow-up questions the user could ask you next. Format them clearly like:
+           "Suggestions:
+           - [Question 1]
+           - [Question 2]"
         
         Recent conversation context:
         ${context}
@@ -174,23 +180,40 @@ export function LoveGPT() {
         }
       }
 
-      const response = await generateContentWithFallback({
+      const stream = await generateContentStreamWithFallback({
         model: 'gemini-3-flash-preview',
         contents: { parts }
       });
 
-      const responseText = response.text || 'I am not sure what to say.';
-      
+      // Add an empty model message first
       setThreads(prev => prev.map(t => {
         if (t.id === activeThreadId) {
           return {
             ...t,
-            messages: [...t.messages, { role: 'model', text: responseText }],
+            messages: [...t.messages, { role: 'model', text: '' }],
             updatedAt: Date.now()
           };
         }
         return t;
       }));
+
+      let fullResponse = '';
+      for await (const chunk of stream) {
+        fullResponse += chunk.text || '';
+        setThreads(prev => prev.map(t => {
+          if (t.id === activeThreadId) {
+            const newMessages = [...t.messages];
+            // The last message is the one we just added
+            newMessages[newMessages.length - 1] = { role: 'model', text: fullResponse };
+            return {
+              ...t,
+              messages: newMessages,
+              updatedAt: Date.now()
+            };
+          }
+          return t;
+        }));
+      }
     } catch (error) {
       console.error('Error:', error);
       setThreads(prev => prev.map(t => {

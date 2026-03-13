@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Copy, RefreshCw, Send, Download } from 'lucide-react';
-import { downloadAsImage } from '../utils/downloadImage';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const messages = [
   "I can't stop smiling when I think about you.",
@@ -38,20 +38,8 @@ export function SecretMessage() {
   };
 
   const handleShare = async () => {
-    const text = `"${message}" - Sent via HeartSpark! ${window.location.href}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Secret Message',
-          text,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      copyToClipboard();
-    }
+    const text = `"${message}" - Sent via HeartSpark!`;
+    await shareAsImage('secret-message', 'Secret Message', text);
   };
 
   const handleDownload = () => {

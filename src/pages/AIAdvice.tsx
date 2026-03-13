@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { MessageSquareHeart, Sparkles } from 'lucide-react';
+import { MessageSquareHeart, Sparkles, Share2, Download } from 'lucide-react';
+import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 export function AIAdvice() {
   const [names, setNames] = useState('');
@@ -40,6 +41,15 @@ export function AIAdvice() {
     }
   };
 
+  const handleShare = async () => {
+    const text = `Love Advice for ${names} about ${topic}: "${advice}" Get yours at HeartSpark!`;
+    await shareAsImage('advice-result', 'AI Love Advice', text);
+  };
+
+  const handleDownload = () => {
+    downloadAsImage('advice-result', 'love-advice');
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
@@ -60,7 +70,7 @@ export function AIAdvice() {
                 type="text"
                 value={names}
                 onChange={(e) => setNames(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
                 placeholder="e.g. Me and Alex"
                 required
               />
@@ -72,7 +82,7 @@ export function AIAdvice() {
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
                 placeholder="e.g. How to ask them out, First date ideas"
                 required
               />
@@ -97,7 +107,7 @@ export function AIAdvice() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
           >
-            <Card className="text-center space-y-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-slate-800 dark:to-slate-800/80 border-pink-200 dark:border-pink-900/50">
+            <Card id="advice-result" className="text-center space-y-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-slate-800 dark:to-slate-800/80 border-pink-200 dark:border-pink-900/50">
               <div className="inline-block p-4 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-2">
                 <Sparkles className="w-8 h-8 text-pink-500" />
               </div>
@@ -105,6 +115,15 @@ export function AIAdvice() {
               <p className="text-xl md:text-2xl font-medium text-slate-800 dark:text-slate-200 italic font-serif leading-relaxed">
                 "{advice}"
               </p>
+
+              <div className="flex flex-wrap justify-center gap-4 pt-4" data-html2canvas-ignore>
+                <Button onClick={handleShare} className="bg-pink-500 hover:bg-pink-600 border-none">
+                  <Share2 className="w-4 h-4 mr-2" /> Share Advice
+                </Button>
+                <Button variant="outline" onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" /> Download
+                </Button>
+              </div>
             </Card>
           </motion.div>
         )}

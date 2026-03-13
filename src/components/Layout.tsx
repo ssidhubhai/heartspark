@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../contexts/AuthContext';
+import { InstallPrompt } from './InstallPrompt';
+import { NotificationBell } from './NotificationBell';
 
 export function Layout({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,11 +37,10 @@ export function Layout({ children }: { children: ReactNode }) {
   ];
 
   const moreLinks = [
+    { name: 'Perfect Reply AI', path: '/tools/perfect-reply' },
     { name: 'Stories', path: '/stories' },
-    { name: 'Calculator', path: '/calculator' },
-    { name: 'Confessions', path: '/confessions' },
+    { name: 'Story Maker', path: '/tools/story' },
     { name: 'Text Analyzer', path: '/analyzer' },
-    { name: 'Secret Link', path: '/secret' },
   ];
 
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -67,6 +68,7 @@ export function Layout({ children }: { children: ReactNode }) {
       isDarkMode ? "bg-slate-900 text-white" : "bg-pink-50 text-slate-900"
     )}>
       <ParticleBackground />
+      <InstallPrompt />
       
       {/* Navbar */}
       <nav className={cn(
@@ -152,6 +154,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 <div className="flex items-center ml-2 border-l pl-2 border-slate-200 dark:border-slate-700">
                   {user ? (
                     <>
+                      <NotificationBell />
                       <Link to="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-all">
                         {user.photoURL ? (
                           <img src={user.photoURL} alt="User" className="w-6 h-6 rounded-full" />
@@ -195,6 +198,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
             {/* Mobile menu button */}
             <div className="flex items-center md:hidden gap-2">
+              {user && <NotificationBell />}
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
