@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, updateDoc, increment, getDocs, deleteDoc, setDoc, getDoc, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, updateDoc, increment, getDocs, deleteDoc, setDoc, getDoc, arrayUnion, arrayRemove, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/Card';
@@ -215,7 +215,7 @@ export function CommunityStories() {
     }
   };
 
-  const COOL_EMOJIS = ['💀', '😭', '💅', '🚩', '☕', '🤡', '🐐', '👀', '💯', '🫶', '🔥', '🥺', '💔', '👑'];
+  const COOL_EMOJIS = ['💀', '😭', '💅', '🚩', '☕', '🤡', '🐐', '👀', '💯', '🫶', '🔥', '🥺', '💔', '👑', '✨', '🥰', '😂', '🤔', '🎉'];
   const [activeReactionStoryId, setActiveReactionStoryId] = useState<string | null>(null);
 
   const handleReaction = async (story: Story, emoji: string) => {
@@ -226,23 +226,31 @@ export function CommunityStories() {
     }
     
     const userReactionKey = `${user.uid}_${emoji}`;
-    const hasReacted = story.reactedUsers?.includes(userReactionKey);
+    const hasReactedToThis = story.reactedUsers?.includes(userReactionKey);
+    
+    // Find if the user has reacted with ANY emoji
+    const previousReactionKey = story.reactedUsers?.find(u => u.startsWith(`${user.uid}_`));
+    const previousEmoji = previousReactionKey ? previousReactionKey.split('_')[1] : null;
 
     // Optimistic UI update
     setStories(prev => prev.map(s => {
       if (s.id === story.id) {
-        const currentCount = (s.reactions as any)?.[emoji] || 0;
         const newReactions = { ...s.reactions };
-        
-        if (hasReacted) {
-          newReactions[emoji] = Math.max(0, currentCount - 1);
-        } else {
-          newReactions[emoji] = currentCount + 1;
-        }
+        let newReactedUsers = [...(s.reactedUsers || [])];
 
-        const newReactedUsers = hasReacted 
-          ? (s.reactedUsers || []).filter(u => u !== userReactionKey)
-          : [...(s.reactedUsers || []), userReactionKey];
+        if (hasReactedToThis) {
+          // Deselect the current emoji
+          newReactions[emoji] = Math.max(0, (newReactions[emoji] || 0) - 1);
+          newReactedUsers = newReactedUsers.filter(u => u !== userReactionKey);
+        } else {
+          // Select new emoji, and remove old one if exists
+          if (previousEmoji) {
+            newReactions[previousEmoji] = Math.max(0, (newReactions[previousEmoji] || 0) - 1);
+            newReactedUsers = newReactedUsers.filter(u => u !== previousReactionKey);
+          }
+          newReactions[emoji] = (newReactions[emoji] || 0) + 1;
+          newReactedUsers.push(userReactionKey);
+        }
 
         return {
           ...s,
@@ -257,12 +265,22 @@ export function CommunityStories() {
 
     try {
       const storyRef = doc(db, 'community_stories', story.id);
-      if (hasReacted) {
+      if (hasReactedToThis) {
+        // Deselect
         await updateDoc(storyRef, {
           [`reactions.${emoji}`]: increment(-1),
           reactedUsers: arrayRemove(userReactionKey)
         });
       } else {
+        // Select new, remove old
+        if (previousEmoji && previousReactionKey) {
+          // Remove old reaction
+          await updateDoc(storyRef, {
+            [`reactions.${previousEmoji}`]: increment(-1),
+            reactedUsers: arrayRemove(previousReactionKey)
+          });
+        }
+        // Add new reaction
         await updateDoc(storyRef, {
           [`reactions.${emoji}`]: increment(1),
           reactedUsers: arrayUnion(userReactionKey)
@@ -526,9 +544,13 @@ export function CommunityStories() {
               />
               <textarea
                 value={newStory}
-                onChange={(e) => setNewStory(e.target.value)}
+                onChange={(e) => {
+                  setNewStory(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
                 placeholder="Spill the tea here... (No links allowed)"
-                className="w-full h-40 p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none resize-none transition-all"
+                className="w-full min-h-[10rem] max-h-[24rem] p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none resize-none transition-all overflow-y-auto"
                 required
                 maxLength={2000}
               />

@@ -83,6 +83,52 @@ export function TextAnalyzer() {
     }
   };
 
+  const [followUp, setFollowUp] = useState('');
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+
+  const handleFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!followUp.trim() || !analysis) return;
+
+    setFollowUpLoading(true);
+    const currentFollowUp = followUp;
+    setFollowUp('');
+
+    try {
+      const prompt = `
+        You are an expert dating coach and relationship analyst.
+        We were analyzing this text message: "${message}"
+        With this context: "${context}"
+        
+        Your previous analysis was:
+        ${analysis}
+        
+        The user has a follow-up question: "${currentFollowUp}"
+        
+        Please provide a concise, helpful answer to their follow-up question. Use simple language and markdown formatting.
+      `;
+
+      const stream = await generateContentStreamWithFallback({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+      });
+
+      let fullResponse = analysis + `\n\n---\n\n**Q: ${currentFollowUp}**\n\n`;
+      setAnalysis(fullResponse);
+      
+      for await (const chunk of stream) {
+        fullResponse += chunk.text || '';
+        setAnalysis(fullResponse);
+      }
+
+    } catch (error) {
+      console.error('Error with follow-up:', error);
+      setAnalysis(prev => prev + '\n\n*Error: Could not get follow-up response.*');
+    } finally {
+      setFollowUpLoading(false);
+    }
+  };
+
   const handleShare = async () => {
     const text = `I just decoded a text message using HeartSpark's AI Text Analyzer! Try it out:`;
     await shareAsImage('analysis-result', 'Text Analyzer Result', text);
@@ -111,9 +157,13 @@ export function TextAnalyzer() {
             </label>
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = `${e.target.scrollHeight}px`;
+              }}
               placeholder="e.g., 'haha okay' or 'what are you up to later?'"
-              className="w-full h-32 p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-indigo-500 outline-none resize-none transition-all"
+              className="w-full min-h-[8rem] max-h-[24rem] p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-indigo-500 outline-none resize-none transition-all overflow-y-auto"
             />
             
             <div className="flex items-center gap-4 mt-2">
@@ -194,6 +244,35 @@ export function TextAnalyzer() {
             <Button variant="outline" onClick={handleDownload}>
               <Download className="w-4 h-4 mr-2" /> Download
             </Button>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700" data-html2canvas-ignore>
+            <form onSubmit={handleFollowUp} className="flex gap-2 items-end bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 p-2 focus-within:border-indigo-500 transition-colors">
+              <textarea
+                value={followUp}
+                onChange={(e) => {
+                  setFollowUp(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (followUp.trim()) handleFollowUp(e);
+                  }
+                }}
+                placeholder="Ask a follow-up question..."
+                className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white resize-none py-2 px-2 max-h-[150px] min-h-[40px]"
+                rows={1}
+              />
+              <button 
+                type="submit" 
+                disabled={followUpLoading || !followUp.trim()} 
+                className="p-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:hover:bg-indigo-500 text-white rounded-xl transition-colors"
+              >
+                {followUpLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+              </button>
+            </form>
           </div>
         </Card>
       )}

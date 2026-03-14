@@ -31,8 +31,7 @@ export function NotificationBell() {
 
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -48,9 +47,9 @@ export function NotificationBell() {
             const now = Date.now();
             const created = data.createdAt?.toMillis() || now;
             if (now - created < 60000) {
-              new Notification('Love AI', {
+              new Notification('HeartSpark', {
                 body: data.message,
-                icon: 'https://api.iconify.design/lucide:heart.svg?color=%234f46e5'
+                icon: 'https://api.iconify.design/lucide:heart.svg?color=%23ef4444'
               });
             }
           }
@@ -63,11 +62,49 @@ export function NotificationBell() {
         if (!data.read) unread++;
       });
 
+      // Sort in memory to avoid needing a composite index in Firestore
+      notifs.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis() || 0;
+        const timeB = b.createdAt?.toMillis() || 0;
+        return timeB - timeA;
+      });
+
       setNotifications(notifs);
       setUnreadCount(unread);
     });
 
     return () => unsubscribe();
+  }, [user]);
+
+  // Periodic discovery notification (every 10-12 hours)
+  useEffect(() => {
+    if (!user) return;
+
+    const checkPeriodicNotification = () => {
+      if (Notification.permission !== 'granted') return;
+
+      const lastPeriodicNotif = localStorage.getItem('lastPeriodicNotif');
+      const now = Date.now();
+      
+      // 10 hours in milliseconds
+      const TEN_HOURS = 10 * 60 * 60 * 1000;
+
+      if (!lastPeriodicNotif || now - parseInt(lastPeriodicNotif) > TEN_HOURS) {
+        new Notification('HeartSpark', {
+          body: 'Check out new interesting stories and updates in the community!',
+          icon: 'https://api.iconify.design/lucide:heart.svg?color=%23ef4444'
+        });
+        localStorage.setItem('lastPeriodicNotif', now.toString());
+      }
+    };
+
+    // Check immediately on mount
+    checkPeriodicNotification();
+
+    // Then check every hour
+    const interval = setInterval(checkPeriodicNotification, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const markAsRead = async (id: string) => {

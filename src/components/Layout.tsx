@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { ParticleBackground } from './ParticleBackground';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User } from 'lucide-react';
+import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils/cn';
@@ -180,6 +180,15 @@ export function Layout({ children }: { children: ReactNode }) {
               )}
 
               <button
+                onClick={() => window.dispatchEvent(new Event('trigger-install'))}
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors hidden sm:block"
+                aria-label="Install App"
+                title="Install App"
+              >
+                <Download className="w-5 h-5 text-pink-500" />
+              </button>
+
+              <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Toggle dark mode"
@@ -199,6 +208,13 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Mobile menu button */}
             <div className="flex items-center md:hidden gap-2">
               {user && <NotificationBell />}
+              <button
+                onClick={() => window.dispatchEvent(new Event('trigger-install'))}
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Install App"
+              >
+                <Download className="w-5 h-5 text-pink-500" />
+              </button>
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
@@ -288,17 +304,19 @@ export function Layout({ children }: { children: ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className={cn(
-        "py-8 border-t transition-colors duration-300 text-center",
-        isDarkMode ? "border-slate-800 bg-slate-900/50" : "border-pink-200 bg-white/50"
-      )}>
-        <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1">
-          Made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500" /> for lovers and dreamers
-        </p>
-        <div className="flex items-center justify-center gap-4 mt-2">
-          <p className="text-xs text-slate-400">© {new Date().getFullYear()} HeartSpark. All rights reserved.</p>
-        </div>
-      </footer>
+      {location.pathname === '/' && (
+        <footer className={cn(
+          "py-8 border-t transition-colors duration-300 text-center",
+          isDarkMode ? "border-slate-800 bg-slate-900/50" : "border-pink-200 bg-white/50"
+        )}>
+          <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1">
+            Made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500" /> for lovers and dreamers
+          </p>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <p className="text-xs text-slate-400">© {new Date().getFullYear()} HeartSpark. All rights reserved.</p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

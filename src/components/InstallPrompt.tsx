@@ -13,21 +13,26 @@ export function InstallPrompt() {
       // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
       
-      // Check if we've already asked recently
-      const lastAsked = localStorage.getItem('installPromptLastAsked');
-      const now = Date.now();
-      // Ask again after 24 hours if they dismissed it
-      if (!lastAsked || now - parseInt(lastAsked) > 24 * 60 * 60 * 1000) {
+      // Show prompt every time the user opens the app until installed
+      setShowPrompt(true);
+    };
+
+    const manualTriggerHandler = () => {
+      if (deferredPrompt) {
         setShowPrompt(true);
+      } else {
+        alert("App is already installed or your browser doesn't support installation.");
       }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('trigger-install', manualTriggerHandler);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('trigger-install', manualTriggerHandler);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -51,7 +56,6 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('installPromptLastAsked', Date.now().toString());
   };
 
   return (
@@ -61,20 +65,20 @@ export function InstallPrompt() {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-indigo-100 dark:border-slate-700 p-4 z-50 flex items-start gap-4"
+          className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-pink-100 dark:border-slate-700 p-4 z-50 flex items-start gap-4"
         >
-          <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center shrink-0">
-            <Download className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-xl flex items-center justify-center shrink-0">
+            <Download className="w-6 h-6 text-pink-600 dark:text-pink-400" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-slate-900 dark:text-white">Install Love AI</h3>
+            <h3 className="font-bold text-slate-900 dark:text-white">Install HeartSpark</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               Add to your homescreen for quick access to perfect replies and community stories!
             </p>
             <div className="flex gap-2 mt-3">
               <button
                 onClick={handleInstall}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="flex-1 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 Install App
               </button>

@@ -154,7 +154,7 @@ export function LoveGPT() {
         You are LoveGPT, a friendly, empathetic dating/relationship coach.
         CRITICAL INSTRUCTIONS:
         1. Use VERY simple, everyday language. Talk like a normal friend texting. No big words, no complex psychology terms.
-        2. Keep your response SHORT (under 100 words if possible) to save tokens, but be helpful.
+        2. Match the length of your response to the user's input. If they just say "hi" or a short sentence, give a short 2-3 sentence reply. If they write a long paragraph, give a detailed, thoughtful response.
         3. At the very end of your response, provide exactly 2 suggested follow-up questions the user could ask you next. Format them clearly like:
            "Suggestions:
            - [Question 1]
@@ -245,14 +245,14 @@ export function LoveGPT() {
       <div className={`
         absolute md:relative z-50 md:z-auto
         w-72 h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl md:shadow-none border border-slate-200 dark:border-slate-700
-        flex flex-col transition-transform duration-300 ease-in-out
-        ${showSidebar ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'}
+        flex flex-col transition-all duration-300 ease-in-out
+        ${showSidebar ? 'translate-x-0 md:w-72 md:opacity-100' : '-translate-x-[120%] md:w-0 md:opacity-0 md:overflow-hidden md:border-none'}
       `}>
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <h2 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <Bot className="w-5 h-5 text-pink-500" /> Chats
           </h2>
-          <Button variant="outline" className="md:hidden p-2" onClick={() => setShowSidebar(false)}>
+          <Button variant="outline" className="p-2" onClick={() => setShowSidebar(false)}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -263,13 +263,14 @@ export function LoveGPT() {
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 w-72">
           {threads.map(thread => (
             <div 
               key={thread.id}
               onClick={() => {
                 setActiveThreadId(thread.id);
-                setShowSidebar(false);
+                // Don't auto-close sidebar on desktop when selecting a chat
+                if (window.innerWidth < 768) setShowSidebar(false);
               }}
               className={`
                 w-full text-left p-3 rounded-xl flex items-center justify-between group cursor-pointer transition-colors
@@ -297,9 +298,11 @@ export function LoveGPT() {
       <div className="flex-1 flex flex-col h-full min-w-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="md:hidden p-2" onClick={() => setShowSidebar(true)}>
-              <Menu className="w-5 h-5" />
-            </Button>
+            {!showSidebar && (
+              <Button variant="outline" className="p-2" onClick={() => setShowSidebar(true)}>
+                <Menu className="w-5 h-5" />
+              </Button>
+            )}
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               LoveGPT <Bot className="w-6 h-6 md:w-8 md:h-8 text-pink-500" />
             </h1>
@@ -355,7 +358,7 @@ export function LoveGPT() {
                 </button>
               </div>
             )}
-            <form onSubmit={handleSend} className="flex gap-2">
+            <form onSubmit={handleSend} className="flex gap-2 items-end bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-600 p-2 focus-within:border-pink-500 transition-colors">
               <input
                 type="file"
                 accept="image/*"
@@ -363,24 +366,37 @@ export function LoveGPT() {
                 ref={fileInputRef}
                 onChange={handleImageUpload}
               />
-              <Button 
+              <button 
                 type="button" 
-                variant="outline" 
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3"
+                className="p-2 text-slate-400 hover:text-pink-500 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <ImageIcon className="w-5 h-5 text-slate-500" />
-              </Button>
-              <input
-                type="text"
+                <ImageIcon className="w-5 h-5" />
+              </button>
+              <textarea
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input.trim() || image) handleSend(e);
+                  }
+                }}
                 placeholder="Ask LoveGPT anything..."
-                className="flex-1 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 focus:border-pink-500 outline-none text-slate-900 dark:text-white"
+                className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white resize-none py-2 max-h-[150px] min-h-[40px]"
+                rows={1}
               />
-              <Button type="submit" disabled={loading || (!input.trim() && !image)} className="bg-pink-500 hover:bg-pink-600">
+              <button 
+                type="submit" 
+                disabled={loading || (!input.trim() && !image)} 
+                className="p-2 bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-pink-500 text-white rounded-xl transition-colors"
+              >
                 <Send className="w-5 h-5" />
-              </Button>
+              </button>
             </form>
           </div>
         </div>

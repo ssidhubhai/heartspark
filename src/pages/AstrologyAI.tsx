@@ -200,7 +200,8 @@ export function AstrologyAI() {
         You are doing a reading for ${activeThread.details.name} born on ${activeThread.details.dob} in ${activeThread.details.place}.
         Today's date is ${new Date().toLocaleDateString()}.
         
-        Use simple, everyday language. Avoid overly complex astrology jargon. Keep your answers concise but helpful to save tokens.
+        Use simple, everyday language. Avoid overly complex astrology jargon.
+        CRITICAL INSTRUCTION: Match the length of your response to the user's input. If they ask a short simple question like "hi" or "how is my day", give a short 2-3 sentence reply. If they write a long paragraph, give a detailed, thoughtful response.
         IMPORTANT: At the very end of your response, always suggest 2 short follow-up questions the user can ask you next.
         
         Recent conversation context:
@@ -272,14 +273,14 @@ export function AstrologyAI() {
       <div className={`
         absolute md:relative z-50 md:z-auto
         w-72 h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl md:shadow-none border border-slate-200 dark:border-slate-700
-        flex flex-col transition-transform duration-300 ease-in-out
-        ${showSidebar ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'}
+        flex flex-col transition-all duration-300 ease-in-out
+        ${showSidebar ? 'translate-x-0 md:w-72 md:opacity-100' : '-translate-x-[120%] md:w-0 md:opacity-0 md:overflow-hidden md:border-none'}
       `}>
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <h2 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-500" /> Readings
           </h2>
-          <Button variant="outline" className="md:hidden p-2" onClick={() => setShowSidebar(false)}>
+          <Button variant="outline" className="p-2" onClick={() => setShowSidebar(false)}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -290,13 +291,13 @@ export function AstrologyAI() {
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 w-72">
           {threads.map(thread => (
             <div 
               key={thread.id}
               onClick={() => {
                 setActiveThreadId(thread.id);
-                setShowSidebar(false);
+                if (window.innerWidth < 768) setShowSidebar(false);
               }}
               className={`
                 w-full text-left p-3 rounded-xl flex items-center justify-between group cursor-pointer transition-colors
@@ -327,9 +328,11 @@ export function AstrologyAI() {
       <div className="flex-1 flex flex-col h-full min-w-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="md:hidden p-2" onClick={() => setShowSidebar(true)}>
-              <Menu className="w-5 h-5" />
-            </Button>
+            {!showSidebar && (
+              <Button variant="outline" className="p-2" onClick={() => setShowSidebar(true)}>
+                <Menu className="w-5 h-5" />
+              </Button>
+            )}
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               Astrology AI <Star className="w-6 h-6 md:w-8 md:h-8 text-yellow-500" />
             </h1>
@@ -433,17 +436,31 @@ export function AstrologyAI() {
             </div>
 
             <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <form onSubmit={handleSend} className="flex gap-2">
-                <input
-                  type="text"
+              <form onSubmit={handleSend} className="flex gap-2 items-end bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-600 p-2 focus-within:border-yellow-500 transition-colors">
+                <textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (input.trim()) handleSend(e);
+                    }
+                  }}
                   placeholder="Ask a follow-up question..."
-                  className="flex-1 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 focus:border-yellow-500 outline-none text-slate-900 dark:text-white"
+                  className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white resize-none py-2 px-2 max-h-[150px] min-h-[40px]"
+                  rows={1}
                 />
-                <Button type="submit" disabled={loading || !input.trim()} className="bg-yellow-500 hover:bg-yellow-600">
+                <button 
+                  type="submit" 
+                  disabled={loading || !input.trim()} 
+                  className="p-2 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 disabled:hover:bg-yellow-500 text-white rounded-xl transition-colors"
+                >
                   <Send className="w-5 h-5" />
-                </Button>
+                </button>
               </form>
             </div>
           </div>
