@@ -5,6 +5,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { Analytics } from './components/Analytics';
 import { Home } from './pages/Home';
 import { CrushQuiz } from './pages/CrushQuiz';
 import { SecretMessage } from './pages/SecretMessage';
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
+        <Analytics />
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
