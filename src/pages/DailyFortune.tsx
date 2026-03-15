@@ -50,7 +50,7 @@ export function DailyFortune() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-          Daily Love Fortune <Flame className="w-8 h-8 text-orange-500" />
+          Daily Love Fortune <Flame className="w-8 h-8 text-indigo-500" />
         </h1>
         <p className="text-lg text-slate-600 dark:text-slate-400">
           Crack open your fortune cookie and see what the universe has in store for your love life today.
@@ -65,7 +65,7 @@ export function DailyFortune() {
         >
           <Button 
             onClick={handleReveal} 
-            className="h-16 px-8 text-xl bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 shadow-lg"
+            className="h-16 px-8 text-xl bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg"
           >
             <Sparkles className="w-6 h-6 mr-2" /> Reveal My Fortune
           </Button>
@@ -78,8 +78,8 @@ export function DailyFortune() {
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
         >
-          <div className="w-32 h-32 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center shadow-inner">
-            <Flame className="w-16 h-16 text-orange-500 animate-pulse" />
+          <div className="w-32 h-32 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center shadow-inner">
+            <Flame className="w-16 h-16 text-indigo-500 animate-pulse" />
           </div>
         </motion.div>
       )}
@@ -92,11 +92,11 @@ export function DailyFortune() {
             exit={{ opacity: 0, scale: 0.8, rotateX: -90 }}
             transition={{ type: "spring", damping: 15 }}
           >
-            <Card id="fortune-result" className="text-center space-y-6 bg-gradient-to-b from-white to-orange-50 dark:from-slate-800 dark:to-slate-800/50 border-orange-200 dark:border-orange-900/50 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 to-red-500"></div>
+            <Card id="fortune-result" className="text-center space-y-6 bg-gradient-to-b from-white to-indigo-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500"></div>
               
-              <div className="inline-block p-4 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-2 mt-4">
-                <Sparkles className="w-8 h-8 text-orange-500" />
+              <div className="inline-block p-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-2 mt-4">
+                <Sparkles className="w-8 h-8 text-indigo-500" />
               </div>
               
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white uppercase tracking-widest text-sm">
@@ -111,7 +111,7 @@ export function DailyFortune() {
                 <Button variant="outline" onClick={handleReveal}>
                   <RefreshCw className="w-4 h-4 mr-2" /> Another Cookie
                 </Button>
-                <Button onClick={handleShare} className="bg-orange-500 hover:bg-orange-600 border-none">
+                <Button onClick={handleShare}>
                   <Share2 className="w-4 h-4 mr-2" /> Share Fortune
                 </Button>
                 <Button variant="outline" onClick={handleDownload}>

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Flame, MessageCircle, Brain, Mail, Users, Bot, Share2, RefreshCw, Download, BookOpen } from 'lucide-react';
+import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Flame, MessageCircle, Brain, Mail, Users, Bot, Share2, RefreshCw, Download, BookOpen, ArrowRight } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -33,7 +33,7 @@ export function Home() {
 
       if (n1 === n2) {
         score = 100;
-        message = "Self-love is the best love! You're perfect just the way you are. 💖";
+        message = "Self-love is the foundation of all love. You are complete.";
       } else {
         // Classic "TRUE LOVE" paper-and-pencil algorithm (order independent)
         const [sortedN1, sortedN2] = [n1, n2].sort();
@@ -73,7 +73,7 @@ export function Home() {
         if (isNaN(score)) score = 50;
         if (score > 100) score = 100;
 
-        // Fun easter eggs for specific names (optional, but adds virality)
+        // Fun easter eggs for specific names
         if ((n1 === 'romeo' && n2 === 'juliet') || (n1 === 'juliet' && n2 === 'romeo')) {
           score = 99;
         }
@@ -89,11 +89,11 @@ export function Home() {
           score = 93;
         }
 
-        if (score > 90) message = "Soulmates! The classic algorithm says you're meant to be. 💖";
-        else if (score > 80) message = "Sparks are flying! A very strong connection here. ✨";
-        else if (score > 70) message = "There's definitely something special between you two! 😉";
-        else if (score > 50) message = "A solid match! With a little effort, this could be great. 🌟";
-        else message = "The numbers are low, but love can always defy the odds! 🌱";
+        if (score > 90) message = "Exceptional compatibility. A profound connection is indicated.";
+        else if (score > 80) message = "High compatibility. Strong potential for a lasting bond.";
+        else if (score > 70) message = "Good compatibility. A solid foundation exists.";
+        else if (score > 50) message = "Moderate compatibility. Requires mutual understanding and effort.";
+        else message = "Low initial compatibility. Growth requires significant communication.";
       }
 
       setResult({ score, message });
@@ -101,10 +101,10 @@ export function Home() {
       
       if (score > 75) {
         confetti({
-          particleCount: 150,
-          spread: 80,
+          particleCount: 100,
+          spread: 70,
           origin: { y: 0.6 },
-          colors: ['#ff69b4', '#ff1493', '#ffc0cb', '#8b5cf6']
+          colors: ['#4f46e5', '#818cf8', '#c7d2fe'] // Indigo palette
         });
       }
 
@@ -122,167 +122,158 @@ export function Home() {
           console.error("Error saving search to Firebase:", error);
         }
       }
-    }, 1500);
+    }, 1200);
   };
 
   const handleShare = async () => {
     if (!result) return;
-    const text = `My love compatibility with ${name2} is ${result.score}%! "${result.message}"`;
-    await shareAsImage('calculator-result', 'Love Calculator Result', text);
+    const text = `Compatibility analysis for ${name1} and ${name2}: ${result.score}%. "${result.message}"`;
+    await shareAsImage('calculator-result', 'Compatibility Result', text);
   };
 
   const handleDownload = () => {
-    downloadAsImage('calculator-result', 'love-calculator-result');
+    downloadAsImage('calculator-result', 'compatibility-result');
   };
 
   const features = [
     {
       title: "Perfect Reply AI",
-      description: "Never get stuck on read. Paste a text, and our AI generates the perfect flirty or funny reply.",
-      icon: <MessageCircle className="w-6 h-6 text-indigo-500" />,
+      description: "Generate context-aware, intelligent responses to any message.",
+      icon: <MessageCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
       path: "/tools/perfect-reply",
-      color: "bg-indigo-100 dark:bg-indigo-900/30",
-      badge: "Most Useful 🚀"
+      badge: "Essential"
     },
     {
       title: "Community Stories",
-      description: "Read and react to dramatic crush stories from around the world.",
-      icon: <Users className="w-6 h-6 text-emerald-500" />,
+      description: "Read and engage with relationship experiences from the community.",
+      icon: <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
       path: "/stories",
-      color: "bg-emerald-100 dark:bg-emerald-900/30",
-      badge: "Trending 🔥"
+      badge: "Trending"
     },
     {
       title: "Couple Story Maker",
-      description: "Generate a cute, personalized story about you and your crush.",
-      icon: <BookOpen className="w-6 h-6 text-teal-500" />,
+      description: "Generate personalized narratives based on your relationship dynamics.",
+      icon: <BookOpen className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
       path: "/tools/story",
-      color: "bg-teal-100 dark:bg-teal-900/30",
-      badge: "New ✨"
+      badge: "New"
     },
     {
       title: "LoveGPT",
-      description: "Talk to your personal AI relationship coach. Ask advice and get help.",
-      icon: <Bot className="w-6 h-6 text-pink-500" />,
+      description: "Consult your personal AI relationship advisor for objective guidance.",
+      icon: <Bot className="w-5 h-5 text-rose-600 dark:text-rose-400" />,
       path: "/love-gpt",
-      color: "bg-pink-100 dark:bg-pink-900/30",
-      badge: "Popular 💖"
+      badge: "Popular"
     },
     {
       title: "Text Analyzer",
-      description: "Confused by their text? Let AI decode what they really mean.",
-      icon: <Brain className="w-6 h-6 text-indigo-500" />,
+      description: "Decode subtext and analyze the sentiment of complex messages.",
+      icon: <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400" />,
       path: "/analyzer",
-      color: "bg-indigo-100 dark:bg-indigo-900/30",
     },
     {
-      title: "Crush Quiz",
-      description: "Are you in the friend zone or is it true love? Take the test!",
-      icon: <Sparkles className="w-6 h-6 text-purple-500" />,
+      title: "Relationship Quiz",
+      description: "Assess your relationship status through structured psychological quizzes.",
+      icon: <Sparkles className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400" />,
       path: "/quiz",
-      color: "bg-purple-100 dark:bg-purple-900/30",
     },
     {
       title: "Couple Games",
-      description: "Play fun mini-games together and test your bond.",
-      icon: <Gamepad2 className="w-6 h-6 text-blue-500" />,
+      description: "Interactive exercises designed to strengthen communication and bonding.",
+      icon: <Gamepad2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
       path: "/games",
-      color: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
-      title: "Flirting Test",
-      description: "Are you a smooth talker or a shy potato? Find out now.",
-      icon: <Flame className="w-6 h-6 text-orange-500" />,
+      title: "Communication Test",
+      description: "Evaluate your interpersonal communication and flirting skills.",
+      icon: <Flame className="w-5 h-5 text-orange-600 dark:text-orange-400" />,
       path: "/flirting-test",
-      color: "bg-orange-100 dark:bg-orange-900/30",
     },
     {
       title: "Astrology AI",
-      description: "Get an advanced astrological reading based on your birth details.",
-      icon: <Star className="w-6 h-6 text-yellow-500" />,
+      description: "Receive professional astrological insights based on precise birth data.",
+      icon: <Star className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
       path: "/astrology",
-      color: "bg-yellow-100 dark:bg-yellow-900/30",
     },
   ];
 
   return (
-    <div className="space-y-16 py-8">
+    <div className="space-y-24 py-12">
       {/* Hero Section */}
-      <section className="text-center space-y-8 max-w-4xl mx-auto relative">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-pink-200/50 via-transparent to-transparent dark:from-pink-900/20 blur-3xl rounded-full"></div>
+      <section className="text-center space-y-8 max-w-4xl mx-auto relative px-4">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-100 via-transparent to-transparent dark:from-zinc-900/50 blur-3xl rounded-full"></div>
         
         <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="inline-flex items-center justify-center p-6 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40 mb-4 shadow-xl shadow-pink-200/50 dark:shadow-none border border-white/50 dark:border-white/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center justify-center p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/50 mb-6 border border-zinc-200 dark:border-zinc-800"
         >
-          <Heart className="w-16 h-16 text-pink-500 fill-pink-500 drop-shadow-md" />
+          <Heart className="w-8 h-8 text-zinc-900 dark:text-zinc-100" />
         </motion.div>
         
         <motion.h1 
-          className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 dark:text-white leading-tight"
+          className="text-5xl md:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white leading-[1.1]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
         >
-          Discover Your <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 animate-gradient-x">
-            True Love Destiny
+          Navigate Relationships <br />
+          <span className="text-zinc-500 dark:text-zinc-400">
+            With Intelligence.
           </span>
         </motion.h1>
         
         <motion.p 
-          className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-medium max-w-2xl mx-auto"
+          className="text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
         >
-          Explore viral crush games, test your compatibility, and find out if they're the one. ✨
+          A suite of advanced tools designed to analyze compatibility, improve communication, and provide objective relationship insights.
         </motion.p>
       </section>
 
-      {/* Love Calculator Section (Replaced the single input) */}
-      <section className="max-w-2xl mx-auto">
+      {/* Compatibility Analysis Section */}
+      <section className="max-w-2xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <Card className="border-pink-200 dark:border-pink-900/50 shadow-xl shadow-pink-100/50 dark:shadow-none bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-                <Heart className="w-6 h-6 text-pink-500 fill-pink-500" /> Love Calculator
+          <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+                Compatibility Analysis
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Uses the classic "TRUE LOVE" paper-and-pencil algorithm!</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">Enter two names to calculate algorithmic compatibility.</p>
             </div>
             
             <form onSubmit={calculateLove} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Your Name</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Person 1</label>
                   <input
                     type="text"
                     value={name1}
                     onChange={(e) => setName1(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
-                    placeholder="e.g. Alex"
+                    className="w-full h-12 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+                    placeholder="Enter name"
                     required
                   />
                 </div>
                 
-                <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 items-center justify-center w-10 h-10 rounded-full bg-pink-500 text-white shadow-lg mt-3">
-                  <Heart className="w-5 h-5 fill-current" />
+                <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-400 mt-3">
+                  <span className="text-xs font-medium">&</span>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Crush's Name</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Person 2</label>
                   <input
                     type="text"
                     value={name2}
                     onChange={(e) => setName2(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
-                    placeholder="e.g. Taylor"
+                    className="w-full h-12 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+                    placeholder="Enter name"
                     required
                   />
                 </div>
@@ -290,16 +281,13 @@ export function Home() {
 
               <Button 
                 type="submit" 
-                className="w-full h-14 text-lg"
+                className="w-full h-12 text-base bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 dark:text-zinc-900"
                 disabled={isCalculating || !name1 || !name2}
               >
                 {isCalculating ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  >
-                    <Heart className="w-6 h-6" />
-                  </motion.div>
+                  <span className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin" /> Analyzing...
+                  </span>
                 ) : (
                   "Calculate Compatibility"
                 )}
@@ -311,48 +299,51 @@ export function Home() {
         <AnimatePresence>
           {result && !isCalculating && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -20 }}
-              className="mt-8"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-6 overflow-hidden"
             >
-              <Card id="calculator-result" className="text-center space-y-6 bg-gradient-to-b from-white to-pink-50 dark:from-slate-800 dark:to-slate-800/50 border-pink-200 dark:border-pink-900/50">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-                  {name1} & {name2}
-                </h2>
+              <Card id="calculator-result" className="text-center space-y-8 bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 p-8">
+                <div className="space-y-2">
+                  <h2 className="text-xl font-medium text-zinc-900 dark:text-white">
+                    {name1} & {name2}
+                  </h2>
+                  <p className="text-sm text-zinc-500 uppercase tracking-wider font-semibold">Analysis Complete</p>
+                </div>
                 
-                <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
+                <div className="relative w-40 h-40 mx-auto flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle
                       cx="50"
                       cy="50"
-                      r="40"
+                      r="45"
                       fill="transparent"
                       stroke="currentColor"
-                      strokeWidth="8"
-                      className="text-pink-100 dark:text-slate-700"
+                      strokeWidth="4"
+                      className="text-zinc-200 dark:text-zinc-800"
                     />
                     <motion.circle
                       cx="50"
                       cy="50"
-                      r="40"
+                      r="45"
                       fill="transparent"
                       stroke="currentColor"
-                      strokeWidth="8"
+                      strokeWidth="4"
                       strokeLinecap="round"
-                      className="text-pink-500"
-                      strokeDasharray="251.2"
-                      initial={{ strokeDashoffset: 251.2 }}
-                      animate={{ strokeDashoffset: 251.2 - (251.2 * result.score) / 100 }}
+                      className="text-indigo-600 dark:text-indigo-500"
+                      strokeDasharray="282.7"
+                      initial={{ strokeDashoffset: 282.7 }}
+                      animate={{ strokeDashoffset: 282.7 - (282.7 * result.score) / 100 }}
                       transition={{ duration: 1.5, ease: "easeOut" }}
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <motion.span 
-                      className="text-5xl font-extrabold text-pink-600 dark:text-pink-400"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 1, type: "spring" }}
+                      className="text-4xl font-bold text-zinc-900 dark:text-white"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
                     >
                       {result.score}%
                     </motion.span>
@@ -360,23 +351,23 @@ export function Home() {
                 </div>
 
                 <motion.p 
-                  className="text-xl text-slate-700 dark:text-slate-300 font-medium px-4"
+                  className="text-lg text-zinc-700 dark:text-zinc-300 max-w-md mx-auto"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 1.5 }}
+                  transition={{ delay: 0.8 }}
                 >
                   {result.message}
                 </motion.p>
 
-                <div className="flex flex-wrap justify-center gap-4 pt-4" data-html2canvas-ignore>
-                  <Button variant="outline" onClick={() => setResult(null)}>
-                    <RefreshCw className="w-4 h-4 mr-2" /> Recalculate
+                <div className="flex flex-wrap justify-center gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800" data-html2canvas-ignore>
+                  <Button variant="outline" size="sm" onClick={() => setResult(null)} className="border-zinc-200 dark:border-zinc-800">
+                    <RefreshCw className="w-4 h-4 mr-2" /> Reset
                   </Button>
-                  <Button onClick={handleShare}>
-                    <Share2 className="w-4 h-4 mr-2" /> Share Result
+                  <Button variant="outline" size="sm" onClick={handleShare} className="border-zinc-200 dark:border-zinc-800">
+                    <Share2 className="w-4 h-4 mr-2" /> Share
                   </Button>
-                  <Button variant="outline" onClick={handleDownload}>
-                    <Download className="w-4 h-4 mr-2" /> Download
+                  <Button variant="outline" size="sm" onClick={handleDownload} className="border-zinc-200 dark:border-zinc-800">
+                    <Download className="w-4 h-4 mr-2" /> Save
                   </Button>
                 </div>
               </Card>
@@ -386,9 +377,12 @@ export function Home() {
       </section>
 
       {/* Features Grid */}
-      <section>
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Popular Games</h2>
+      <section className="px-4 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white">Application Suite</h2>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-1">Explore our collection of relationship tools.</p>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -397,22 +391,22 @@ export function Home() {
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index }}
+              transition={{ delay: 0.1 * index, duration: 0.4 }}
             >
-              <Link to={feature.path} className="block h-full relative">
-                <Card className="h-full flex flex-col hover:border-pink-300 dark:hover:border-pink-700 transition-colors relative overflow-hidden">
+              <Link to={feature.path} className="block h-full group">
+                <Card className="h-full flex flex-col p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 relative">
                   {feature.badge && (
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    <div className="absolute top-6 right-6 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-md">
                       {feature.badge}
                     </div>
                   )}
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${feature.color}`}>
+                  <div className="w-10 h-10 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400 flex-grow">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed flex-grow">
                     {feature.description}
                   </p>
                 </Card>
@@ -423,22 +417,21 @@ export function Home() {
       </section>
 
       {/* Daily Fortune Teaser */}
-      <section>
-        <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-none">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-4 text-center md:text-left">
-              <h2 className="text-3xl font-bold">Daily Love Fortune</h2>
-              <p className="text-pink-100 max-w-lg text-lg">
-                What do the stars say about your love life today? Get your personalized daily fortune and romantic advice.
+      <section className="px-4 max-w-7xl mx-auto pb-12">
+        <Card className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-none overflow-hidden relative">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 p-8 md:p-10">
+            <div className="space-y-3 text-center md:text-left">
+              <h2 className="text-2xl font-semibold">Daily Insights</h2>
+              <p className="text-zinc-400 dark:text-zinc-600 max-w-lg">
+                Receive your personalized daily reading and actionable relationship advice based on current astrological alignments.
               </p>
             </div>
             <Button 
-              variant="secondary" 
-              size="lg" 
-              className="bg-white text-pink-600 hover:bg-pink-50 w-full md:w-auto"
+              className="bg-white text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 w-full md:w-auto whitespace-nowrap"
               onClick={() => navigate('/tools/fortune')}
             >
-              Reveal Fortune
+              View Today's Reading <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </Card>

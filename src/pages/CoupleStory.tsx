@@ -51,7 +51,7 @@ export function CoupleStory() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-          Couple Story Generator <BookOpen className="w-8 h-8 text-blue-500" />
+          Couple Story Generator <BookOpen className="w-8 h-8 text-indigo-500" />
         </h1>
         <p className="text-lg text-slate-600 dark:text-slate-400">
           Generate a short, romantic story starring you and your crush.
@@ -67,7 +67,7 @@ export function CoupleStory() {
                 type="text"
                 value={name1}
                 onChange={(e) => setName1(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none transition-all"
                 required
               />
             </div>
@@ -77,7 +77,7 @@ export function CoupleStory() {
                 type="text"
                 value={name2}
                 onChange={(e) => setName2(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none transition-all"
                 required
               />
             </div>
@@ -85,7 +85,7 @@ export function CoupleStory() {
 
           <Button 
             type="submit" 
-            className="w-full h-14 text-lg bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600"
+            className="w-full h-14 text-lg bg-indigo-500 hover:bg-indigo-600 text-white"
             disabled={isGenerating || !name1 || !name2}
           >
             {isGenerating ? (
@@ -106,9 +106,9 @@ export function CoupleStory() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
           >
-            <Card id="story-result" className="text-center space-y-6 bg-gradient-to-b from-white to-blue-50 dark:from-slate-800 dark:to-slate-800/50 border-blue-200 dark:border-blue-900/50">
-              <div className="inline-block p-4 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-2">
-                <BookOpen className="w-8 h-8 text-blue-500" />
+            <Card id="story-result" className="text-center space-y-6 bg-gradient-to-b from-white to-indigo-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
+              <div className="inline-block p-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-2">
+                <BookOpen className="w-8 h-8 text-indigo-500" />
               </div>
               
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
@@ -123,7 +123,7 @@ export function CoupleStory() {
                 <Button variant="outline" onClick={() => setStory('')}>
                   <RefreshCw className="w-4 h-4 mr-2" /> New Story
                 </Button>
-                <Button onClick={handleShare} className="bg-blue-500 hover:bg-blue-600 border-none">
+                <Button onClick={handleShare}>
                   <Share2 className="w-4 h-4 mr-2" /> Share Story
                 </Button>
                 <Button variant="outline" onClick={handleDownload}>

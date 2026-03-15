@@ -98,7 +98,7 @@ export function FlirtingTest() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-          Flirting Skill Test <Flame className="w-8 h-8 text-orange-500" />
+          Flirting Skill Test <Flame className="w-8 h-8 text-indigo-500" />
         </h1>
         <p className="text-lg text-slate-600 dark:text-slate-400">
           Are you a smooth talker or a shy potato? Find out now.
@@ -122,7 +122,7 @@ export function FlirtingTest() {
               
               <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-orange-400 to-red-500"
+                  className="h-full bg-indigo-500"
                   initial={{ width: `${(currentQuestion / questions.length) * 100}%` }}
                   animate={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
                 />
@@ -137,7 +137,7 @@ export function FlirtingTest() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(option.score)}
-                    className="w-full text-left p-4 rounded-xl border-2 border-orange-100 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-slate-800 transition-all flex items-center justify-between group"
+                    className="w-full text-left p-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-between group"
                   >
                     <span className="text-slate-700 dark:text-slate-300 font-medium">{option.text}</span>
                   </button>
@@ -152,8 +152,8 @@ export function FlirtingTest() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, type: "spring" }}
           >
-            <Card id="flirting-result" className="text-center space-y-6 bg-gradient-to-b from-white to-orange-50 dark:from-slate-800 dark:to-slate-800/50 border-orange-200 dark:border-orange-900/50">
-              <div className="inline-block p-4 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-4">
+            <Card id="flirting-result" className="text-center space-y-6 bg-gradient-to-b from-white to-indigo-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
+              <div className="inline-block p-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-4">
                 <span className="text-6xl">{getResult().level.split(' ').pop()}</span>
               </div>
               
@@ -169,7 +169,7 @@ export function FlirtingTest() {
                 <Button variant="outline" onClick={resetTest}>
                   <RefreshCw className="w-4 h-4 mr-2" /> Retake Test
                 </Button>
-                <Button onClick={handleShare} className="bg-orange-500 hover:bg-orange-600 border-none">
+                <Button onClick={handleShare}>
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
                 <Button variant="outline" onClick={handleDownload}>

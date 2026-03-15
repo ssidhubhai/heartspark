@@ -216,7 +216,7 @@ export function CrushQuiz() {
           <Button 
             variant="outline" 
             onClick={() => setQuizMode('custom_setup')}
-            className="mt-4 border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/30"
+            className="mt-4 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
           >
             <Wand2 className="w-4 h-4 mr-2" /> Make a Custom AI Quiz for My Situation
           </Button>
@@ -233,8 +233,8 @@ export function CrushQuiz() {
           >
             <Card className="space-y-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
+                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-indigo-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-white">AI Custom Quiz</h2>
               </div>
@@ -248,7 +248,7 @@ export function CrushQuiz() {
                     value={customSituation}
                     onChange={(e) => setCustomSituation(e.target.value)}
                     placeholder="e.g., We work together in the same office and always get coffee at 10am, but they recently started acting distant..."
-                    className="w-full h-32 p-4 rounded-xl border-2 border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-purple-500 outline-none resize-none transition-all"
+                    className="w-full h-32 p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-indigo-500 outline-none resize-none transition-all"
                     required
                   />
                 </div>
@@ -265,7 +265,7 @@ export function CrushQuiz() {
                   <Button 
                     type="submit" 
                     disabled={isGenerating || !customSituation.trim()} 
-                    className="flex-1 bg-purple-500 hover:bg-purple-600"
+                    className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white"
                   >
                     {isGenerating ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -293,7 +293,7 @@ export function CrushQuiz() {
               
               <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-pink-500 to-purple-500"
+                  className="h-full bg-indigo-500"
                   initial={{ width: `${(currentQuestion / activeQuestions.length) * 100}%` }}
                   animate={{ width: `${((currentQuestion + 1) / activeQuestions.length) * 100}%` }}
                 />
@@ -308,10 +308,10 @@ export function CrushQuiz() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(option.score)}
-                    className="w-full text-left p-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 hover:border-pink-500 dark:hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-slate-800 transition-all flex items-center justify-between group"
+                    className="w-full text-left p-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-between group"
                   >
                     <span className="text-slate-700 dark:text-slate-300 font-medium">{option.text}</span>
-                    <CheckCircle2 className="w-5 h-5 text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <CheckCircle2 className="w-5 h-5 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
@@ -324,8 +324,8 @@ export function CrushQuiz() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, type: "spring" }}
           >
-            <Card id="quiz-result" className="text-center space-y-6 bg-gradient-to-b from-white to-purple-50 dark:from-slate-800 dark:to-slate-800/50 border-purple-200 dark:border-purple-900/50">
-              <div className="inline-block p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4">
+            <Card id="quiz-result" className="text-center space-y-6 bg-gradient-to-b from-white to-indigo-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
+              <div className="inline-block p-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-4">
                 <span className="text-6xl">{calculateResult().title.split(' ').pop()}</span>
               </div>
               

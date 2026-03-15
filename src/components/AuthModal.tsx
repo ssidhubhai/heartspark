@@ -93,14 +93,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </p>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2 text-red-600 dark:text-red-400 text-sm">
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2 text-red-600 dark:text-red-400 text-sm">
                   <AlertCircle className="w-5 h-5 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
               {successMsg && (
-                <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
+                <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg flex items-start gap-2 text-indigo-600 dark:text-indigo-400 text-sm">
                   <AlertCircle className="w-5 h-5 shrink-0" />
                   <span>{successMsg}</span>
                 </div>

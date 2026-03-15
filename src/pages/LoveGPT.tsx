@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X } from 'lucide-react';
+import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X, Copy, Check } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
@@ -51,7 +51,7 @@ export function LoveGPT() {
     return [{
       id: Date.now().toString(),
       title: 'New Chat',
-      messages: [{ role: 'model', text: 'Hi there! I am LoveGPT, your personal relationship and dating assistant. How can I help you today? ❤️' }],
+      messages: [{ role: 'model', text: 'Hello. I am LoveGPT, your professional relationship and dating assistant. How can I assist you today?' }],
       updatedAt: Date.now()
     }];
   });
@@ -62,6 +62,7 @@ export function LoveGPT() {
   const [input, setInput] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -94,7 +95,7 @@ export function LoveGPT() {
     const newThread: Thread = {
       id: Date.now().toString(),
       title: 'New Chat',
-      messages: [{ role: 'model', text: 'Hi there! I am LoveGPT, your personal relationship and dating assistant. How can I help you today? ❤️' }],
+      messages: [{ role: 'model', text: 'Hello. I am LoveGPT, your professional relationship and dating assistant. How can I assist you today?' }],
       updatedAt: Date.now()
     };
     setThreads(prev => [newThread, ...prev]);
@@ -115,6 +116,12 @@ export function LoveGPT() {
         startNewChat(); // Always have at least one chat
       }
     }
+  };
+
+  const handleCopy = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -151,12 +158,13 @@ export function LoveGPT() {
       let context = currentMessages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'LoveGPT'}: ${m.text}`).join('\n');
 
       const prompt = `
-        You are LoveGPT, a friendly, empathetic dating/relationship coach.
+        You are LoveGPT, a highly professional, empathetic, and insightful relationship coach.
         CRITICAL INSTRUCTIONS:
-        1. Use VERY simple, everyday language. Talk like a normal friend texting. No big words, no complex psychology terms.
-        2. Match the length of your response to the user's input. If they just say "hi" or a short sentence, give a short 2-3 sentence reply. If they write a long paragraph, give a detailed, thoughtful response.
-        3. At the very end of your response, provide exactly 2 suggested follow-up questions the user could ask you next. Format them clearly like:
-           "Suggestions:
+        1. Use clear, professional, yet warm language. Avoid overly casual slang or excessive emojis.
+        2. Match the length of your response to the user's input. If they ask a brief question, provide a concise answer. If they write a detailed scenario, provide a comprehensive, structured analysis.
+        3. Use Markdown formatting (bolding, bullet points) to structure your advice clearly.
+        4. At the very end of your response, provide exactly 2 suggested follow-up questions the user could ask you next. Format them clearly like:
+           "**Suggested Follow-ups:**
            - [Question 1]
            - [Question 2]"
         
@@ -220,7 +228,7 @@ export function LoveGPT() {
         if (t.id === activeThreadId) {
           return {
             ...t,
-            messages: [...t.messages, { role: 'model', text: 'Oops! I am having trouble connecting right now. Please try again later.' }],
+            messages: [...t.messages, { role: 'model', text: 'I apologize, but I am having trouble connecting right now. Please try again later.' }],
             updatedAt: Date.now()
           };
         }
@@ -232,11 +240,11 @@ export function LoveGPT() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)] flex flex-col md:flex-row gap-6 relative">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6 relative">
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setShowSidebar(false)}
         />
       )}
@@ -244,39 +252,33 @@ export function LoveGPT() {
       {/* Sidebar */}
       <div className={`
         absolute md:relative z-50 md:z-auto
-        w-72 h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl md:shadow-none border border-slate-200 dark:border-slate-700
+        w-72 h-full bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl shadow-2xl md:shadow-none border border-zinc-200 dark:border-zinc-800
         flex flex-col transition-all duration-300 ease-in-out
         ${showSidebar ? 'translate-x-0 md:w-72 md:opacity-100' : '-translate-x-[120%] md:w-0 md:opacity-0 md:overflow-hidden md:border-none'}
       `}>
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <h2 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <Bot className="w-5 h-5 text-pink-500" /> Chats
-          </h2>
-          <Button variant="outline" className="p-2" onClick={() => setShowSidebar(false)}>
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-        
-        <div className="p-4">
-          <Button onClick={startNewChat} className="w-full bg-pink-500 hover:bg-pink-600 text-white">
+        <div className="p-4 flex justify-between items-center">
+          <Button onClick={startNewChat} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
             <Plus className="w-4 h-4 mr-2" /> New Chat
+          </Button>
+          <Button variant="outline" className="ml-2 p-2 md:hidden border-zinc-200 dark:border-zinc-800" onClick={() => setShowSidebar(false)}>
+            <X className="w-4 h-4 text-zinc-500" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 w-72">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 w-72">
+          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3 px-2">Recent Chats</p>
           {threads.map(thread => (
             <div 
               key={thread.id}
               onClick={() => {
                 setActiveThreadId(thread.id);
-                // Don't auto-close sidebar on desktop when selecting a chat
                 if (window.innerWidth < 768) setShowSidebar(false);
               }}
               className={`
-                w-full text-left p-3 rounded-xl flex items-center justify-between group cursor-pointer transition-colors
+                w-full text-left p-2.5 rounded-xl flex items-center justify-between group cursor-pointer transition-colors
                 ${activeThreadId === thread.id 
-                  ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-500' 
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300'}
+                  ? 'bg-zinc-200/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' 
+                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400'}
               `}
             >
               <div className="flex items-center gap-3 overflow-hidden">
@@ -285,9 +287,9 @@ export function LoveGPT() {
               </div>
               <button 
                 onClick={(e) => deleteThread(thread.id, e)}
-                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-md transition-all"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
@@ -295,70 +297,105 @@ export function LoveGPT() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full min-w-0">
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/50 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm z-10">
           <div className="flex items-center gap-3">
             {!showSidebar && (
-              <Button variant="outline" className="p-2" onClick={() => setShowSidebar(true)}>
+              <button className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setShowSidebar(true)}>
                 <Menu className="w-5 h-5" />
-              </Button>
+              </button>
             )}
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              LoveGPT <Bot className="w-6 h-6 md:w-8 md:h-8 text-pink-500" />
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-zinc-900 dark:text-white leading-tight">
+                  LoveGPT
+                </h1>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Professional Relationship Assistant</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col overflow-hidden bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] rounded-2xl">
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 scroll-smooth">
+          <div className="max-w-3xl mx-auto space-y-8">
             {activeThread?.messages.map((msg, i) => (
-              <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-pink-500 text-white'
-                }`}>
-                  {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-                </div>
-                <div className={`max-w-[80%] rounded-2xl p-4 ${
+              <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
+                {msg.role === 'model' && (
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0 mt-1">
+                    <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                )}
+                
+                <div className={`relative max-w-[85%] md:max-w-[75%] ${
                   msg.role === 'user' 
-                    ? 'bg-indigo-500 text-white rounded-tr-none' 
-                    : 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-600'
+                    ? 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 rounded-2xl rounded-tr-sm px-5 py-3.5' 
+                    : 'text-zinc-800 dark:text-zinc-200 px-2 py-1'
                 }`}>
                   {msg.image && (
-                    <img src={msg.image} alt="Uploaded" className="max-w-full rounded-lg mb-2 max-h-64 object-contain" />
+                    <img src={msg.image} alt="Uploaded" className="max-w-full rounded-xl mb-3 max-h-64 object-contain border border-zinc-200 dark:border-zinc-700" />
                   )}
-                  <div className={`prose max-w-none ${msg.role === 'user' ? 'prose-invert text-white' : 'text-slate-800 dark:text-slate-200 dark:prose-invert'} markdown-body`}>
+                  <div className={`prose prose-zinc dark:prose-invert max-w-none ${msg.role === 'user' ? 'prose-p:leading-relaxed' : 'prose-p:leading-7'} markdown-body`}>
                     <Markdown>{msg.text}</Markdown>
                   </div>
+                  
+                  {msg.role === 'model' && msg.text && (
+                    <button 
+                      onClick={() => handleCopy(msg.text, i)}
+                      className="absolute -left-10 top-2 p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm"
+                      title="Copy response"
+                    >
+                      {copiedIndex === i ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
+
+                {msg.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center shrink-0 mt-1">
+                    <User className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+                  </div>
+                )}
               </div>
             ))}
             {loading && (
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center shrink-0">
-                  <Bot className="w-5 h-5" />
+              <div className="flex gap-4 justify-start">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0 mt-1">
+                  <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <div className="bg-white dark:bg-slate-700 rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-pink-500" />
-                  <span className="text-slate-500">Thinking...</span>
+                <div className="px-2 py-3 flex items-center gap-2">
+                  <span className="flex gap-1">
+                    <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </span>
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-4" />
           </div>
+        </div>
 
-          <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {/* Input Area */}
+        <div className="p-4 md:p-6 bg-white dark:bg-zinc-950">
+          <div className="max-w-3xl mx-auto relative">
             {image && (
-              <div className="mb-2 relative inline-block">
-                <img src={image} alt="Preview" className="h-20 rounded-lg border border-slate-200" />
-                <button 
-                  onClick={() => setImage(null)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
+              <div className="absolute bottom-full mb-4 left-0">
+                <div className="relative inline-block">
+                  <img src={image} alt="Preview" className="h-24 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm object-cover" />
+                  <button 
+                    onClick={() => setImage(null)}
+                    className="absolute -top-2 -right-2 bg-zinc-800 text-white rounded-full p-1.5 shadow-md hover:bg-zinc-700 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             )}
-            <form onSubmit={handleSend} className="flex gap-2 items-end bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-600 p-2 focus-within:border-pink-500 transition-colors">
+            <form onSubmit={handleSend} className="relative flex items-end gap-2 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all shadow-sm">
               <input
                 type="file"
                 accept="image/*"
@@ -369,7 +406,8 @@ export function LoveGPT() {
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 text-slate-400 hover:text-pink-500 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="p-2.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors rounded-xl hover:bg-zinc-200/50 dark:hover:bg-zinc-800"
+                title="Attach image"
               >
                 <ImageIcon className="w-5 h-5" />
               </button>
@@ -378,7 +416,7 @@ export function LoveGPT() {
                 onChange={(e) => {
                   setInput(e.target.value);
                   e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -386,18 +424,21 @@ export function LoveGPT() {
                     if (input.trim() || image) handleSend(e);
                   }
                 }}
-                placeholder="Ask LoveGPT anything..."
-                className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white resize-none py-2 max-h-[150px] min-h-[40px]"
+                placeholder="Message LoveGPT..."
+                className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3 max-h-[200px] min-h-[44px] placeholder:text-zinc-400"
                 rows={1}
               />
               <button 
                 type="submit" 
                 disabled={loading || (!input.trim() && !image)} 
-                className="p-2 bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-pink-500 text-white rounded-xl transition-colors"
+                className="p-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-xl transition-all shadow-sm mb-0.5 mr-0.5"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4" />
               </button>
             </form>
+            <p className="text-center text-xs text-zinc-400 mt-3">
+              LoveGPT can make mistakes. Consider verifying important information.
+            </p>
           </div>
         </div>
       </div>
