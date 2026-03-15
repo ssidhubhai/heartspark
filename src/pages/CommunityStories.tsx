@@ -458,8 +458,8 @@ export function CommunityStories() {
             exit={{ opacity: 0, y: -50, x: '-50%' }}
             className={`fixed top-20 left-1/2 z-[100] flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-sm font-medium ${
               toast.type === 'error' ? 'bg-red-500 text-white' : 
-              toast.type === 'success' ? 'bg-indigo-500 text-white' : 
-              'bg-zinc-800 text-white'
+              toast.type === 'success' ? 'bg-emerald-500 text-white' : 
+              'bg-slate-800 text-white'
             }`}
           >
             {toast.type === 'error' && <AlertCircle className="w-4 h-4" />}
@@ -799,19 +799,19 @@ export function CommunityStories() {
                   <div className="flex-1"></div>
                   
                   {(story.reportCount || 0) > 0 && (
-                    <button onClick={() => handleClearReports(story.id)} className="text-xs px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 rounded-md font-medium transition-colors">
+                    <button onClick={() => handleClearReports(story.id)} className="text-xs px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-md font-medium transition-colors">
                       Clear Reports
                     </button>
                   )}
                   
                   <button onClick={() => handleBlockUser(story.userId)} className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
-                    blockingUserId === story.userId ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                    blockingUserId === story.userId ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                   }`}>
                     {blockingUserId === story.userId ? 'Confirm Block' : 'Block User'}
                   </button>
                   
                   <button onClick={() => handleDeletePost(story.id)} className={`text-xs px-3 py-1.5 rounded-md font-medium flex items-center gap-1 transition-colors ${
-                    deletingPostId === story.id ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40'
+                    deletingPostId === story.id ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-100 text-red-700 hover:bg-red-200'
                   }`}>
                     <Trash2 className="w-3 h-3" /> {deletingPostId === story.id ? 'Confirm Delete' : 'Delete Post'}
                   </button>

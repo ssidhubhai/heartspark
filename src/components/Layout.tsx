@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
+import { ParticleBackground } from './ParticleBackground';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download, Settings } from 'lucide-react';
+import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils/cn';
@@ -11,7 +12,6 @@ import { NotificationBell } from './NotificationBell';
 export function Layout({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const location = useLocation();
   const { user, login, logout, isConfigured } = useAuth();
 
@@ -43,12 +43,14 @@ export function Layout({ children }: { children: ReactNode }) {
     { name: 'Text Analyzer', path: '/analyzer' },
   ];
 
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'HeartSpark - AI Relationship Coach',
-          text: 'Check out HeartSpark, the professional AI relationship and astrology assistant.',
+          title: 'HeartSpark - AI Love & Relationship Coach',
+          text: 'Check out HeartSpark! It has an AI Astrologer, LoveGPT, couple games, and fun crush quizzes. Discover your true love destiny today!',
           url: window.location.origin,
         });
       } catch (error) {
@@ -62,22 +64,28 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className={cn(
-      "min-h-screen flex flex-col transition-colors duration-300 font-sans",
-      isDarkMode ? "bg-zinc-950 text-zinc-100" : "bg-zinc-50 text-zinc-900"
+      "min-h-screen flex flex-col transition-colors duration-300",
+      isDarkMode ? "bg-slate-900 text-white" : "bg-pink-50 text-slate-900"
     )}>
+      <ParticleBackground />
       <InstallPrompt />
       
       {/* Navbar */}
       <nav className={cn(
-        "sticky top-0 z-50 backdrop-blur-xl border-b transition-colors duration-300",
-        isDarkMode ? "bg-zinc-950/80 border-zinc-800" : "bg-white/80 border-zinc-200"
+        "sticky top-0 z-50 backdrop-blur-md border-b transition-colors duration-300",
+        isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-pink-100"
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center gap-2 group">
-                <Heart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <span className="font-semibold text-xl tracking-tight text-zinc-900 dark:text-white">
+                <motion.div
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <Heart className="w-8 h-8 text-pink-500 fill-pink-500" />
+                </motion.div>
+                <span className="font-bold text-2xl bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
                   HeartSpark
                 </span>
               </Link>
@@ -90,8 +98,10 @@ export function Layout({ children }: { children: ReactNode }) {
                   key={link.path}
                   to={link.path}
                   className={cn(
-                    "px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                    location.pathname === link.path ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" : "text-zinc-600 dark:text-zinc-400"
+                    "px-3 py-2 rounded-full text-sm font-medium transition-all hover:bg-pink-100 hover:text-pink-600",
+                    location.pathname === link.path && "bg-pink-100 text-pink-600 shadow-sm",
+                    isDarkMode && "hover:bg-slate-800 hover:text-pink-400",
+                    isDarkMode && location.pathname === link.path && "bg-slate-800 text-pink-400 shadow-sm"
                   )}
                 >
                   {link.name}
@@ -99,79 +109,71 @@ export function Layout({ children }: { children: ReactNode }) {
               ))}
 
               {/* More Dropdown */}
-              <div className="relative group">
+              <div className="relative">
                 <button
+                  onClick={() => setIsMoreOpen(!isMoreOpen)}
                   className={cn(
-                    "px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1 text-zinc-600 dark:text-zinc-400"
+                    "px-3 py-2 rounded-full text-sm font-medium transition-all hover:bg-pink-100 hover:text-pink-600 flex items-center gap-1",
+                    isDarkMode && "hover:bg-slate-800 hover:text-pink-400"
                   )}
                 >
                   More
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 
-                <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg py-2 border backdrop-blur-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-                  {moreLinks.map((link) => (
-                    <Link
-                      key={link.path}
-                      to={link.path}
+                <AnimatePresence>
+                  {isMoreOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
                       className={cn(
-                        "block px-4 py-2 text-sm transition-colors",
-                        location.pathname === link.path ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                        "absolute right-0 mt-2 w-48 rounded-xl shadow-lg py-2 border backdrop-blur-xl z-50",
+                        isDarkMode ? "bg-slate-800/90 border-slate-700" : "bg-white/90 border-pink-100"
                       )}
                     >
-                      {link.name}
-                    </Link>
-                  ))}
-                </div>
+                      {moreLinks.map((link) => (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          onClick={() => setIsMoreOpen(false)}
+                          className={cn(
+                            "block px-4 py-2 text-sm transition-colors",
+                            location.pathname === link.path ? "text-pink-600 bg-pink-50 dark:bg-slate-700 dark:text-pink-400" : "text-slate-700 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-slate-700"
+                          )}
+                        >
+                          {link.name}
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
               
-              <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
-              
               {isConfigured && (
-                <div className="flex items-center gap-2 relative">
+                <div className="flex items-center ml-2 border-l pl-2 border-slate-200 dark:border-slate-700">
                   {user ? (
                     <>
                       <NotificationBell />
-                      <button 
-                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-all"
-                      >
+                      <Link to="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-all">
                         {user.photoURL ? (
-                          <img src={user.photoURL} alt="User" className="w-7 h-7 rounded-full border border-zinc-200 dark:border-zinc-700" />
+                          <img src={user.photoURL} alt="User" className="w-6 h-6 rounded-full" />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
-                            <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          <div className="w-6 h-6 rounded-full bg-pink-100 dark:bg-slate-700 flex items-center justify-center">
+                            <User className="w-4 h-4 text-pink-500 dark:text-pink-400" />
                           </div>
                         )}
+                        <span className="hidden lg:inline">Profile</span>
+                      </Link>
+                      <button onClick={logout} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-all">
+                        <LogOut className="w-4 h-4" />
+                        <span className="hidden lg:inline">Logout</span>
                       </button>
-
-                      {/* Profile Dropdown */}
-                      <AnimatePresence>
-                        {isProfileDropdownOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute right-0 top-full mt-2 w-56 rounded-xl shadow-lg py-2 border backdrop-blur-xl z-50 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-                          >
-                            <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-2">
-                              <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">{user.displayName || 'User'}</p>
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{user.email}</p>
-                            </div>
-                            <Link to="/profile" onClick={() => setIsProfileDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-                              <Settings className="w-4 h-4" /> Account Settings
-                            </Link>
-                            <button onClick={() => { logout(); setIsProfileDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10">
-                              <LogOut className="w-4 h-4" /> Sign Out
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </>
                   ) : (
-                    <button onClick={login} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all shadow-sm">
+                    <button onClick={login} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium bg-pink-500 text-white hover:bg-pink-600 transition-all">
                       <LogIn className="w-4 h-4" />
-                      <span>Sign In</span>
+                      <span className="hidden lg:inline">Login</span>
                     </button>
                   )}
                 </div>
@@ -179,49 +181,49 @@ export function Layout({ children }: { children: ReactNode }) {
 
               <button
                 onClick={() => window.dispatchEvent(new Event('trigger-install'))}
-                className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors hidden sm:block text-zinc-500 dark:text-zinc-400"
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors hidden sm:block"
                 aria-label="Install App"
                 title="Install App"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-5 h-5 text-pink-500" />
               </button>
 
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500 dark:text-zinc-400"
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Toggle dark mode"
               >
-                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
               </button>
               
               <button
                 onClick={handleShare}
-                className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500 dark:text-zinc-400"
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Share"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-5 h-5 text-pink-500" />
               </button>
             </div>
 
             {/* Mobile menu button */}
-            <div className="flex items-center md:hidden gap-1">
+            <div className="flex items-center md:hidden gap-2">
               {user && <NotificationBell />}
               <button
                 onClick={() => window.dispatchEvent(new Event('trigger-install'))}
-                className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500"
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Install App"
               >
-                <Download className="w-5 h-5" />
+                <Download className="w-5 h-5 text-pink-500" />
               </button>
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500"
+                className="p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 transition-colors"
               >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
               </button>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none"
+                className="p-2 rounded-md text-slate-600 dark:text-slate-300 hover:bg-pink-100 dark:hover:bg-slate-800 focus:outline-none"
               >
                 {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -236,17 +238,16 @@ export function Layout({ children }: { children: ReactNode }) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden overflow-hidden bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800"
+              className="md:hidden overflow-hidden bg-white dark:bg-slate-900 border-b border-pink-100 dark:border-slate-800"
             >
-              <div className="px-4 pt-2 pb-4 space-y-1">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 {[...navLinks, ...moreLinks].map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
-                    onClick={() => setIsMenuOpen(false)}
                     className={cn(
-                      "block px-3 py-2.5 rounded-lg text-base font-medium transition-colors",
-                      location.pathname === link.path ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                      "block px-3 py-2 rounded-md text-base font-medium hover:bg-pink-50 dark:hover:bg-slate-800",
+                      location.pathname === link.path ? "text-pink-600 bg-pink-50 dark:bg-slate-800 dark:text-pink-400" : "text-slate-700 dark:text-slate-300"
                     )}
                   >
                     {link.name}
@@ -254,37 +255,29 @@ export function Layout({ children }: { children: ReactNode }) {
                 ))}
                 <button
                   onClick={handleShare}
-                  className="w-full text-left px-3 py-2.5 rounded-lg text-base font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-slate-800 flex items-center gap-2"
                 >
                   <Share2 className="w-5 h-5" /> Share App
                 </button>
                 {isConfigured && (
-                  <div className="pt-4 mt-2 border-t border-zinc-200 dark:border-zinc-800">
+                  <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
                     {user ? (
                       <>
-                        <div className="px-3 py-2 flex items-center gap-3 mb-2">
+                        <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-slate-800 flex items-center gap-2">
                           {user.photoURL ? (
-                            <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700" />
+                            <img src={user.photoURL} alt="User" className="w-5 h-5 rounded-full" />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
-                              <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                            </div>
+                            <User className="w-5 h-5 text-pink-500" />
                           )}
-                          <div>
-                            <p className="text-sm font-medium text-zinc-900 dark:text-white">{user.displayName || 'User'}</p>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">{user.email}</p>
-                          </div>
-                        </div>
-                        <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="w-full text-left px-3 py-2.5 rounded-lg text-base font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 flex items-center gap-2">
-                          <Settings className="w-5 h-5" /> Account Settings
+                          Profile
                         </Link>
-                        <button onClick={() => { logout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2.5 rounded-lg text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2">
-                          <LogOut className="w-5 h-5" /> Sign Out
+                        <button onClick={() => { logout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                          <LogOut className="w-5 h-5" /> Logout
                         </button>
                       </>
                     ) : (
-                      <button onClick={() => { login(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2.5 rounded-lg text-base font-medium text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-900 flex items-center gap-2">
-                        <LogIn className="w-5 h-5" /> Sign In
+                      <button onClick={() => { login(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-pink-600 hover:bg-pink-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                        <LogIn className="w-5 h-5" /> Login
                       </button>
                     )}
                   </div>
@@ -300,11 +293,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="h-full"
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
           >
             {children}
           </motion.div>
@@ -315,13 +307,13 @@ export function Layout({ children }: { children: ReactNode }) {
       {location.pathname === '/' && (
         <footer className={cn(
           "py-8 border-t transition-colors duration-300 text-center",
-          isDarkMode ? "border-zinc-800 bg-zinc-950/50" : "border-zinc-200 bg-white/50"
+          isDarkMode ? "border-slate-800 bg-slate-900/50" : "border-pink-200 bg-white/50"
         )}>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center justify-center gap-1">
-            Made with <Heart className="w-4 h-4 text-indigo-500 fill-indigo-500" /> for deeper connections
+          <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1">
+            Made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500" /> for lovers and dreamers
           </p>
           <div className="flex items-center justify-center gap-4 mt-2">
-            <p className="text-xs text-zinc-400">© {new Date().getFullYear()} HeartSpark. All rights reserved.</p>
+            <p className="text-xs text-slate-400">© {new Date().getFullYear()} HeartSpark. All rights reserved.</p>
           </div>
         </footer>
       )}

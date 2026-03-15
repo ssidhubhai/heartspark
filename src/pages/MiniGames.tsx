@@ -55,29 +55,29 @@ export function MiniGames() {
               <p className="text-slate-600 dark:text-slate-400">
                 How many hearts can you tap in 10 seconds? Test your speed!
               </p>
-              <Button className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white">Play Now</Button>
+              <Button className="mt-4 bg-indigo-500 hover:bg-indigo-600 border-none">Play Now</Button>
             </Card>
 
-            <Card className="flex flex-col items-center text-center space-y-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer" onClick={() => handleGameChange('memory')}>
-              <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                <Gamepad2 className="w-8 h-8 text-indigo-500" />
+            <Card className="flex flex-col items-center text-center space-y-4 hover:border-teal-300 dark:hover:border-teal-700 transition-colors cursor-pointer" onClick={() => handleGameChange('memory')}>
+              <div className="w-16 h-16 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                <Gamepad2 className="w-8 h-8 text-teal-500" />
               </div>
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Memory Match</h2>
               <p className="text-slate-600 dark:text-slate-400">
                 Match the romantic pairs as fast as you can!
               </p>
-              <Button className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white">Play Now</Button>
+              <Button className="mt-4 bg-teal-500 hover:bg-teal-600 border-none">Play Now</Button>
             </Card>
 
-            <Card className="flex flex-col items-center text-center space-y-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer" onClick={() => handleGameChange('truth_dare')}>
-              <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                <MessageCircleQuestion className="w-8 h-8 text-indigo-500" />
+            <Card className="flex flex-col items-center text-center space-y-4 hover:border-rose-300 dark:hover:border-rose-700 transition-colors cursor-pointer" onClick={() => handleGameChange('truth_dare')}>
+              <div className="w-16 h-16 rounded-2xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                <MessageCircleQuestion className="w-8 h-8 text-rose-500" />
               </div>
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Truth or Dare</h2>
               <p className="text-slate-600 dark:text-slate-400">
                 Spicy and fun questions to get to know each other better!
               </p>
-              <Button className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white">Play Now</Button>
+              <Button className="mt-4 bg-rose-500 hover:bg-rose-600 border-none">Play Now</Button>
             </Card>
           </motion.div>
         )}
@@ -157,7 +157,7 @@ function TapGame({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <Card className="text-center space-y-6 min-h-[400px] flex flex-col relative overflow-hidden bg-gradient-to-br from-indigo-50 to-zinc-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
+    <Card className="text-center space-y-6 min-h-[400px] flex flex-col relative overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-800/80 border-indigo-200 dark:border-indigo-900/50">
       <div className="flex justify-between items-center z-10">
         <Button variant="ghost" onClick={onBack} size="sm">
           ← Back
@@ -165,17 +165,17 @@ function TapGame({ onBack }: { onBack: () => void }) {
         <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
           Time: {timeLeft}s
         </div>
-        <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+        <div className="text-xl font-bold text-pink-600 dark:text-pink-400">
           Score: {score}
         </div>
       </div>
 
       {!isPlaying && !gameOver && (
         <div className="flex-grow flex flex-col items-center justify-center space-y-4 z-10">
-          <Heart className="w-16 h-16 text-indigo-500 fill-indigo-500 animate-pulse" />
+          <Heart className="w-16 h-16 text-pink-500 fill-pink-500 animate-pulse" />
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Tap the Heart!</h2>
           <p className="text-slate-600 dark:text-slate-400">Tap as many hearts as you can in 10 seconds.</p>
-          <Button onClick={startGame} size="lg" className="bg-indigo-500 hover:bg-indigo-600 text-white">Start Game</Button>
+          <Button onClick={startGame} size="lg" className="bg-indigo-500 hover:bg-indigo-600 border-none">Start Game</Button>
         </div>
       )}
 
@@ -187,18 +187,18 @@ function TapGame({ onBack }: { onBack: () => void }) {
             whileTap={{ scale: 0.8 }}
             onClick={handleTap}
           >
-            <Heart className="w-12 h-12 text-indigo-500 fill-indigo-500 drop-shadow-lg" />
+            <Heart className="w-12 h-12 text-pink-500 fill-pink-500 drop-shadow-lg" />
           </motion.button>
         </div>
       )}
 
       {gameOver && (
         <div className="flex-grow flex flex-col items-center justify-center space-y-4 z-10">
-          <Trophy className="w-16 h-16 text-indigo-500" />
+          <Trophy className="w-16 h-16 text-yellow-500" />
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Game Over!</h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400">You tapped <span className="font-bold text-indigo-500">{score}</span> hearts!</p>
+          <p className="text-xl text-slate-600 dark:text-slate-400">You tapped <span className="font-bold text-pink-500">{score}</span> hearts!</p>
           <div className="flex gap-4 mt-4">
-            <Button onClick={startGame} className="bg-indigo-500 hover:bg-indigo-600 text-white">
+            <Button onClick={startGame} className="bg-indigo-500 hover:bg-indigo-600 border-none">
               <RefreshCw className="w-4 h-4 mr-2" /> Play Again
             </Button>
           </div>
@@ -274,23 +274,23 @@ function MemoryGame({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <Card className="text-center space-y-6 min-h-[400px] flex flex-col relative overflow-hidden bg-gradient-to-br from-indigo-50 to-zinc-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
+    <Card className="text-center space-y-6 min-h-[400px] flex flex-col relative overflow-hidden bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800/80 border-teal-200 dark:border-teal-900/50">
       <div className="flex justify-between items-center z-10 w-full">
         <Button variant="ghost" onClick={onBack} size="sm">
           ← Back
         </Button>
-        <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+        <div className="text-xl font-bold text-teal-600 dark:text-teal-400">
           Moves: {moves}
         </div>
       </div>
 
       {isGameOver ? (
         <div className="flex-grow flex flex-col items-center justify-center space-y-4 z-10">
-          <Trophy className="w-16 h-16 text-indigo-500" />
+          <Trophy className="w-16 h-16 text-yellow-500" />
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white">You Won!</h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400">Completed in <span className="font-bold text-indigo-500">{moves}</span> moves!</p>
+          <p className="text-xl text-slate-600 dark:text-slate-400">Completed in <span className="font-bold text-teal-500">{moves}</span> moves!</p>
           <div className="flex gap-4 mt-4">
-            <Button onClick={initializeGame} className="bg-indigo-500 hover:bg-indigo-600 text-white">
+            <Button onClick={initializeGame} className="bg-teal-500 hover:bg-teal-600 border-none">
               <RefreshCw className="w-4 h-4 mr-2" /> Play Again
             </Button>
           </div>
@@ -302,8 +302,8 @@ function MemoryGame({ onBack }: { onBack: () => void }) {
               key={card.id}
               className={`aspect-square text-3xl sm:text-4xl flex items-center justify-center rounded-xl transition-all duration-300 transform preserve-3d cursor-pointer ${
                 card.isFlipped || card.isMatched
-                  ? 'bg-white dark:bg-zinc-800 shadow-md border-2 border-indigo-200 dark:border-zinc-700'
-                  : 'bg-indigo-500 shadow-sm hover:bg-indigo-600'
+                  ? 'bg-white dark:bg-slate-700 shadow-md border-2 border-teal-200 dark:border-teal-700'
+                  : 'bg-teal-500 shadow-sm hover:bg-teal-600'
               }`}
               onClick={() => handleCardClick(index)}
               whileHover={{ scale: card.isFlipped || card.isMatched ? 1 : 1.05 }}
@@ -361,7 +361,7 @@ function TruthOrDareGame({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <Card className="text-center space-y-6 min-h-[400px] flex flex-col relative overflow-hidden bg-gradient-to-br from-indigo-50 to-zinc-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
+    <Card className="text-center space-y-6 min-h-[400px] flex flex-col relative overflow-hidden bg-gradient-to-br from-rose-50 to-pink-50 dark:from-slate-800 dark:to-slate-800/80 border-rose-200 dark:border-rose-900/50">
       <div className="flex justify-between items-center z-10 w-full">
         <Button variant="ghost" onClick={onBack} size="sm">
           ← Back
@@ -371,14 +371,14 @@ function TruthOrDareGame({ onBack }: { onBack: () => void }) {
       <div className="flex-grow flex flex-col items-center justify-center space-y-8 z-10 w-full max-w-md mx-auto">
         {!currentPrompt ? (
           <>
-            <MessageCircleQuestion className="w-16 h-16 text-indigo-500" />
+            <MessageCircleQuestion className="w-16 h-16 text-rose-500" />
             <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Truth or Dare?</h2>
             <p className="text-slate-600 dark:text-slate-400">Choose your fate!</p>
             <div className="flex gap-4 w-full">
-              <Button onClick={() => handleChoice('Truth')} className="flex-1 h-16 text-xl bg-indigo-500 hover:bg-indigo-600 text-white">
+              <Button onClick={() => handleChoice('Truth')} className="flex-1 h-16 text-xl bg-blue-500 hover:bg-blue-600 border-none">
                 Truth
               </Button>
-              <Button onClick={() => handleChoice('Dare')} className="flex-1 h-16 text-xl bg-zinc-800 hover:bg-zinc-700 text-white">
+              <Button onClick={() => handleChoice('Dare')} className="flex-1 h-16 text-xl bg-rose-500 hover:bg-rose-600 border-none">
                 Dare
               </Button>
             </div>
@@ -389,10 +389,10 @@ function TruthOrDareGame({ onBack }: { onBack: () => void }) {
             animate={{ scale: 1, opacity: 1 }}
             className="w-full space-y-8"
           >
-            <h2 className={`text-4xl font-bold ${currentPrompt.type === 'Truth' ? 'text-indigo-500' : 'text-zinc-800 dark:text-zinc-200'}`}>
+            <h2 className={`text-4xl font-bold ${currentPrompt.type === 'Truth' ? 'text-blue-500' : 'text-rose-500'}`}>
               {currentPrompt.type}
             </h2>
-            <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl shadow-inner min-h-[150px] flex items-center justify-center border border-zinc-200 dark:border-zinc-800">
+            <div className="bg-white dark:bg-slate-700 p-8 rounded-2xl shadow-inner min-h-[150px] flex items-center justify-center">
               <p className="text-2xl font-medium text-slate-800 dark:text-white leading-relaxed">
                 "{currentPrompt.text}"
               </p>

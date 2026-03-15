@@ -57,13 +57,13 @@ export function SecretMessage() {
         </p>
       </div>
 
-      <Card id="secret-message" className="text-center space-y-8 bg-gradient-to-br from-indigo-50 to-zinc-50 dark:from-slate-800 dark:to-slate-800/80 border-indigo-200 dark:border-indigo-900/50">
+      <Card id="secret-message" className="text-center space-y-8 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-slate-800 dark:to-slate-800/80 border-rose-200 dark:border-rose-900/50">
         <motion.div
           key={message}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="min-h-[150px] flex items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-inner border border-indigo-100 dark:border-slate-700"
+          className="min-h-[150px] flex items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-inner border border-rose-100 dark:border-slate-700"
         >
           <p className="text-2xl md:text-3xl font-medium text-slate-800 dark:text-slate-200 italic font-serif">
             "{message}"
@@ -77,7 +77,7 @@ export function SecretMessage() {
           <Button onClick={copyToClipboard} className="flex-1 min-w-[140px]" variant={copied ? "secondary" : "primary"}>
             <Copy className="w-5 h-5 mr-2" /> {copied ? "Copied!" : "Copy Text"}
           </Button>
-          <Button onClick={handleShare} className="flex-1 min-w-[140px] bg-indigo-500 hover:bg-indigo-600 border-none text-white">
+          <Button onClick={handleShare} className="flex-1 min-w-[140px] bg-rose-500 hover:bg-rose-600 border-none">
             <Send className="w-5 h-5 mr-2" /> Send via App
           </Button>
           <Button variant="outline" onClick={handleDownload} className="flex-1 min-w-[140px]">

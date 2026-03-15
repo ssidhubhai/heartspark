@@ -55,7 +55,7 @@ export function CrushPrediction() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-          Crush Prediction <Star className="w-8 h-8 text-indigo-500" />
+          Crush Prediction <Star className="w-8 h-8 text-yellow-500" />
         </h1>
         <p className="text-lg text-slate-600 dark:text-slate-400">
           Enter your names to get a mystical prediction about your future together.
@@ -71,7 +71,7 @@ export function CrushPrediction() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 outline-none transition-all"
                 required
               />
             </div>
@@ -81,7 +81,7 @@ export function CrushPrediction() {
                 type="text"
                 value={crush}
                 onChange={(e) => setCrush(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-yellow-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 outline-none transition-all"
                 required
               />
             </div>
@@ -89,7 +89,7 @@ export function CrushPrediction() {
 
           <Button 
             type="submit" 
-            className="w-full h-14 text-lg bg-indigo-500 hover:bg-indigo-600 text-white"
+            className="w-full h-14 text-lg bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600"
             disabled={isPredicting || !name || !crush}
           >
             {isPredicting ? (
@@ -110,9 +110,9 @@ export function CrushPrediction() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
           >
-            <Card id="prediction-result" className="text-center space-y-6 bg-gradient-to-b from-white to-indigo-50 dark:from-zinc-900 dark:to-zinc-900 border-indigo-200 dark:border-zinc-800">
-              <div className="inline-block p-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-2">
-                <Star className="w-8 h-8 text-indigo-500" />
+            <Card id="prediction-result" className="text-center space-y-6 bg-gradient-to-b from-white to-yellow-50 dark:from-slate-800 dark:to-slate-800/50 border-yellow-200 dark:border-yellow-900/50">
+              <div className="inline-block p-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 mb-2">
+                <Star className="w-8 h-8 text-yellow-500" />
               </div>
               
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
@@ -125,7 +125,7 @@ export function CrushPrediction() {
 
               <div className="py-4">
                 <p className="text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-2">Probability of happening</p>
-                <div className="text-4xl font-extrabold text-indigo-500">
+                <div className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-500">
                   {probability}%
                 </div>
               </div>
@@ -134,7 +134,7 @@ export function CrushPrediction() {
                 <Button variant="outline" onClick={() => setPrediction('')}>
                   <RefreshCw className="w-4 h-4 mr-2" /> Try Again
                 </Button>
-                <Button onClick={handleShare}>
+                <Button onClick={handleShare} className="bg-yellow-500 hover:bg-yellow-600 border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
                 <Button variant="outline" onClick={handleDownload}>
