@@ -130,11 +130,11 @@ export function NotificationBell() {
     <div className="relative">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        className="relative p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
       >
-        <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+        <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+          <span className="absolute top-1 right-1 w-4 h-4 bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -146,14 +146,14 @@ export function NotificationBell() {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-80 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-pink-100 dark:border-pink-900/30 z-50 overflow-hidden"
           >
-            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-              <h3 className="font-bold text-slate-900 dark:text-white">Notifications</h3>
+            <div className="p-4 border-b border-pink-100 dark:border-zinc-800 flex justify-between items-center">
+              <h3 className="font-bold text-zinc-900 dark:text-white">Notifications</h3>
               {unreadCount > 0 && (
                 <button 
                   onClick={markAllAsRead}
-                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="text-xs text-pink-600 dark:text-pink-400 hover:underline"
                 >
                   Mark all read
                 </button>
@@ -162,8 +162,8 @@ export function NotificationBell() {
             
             <div className="max-h-96 overflow-y-auto">
               {notifications.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">
+                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-20 text-pink-500" />
                   <p className="text-sm">No notifications yet</p>
                 </div>
               ) : (
@@ -175,12 +175,12 @@ export function NotificationBell() {
                       markAsRead(notif.id);
                       setIsOpen(false);
                     }}
-                    className={`block p-4 border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notif.read ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}
+                    className={`block p-4 border-b border-pink-50 dark:border-zinc-800/50 hover:bg-pink-50/50 dark:hover:bg-zinc-800/50 transition-colors ${!notif.read ? 'bg-pink-50/80 dark:bg-pink-900/10' : ''}`}
                   >
-                    <p className={`text-sm ${!notif.read ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                    <p className={`text-sm ${!notif.read ? 'font-semibold text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-300'}`}>
                       {notif.message}
                     </p>
-                    <span className="text-xs text-slate-400 mt-1 block">
+                    <span className="text-xs text-zinc-400 mt-1 block">
                       {notif.createdAt ? new Date(notif.createdAt.toMillis()).toLocaleString() : 'Just now'}
                     </span>
                   </Link>

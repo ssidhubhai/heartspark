@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Share2, RefreshCw, Flame, Download } from 'lucide-react';
+import { Share2, RefreshCw, Flame, Download, Sparkles } from 'lucide-react';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
 const questions = [
@@ -86,7 +86,7 @@ export function FlirtingTest() {
 
   const handleShare = async () => {
     const result = getResult();
-    const text = `I just took the Flirting Skill Test and got: ${result.level}! Test your flirting skills at HeartSpark!`;
+    const text = `I just took the Flirting Skill Test and got: ${result.level}! Test your flirting skills at Heart Spark!`;
     await shareAsImage('flirting-result', 'Flirting Skill Test', text);
   };
 
@@ -97,10 +97,10 @@ export function FlirtingTest() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-          Flirting Skill Test <Flame className="w-8 h-8 text-orange-500" />
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
+          Flirting Skill Test <Flame className="w-8 h-8 text-pink-500" />
         </h1>
-        <p className="text-lg text-slate-600 dark:text-slate-400">
+        <p className="text-lg text-zinc-600 dark:text-zinc-400">
           Are you a smooth talker or a shy potato? Find out now.
         </p>
       </div>
@@ -114,21 +114,21 @@ export function FlirtingTest() {
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="space-y-6">
-              <div className="flex justify-between items-center text-sm font-medium text-slate-500 dark:text-slate-400">
+            <Card className="space-y-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8">
+              <div className="flex justify-between items-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
                 <span>Scenario {currentQuestion + 1} of {questions.length}</span>
                 <span>{Math.round(((currentQuestion) / questions.length) * 100)}% Completed</span>
               </div>
               
-              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-pink-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-orange-400 to-red-500"
+                  className="h-full bg-gradient-to-r from-pink-500 to-purple-500"
                   initial={{ width: `${(currentQuestion / questions.length) * 100}%` }}
                   animate={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
                 />
               </div>
 
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white py-4">
+              <h2 className="text-2xl font-bold text-zinc-800 dark:text-white py-4 leading-tight">
                 {questions[currentQuestion].question}
               </h2>
 
@@ -137,9 +137,9 @@ export function FlirtingTest() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(option.score)}
-                    className="w-full text-left p-4 rounded-xl border-2 border-orange-100 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-slate-800 transition-all flex items-center justify-between group"
+                    className="w-full text-left p-5 rounded-xl border-2 border-pink-100 dark:border-zinc-800 hover:border-pink-500 dark:hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-between group shadow-sm hover:shadow-md"
                   >
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{option.text}</span>
+                    <span className="text-zinc-700 dark:text-zinc-300 font-medium text-lg">{option.text}</span>
                   </button>
                 ))}
               </div>
@@ -148,31 +148,40 @@ export function FlirtingTest() {
         ) : (
           <motion.div
             key="result"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, type: "spring" }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", damping: 15 }}
           >
-            <Card id="flirting-result" className="text-center space-y-6 bg-gradient-to-b from-white to-orange-50 dark:from-slate-800 dark:to-slate-800/50 border-orange-200 dark:border-orange-900/50">
-              <div className="inline-block p-4 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-4">
-                <span className="text-6xl">{getResult().level.split(' ').pop()}</span>
+            <Card id="flirting-result" className="text-center space-y-8 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500"></div>
+              
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-2 mt-4 shadow-inner">
+                <Flame className="w-10 h-10 text-pink-500" />
               </div>
               
-              <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
-                {getResult().level.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')}
-              </h2>
-              
-              <p className="text-xl text-slate-700 dark:text-slate-300 font-medium px-4">
-                {getResult().desc}
-              </p>
+              <div className="space-y-2">
+                <h2 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">
+                  Your Flirting Level
+                </h2>
+                <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+                  {getResult().level}
+                </h3>
+              </div>
 
-              <div className="flex flex-wrap justify-center gap-4 pt-8" data-html2canvas-ignore>
-                <Button variant="outline" onClick={resetTest}>
+              <div className="py-6 bg-pink-50/50 dark:bg-pink-900/10 rounded-2xl border border-pink-100 dark:border-pink-900/20 px-6">
+                <p className="text-lg text-zinc-700 dark:text-zinc-300 font-medium leading-relaxed">
+                  {getResult().desc}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-pink-100 dark:border-zinc-800" data-html2canvas-ignore>
+                <Button variant="outline" onClick={resetTest} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                   <RefreshCw className="w-4 h-4 mr-2" /> Retake Test
                 </Button>
-                <Button onClick={handleShare} className="bg-orange-500 hover:bg-orange-600 border-none">
+                <Button onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
-                <Button variant="outline" onClick={handleDownload}>
+                <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                   <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               </div>

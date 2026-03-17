@@ -458,8 +458,8 @@ export function CommunityStories() {
             exit={{ opacity: 0, y: -50, x: '-50%' }}
             className={`fixed top-20 left-1/2 z-[100] flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-sm font-medium ${
               toast.type === 'error' ? 'bg-red-500 text-white' : 
-              toast.type === 'success' ? 'bg-emerald-500 text-white' : 
-              'bg-slate-800 text-white'
+              toast.type === 'success' ? 'bg-indigo-500 text-white' : 
+              'bg-zinc-800 text-white'
             }`}
           >
             {toast.type === 'error' && <AlertCircle className="w-4 h-4" />}
@@ -471,12 +471,12 @@ export function CommunityStories() {
       </AnimatePresence>
 
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-          Community Stories <MessageCircle className="w-8 h-8 text-indigo-500" />
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
+          Community Stories <MessageCircle className="w-8 h-8 text-pink-500" />
         </h1>
-        <p className="text-lg text-slate-600 dark:text-slate-400">
+        <p className="text-lg text-zinc-600 dark:text-zinc-400">
           Read dramatic crush stories from around the world. <br/>
-          <span className="text-sm font-medium text-indigo-500 flex items-center justify-center gap-1 mt-2">
+          <span className="text-sm font-medium text-pink-500 flex items-center justify-center gap-1 mt-2">
             <ShieldCheck className="w-4 h-4" /> Protected by AI Moderation
           </span>
         </p>
@@ -484,16 +484,16 @@ export function CommunityStories() {
         {/* Toggle for Reported Stories */}
         {isAdmin && (
           <div className="flex justify-center mt-4">
-            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl inline-flex">
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl inline-flex">
               <button
                 onClick={() => setShowReportedOnly(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!showReportedOnly ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!showReportedOnly ? 'bg-white dark:bg-zinc-700 text-pink-600 dark:text-pink-400 shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
               >
                 All Stories
               </button>
               <button
                 onClick={() => setShowReportedOnly(true)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${showReportedOnly ? 'bg-white dark:bg-slate-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${showReportedOnly ? 'bg-white dark:bg-zinc-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
               >
                 <Flag className="w-4 h-4" /> Reported
               </button>
@@ -506,30 +506,30 @@ export function CommunityStories() {
       {user ? (
         <button
           onClick={() => setShowPostModal(true)}
-          className="fixed bottom-8 right-8 md:bottom-12 md:right-12 w-16 h-16 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40"
+          className="fixed bottom-8 right-8 md:bottom-12 md:right-12 w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40 border-none"
           aria-label="Post a Story"
         >
           <Plus className="w-8 h-8" />
         </button>
       ) : (
-        <div className="fixed bottom-0 left-0 w-full bg-indigo-600 text-white p-4 text-center z-40 shadow-lg flex items-center justify-center gap-4">
+        <div className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 text-center z-40 shadow-lg flex items-center justify-center gap-4">
           <p className="font-medium">Login to share your own stories and react!</p>
         </div>
       )}
 
       {/* Post Modal */}
       {showPostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl bg-white dark:bg-slate-800 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl bg-white dark:bg-zinc-800 relative shadow-2xl animate-in fade-in zoom-in duration-200 border-pink-100 dark:border-pink-900/30">
             <button 
               onClick={() => setShowPostModal(false)} 
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
             
-            <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white flex items-center gap-2">
-              Share Your Story <MessageCircle className="w-6 h-6 text-indigo-500" />
+            <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+              Share Your Story <MessageCircle className="w-6 h-6 text-pink-500" />
             </h2>
             
             <form onSubmit={handlePostStory} className="space-y-4">
@@ -538,7 +538,7 @@ export function CommunityStories() {
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="Story Title (e.g., My best friend just confessed...)"
-                className="w-full h-12 px-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none font-bold transition-all"
+                className="w-full h-12 px-4 rounded-xl border-2 border-pink-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 focus:border-pink-500 outline-none font-bold transition-all"
                 required
                 maxLength={100}
               />
@@ -550,7 +550,7 @@ export function CommunityStories() {
                   e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
                 placeholder="Spill the tea here... (No links allowed)"
-                className="w-full min-h-[10rem] max-h-[24rem] p-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none resize-none transition-all overflow-y-auto"
+                className="w-full min-h-[10rem] max-h-[24rem] p-4 rounded-xl border-2 border-pink-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 focus:border-pink-500 outline-none resize-none transition-all overflow-y-auto"
                 required
                 maxLength={2000}
               />
@@ -560,10 +560,10 @@ export function CommunityStories() {
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
                   placeholder="Your Name (Optional)"
-                  className="flex-1 h-12 px-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none transition-all"
+                  className="flex-1 h-12 px-4 rounded-xl border-2 border-pink-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 focus:border-pink-500 outline-none transition-all"
                   maxLength={30}
                 />
-                <Button type="submit" disabled={loading || !newStory.trim() || !newTitle.trim()} className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center gap-2 w-full sm:w-auto">
+                <Button type="submit" disabled={loading || !newStory.trim() || !newTitle.trim()} className="h-12 px-8 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 border-none flex items-center justify-center gap-2 w-full sm:w-auto text-white">
                   {loading ? (
                     <>
                       {moderating ? 'AI Checking...' : 'Posting...'} 
@@ -589,15 +589,15 @@ export function CommunityStories() {
             // Skeleton Loaders
             [1, 2, 3].map((i) => (
               <motion.div key={`skeleton-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <Card className="animate-pulse space-y-4 border-slate-200 dark:border-slate-700">
-                  <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                <Card className="animate-pulse space-y-4 border-pink-100 dark:border-pink-900/30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
+                  <div className="h-6 bg-pink-50 dark:bg-zinc-800 rounded w-3/4"></div>
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+                    <div className="w-6 h-6 rounded-full bg-pink-50 dark:bg-zinc-800"></div>
+                    <div className="h-4 bg-pink-50 dark:bg-zinc-800 rounded w-1/4"></div>
                   </div>
                   <div className="space-y-2 mt-4">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
+                    <div className="h-4 bg-pink-50 dark:bg-zinc-800 rounded w-full"></div>
+                    <div className="h-4 bg-pink-50 dark:bg-zinc-800 rounded w-5/6"></div>
                   </div>
                 </Card>
               </motion.div>
@@ -606,9 +606,9 @@ export function CommunityStories() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
-              className="text-center py-20 text-slate-500"
+              className="text-center py-20 text-zinc-500"
             >
-              <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50 text-pink-400" />
               <p className="text-lg">No stories yet.</p>
               <p>Tap the + button to be the first to share!</p>
             </motion.div>
@@ -622,7 +622,7 @@ export function CommunityStories() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card id={`story-${story.id}`} className="hover:shadow-md transition-shadow overflow-hidden relative border-slate-200 dark:border-slate-700">
+                <Card id={`story-${story.id}`} className="hover:shadow-md transition-shadow overflow-hidden relative border-pink-100 dark:border-pink-900/30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
               
               {/* Admin Warning Banner */}
               {isAdmin && (story.reportCount || 0) > 0 && (
@@ -635,19 +635,19 @@ export function CommunityStories() {
               <div className={`space-y-3 ${isAdmin && (story.reportCount || 0) > 0 ? 'mt-4' : ''}`}>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg shadow-sm border border-indigo-50 dark:border-indigo-800">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/50 dark:to-purple-900/50 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold text-lg shadow-sm border border-pink-50 dark:border-pink-800">
                       {story.author.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 dark:text-white">{story.author}</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">{story.author}</span>
                         {user && user.uid === story.userId && (
-                          <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-[10px] rounded-full font-bold uppercase tracking-wider">
+                          <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/50 text-pink-600 dark:text-pink-400 text-[10px] rounded-full font-bold uppercase tracking-wider">
                             You
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
                         {story.createdAt ? new Date(story.createdAt.toMillis()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Just now'}
                       </div>
                     </div>
@@ -660,7 +660,7 @@ export function CommunityStories() {
                       className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors shrink-0 ${
                         deletingPostId === story.id 
                           ? 'bg-red-500 text-white hover:bg-red-600 shadow-md' 
-                          : 'text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30'
+                          : 'text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30'
                       }`}
                       title="Delete your post"
                     >
@@ -671,19 +671,19 @@ export function CommunityStories() {
                 </div>
                 
                 <div className="pt-2">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{story.title}</h3>
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2 leading-tight">{story.title}</h3>
                   <div className="relative">
-                    <p className={`text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed ${expandedStory !== story.id ? 'line-clamp-4' : ''}`}>
+                    <p className={`text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${expandedStory !== story.id ? 'line-clamp-4' : ''}`}>
                       {story.content}
                     </p>
                     {story.content.length > 200 && expandedStory !== story.id && (
-                      <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white dark:from-slate-800 to-transparent pointer-events-none" />
+                      <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white dark:from-zinc-800 to-transparent pointer-events-none" />
                     )}
                   </div>
                   {story.content.length > 200 && (
                     <button 
                       onClick={() => toggleComments(story.id)}
-                      className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold mt-1 hover:underline focus:outline-none"
+                      className="text-pink-600 dark:text-pink-400 text-sm font-semibold mt-1 hover:underline focus:outline-none"
                     >
                       {expandedStory === story.id ? 'Show less' : 'Read more'}
                     </button>
@@ -692,7 +692,7 @@ export function CommunityStories() {
               </div>
 
               {/* Reactions & Actions */}
-              <div className="flex flex-wrap items-center gap-2 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 relative">
+              <div className="flex flex-wrap items-center gap-2 mt-6 pt-4 border-t border-pink-100 dark:border-pink-900/30 relative">
                 
                 {/* Render active reactions */}
                 {Object.entries(story.reactions || {})
@@ -714,9 +714,9 @@ export function CommunityStories() {
                       <button 
                         key={emoji}
                         onClick={() => handleReaction(story, emoji)} 
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${hasReacted ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${hasReacted ? 'bg-pink-100 dark:bg-pink-900/30 border border-pink-200 dark:border-pink-800' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                       >
-                        {displayEmoji} <span className="font-medium text-slate-600 dark:text-slate-300">{count}</span>
+                        {displayEmoji} <span className="font-medium text-zinc-600 dark:text-zinc-300">{count}</span>
                       </button>
                     );
                   })}
@@ -725,7 +725,7 @@ export function CommunityStories() {
                 <div className="relative">
                   <button 
                     onClick={() => setActiveReactionStoryId(activeReactionStoryId === story.id ? null : story.id)}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -736,13 +736,13 @@ export function CommunityStories() {
                         initial={{ opacity: 0, scale: 0.9, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                        className="absolute bottom-full left-0 mb-2 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-2 z-10 w-64 flex flex-wrap gap-1"
+                        className="absolute bottom-full left-0 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-pink-200 dark:border-zinc-700 p-2 z-10 w-64 flex flex-wrap gap-1"
                       >
                         {COOL_EMOJIS.map(emoji => (
                           <button
                             key={emoji}
                             onClick={() => handleReaction(story, emoji)}
-                            className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-lg"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-pink-50 dark:hover:bg-zinc-700 rounded-full transition-colors text-lg"
                           >
                             {emoji}
                           </button>
@@ -756,7 +756,7 @@ export function CommunityStories() {
 
                 <button 
                   onClick={() => toggleComments(story.id)}
-                  className="flex items-center gap-1 px-4 py-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full text-sm font-medium transition-colors"
+                  className="flex items-center gap-1 px-4 py-1.5 text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-full text-sm font-medium transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
                   {story.commentCount || 0}
@@ -769,7 +769,7 @@ export function CommunityStories() {
                   className={`flex items-center gap-1 px-2 py-1.5 rounded-full text-xs transition-colors ml-2 ${
                     reportingPostId === story.id 
                       ? 'bg-red-500 text-white hover:bg-red-600' 
-                      : 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
+                      : 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
                   }`}
                   title="Report inappropriate content"
                 >
@@ -784,7 +784,7 @@ export function CommunityStories() {
                     navigator.clipboard.writeText(url);
                     showToast("Story link copied to clipboard!", "success");
                   }}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-full text-xs transition-colors ml-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-full text-xs transition-colors ml-1 text-zinc-400 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30"
                   title="Share this story"
                 >
                   <Share2 className="w-4 h-4" />
@@ -793,25 +793,25 @@ export function CommunityStories() {
 
               {/* Admin Controls Panel */}
               {isAdmin && (
-                <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-wrap gap-2 items-center">
-                  <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Admin Controls</span>
+                <div className="mt-4 p-3 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-pink-200 dark:border-zinc-700 flex flex-wrap gap-2 items-center">
+                  <Shield className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                  <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Admin Controls</span>
                   <div className="flex-1"></div>
                   
                   {(story.reportCount || 0) > 0 && (
-                    <button onClick={() => handleClearReports(story.id)} className="text-xs px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-md font-medium transition-colors">
+                    <button onClick={() => handleClearReports(story.id)} className="text-xs px-3 py-1.5 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-900/50 rounded-md font-medium transition-colors">
                       Clear Reports
                     </button>
                   )}
                   
                   <button onClick={() => handleBlockUser(story.userId)} className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
-                    blockingUserId === story.userId ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                    blockingUserId === story.userId ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   }`}>
                     {blockingUserId === story.userId ? 'Confirm Block' : 'Block User'}
                   </button>
                   
                   <button onClick={() => handleDeletePost(story.id)} className={`text-xs px-3 py-1.5 rounded-md font-medium flex items-center gap-1 transition-colors ${
-                    deletingPostId === story.id ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    deletingPostId === story.id ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40'
                   }`}>
                     <Trash2 className="w-3 h-3" /> {deletingPostId === story.id ? 'Confirm Delete' : 'Delete Post'}
                   </button>
@@ -825,24 +825,24 @@ export function CommunityStories() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 -mx-6 -mb-6 p-6 overflow-hidden"
+                    className="mt-4 pt-4 border-t border-pink-100 dark:border-zinc-700 bg-pink-50/50 dark:bg-zinc-800/50 -mx-6 -mb-6 p-6 overflow-hidden"
                   >
                     {loadingComments ? (
-                      <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-indigo-500" /></div>
+                      <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-pink-500" /></div>
                     ) : (
                       <div className="space-y-4">
                         {comments.length === 0 ? (
-                          <p className="text-sm text-slate-500 text-center py-2">No comments yet. Be the first!</p>
+                          <p className="text-sm text-zinc-500 text-center py-2">No comments yet. Be the first!</p>
                         ) : (
                           comments.map(comment => (
                             <motion.div 
                               key={comment.id} 
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="bg-white dark:bg-slate-700 p-3 rounded-lg shadow-sm"
+                              className="bg-white dark:bg-zinc-700 p-3 rounded-lg shadow-sm border border-pink-100 dark:border-zinc-600"
                             >
-                              <p className="text-sm font-medium text-indigo-500 mb-1">{comment.author}</p>
-                              <p className="text-sm text-slate-800 dark:text-slate-200">{comment.text}</p>
+                              <p className="text-sm font-medium text-pink-500 mb-1">{comment.author}</p>
+                              <p className="text-sm text-zinc-800 dark:text-zinc-200">{comment.text}</p>
                             </motion.div>
                           ))
                         )}
@@ -854,16 +854,16 @@ export function CommunityStories() {
                               value={newComment}
                               onChange={(e) => setNewComment(e.target.value)}
                               placeholder="Add a comment... (No links)"
-                              className="flex-1 h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none text-sm"
+                              className="flex-1 h-10 px-3 rounded-lg border border-pink-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 focus:border-pink-500 outline-none text-sm"
                               required
                               maxLength={200}
                             />
-                            <Button type="submit" disabled={!newComment.trim()} className="h-10 px-4 bg-indigo-500 hover:bg-indigo-600 text-sm">
+                            <Button type="submit" disabled={!newComment.trim()} className="h-10 px-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-sm border-none text-white shadow-md">
                               Post
                             </Button>
                           </form>
                         ) : (
-                          <div className="text-center pt-2 text-sm text-slate-500">
+                          <div className="text-center pt-2 text-sm text-zinc-500">
                             Please login to join the conversation.
                           </div>
                         )}

@@ -42,28 +42,33 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
   for (let i = 0; i < keys.length; i++) {
     const keyIndex = (startIndex + i) % keys.length;
     const apiKey = keys[keyIndex];
+    const maskedKey = apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
     
     try {
+      // Log which key is being used (safely hiding the full key)
+      console.log(`[Gemini API] Sending request using Key #${keyIndex + 1} (${maskedKey})`);
+
       const ai = new GoogleGenAI({ apiKey });
       
       try {
         const response = await ai.models.generateContent(params);
-        currentKeyIndex = keyIndex;
+        // Move to the NEXT key for the next request (True Round-Robin)
+        currentKeyIndex = (keyIndex + 1) % keys.length;
         return response;
       } catch (modelError: any) {
         // If the primary model is overloaded (503), try the fallback model
         const errorMessage = modelError?.message?.toLowerCase() || '';
         if (errorMessage.includes('503') || errorMessage.includes('unavailable') || errorMessage.includes('high demand')) {
-          console.warn('Primary model overloaded, trying fallback model gemini-2.5-flash...');
+          console.warn(`[Gemini API] Primary model overloaded on Key #${keyIndex + 1}, trying fallback model gemini-2.5-flash...`);
           const fallbackParams = { ...params, model: 'gemini-2.5-flash' };
           const fallbackResponse = await ai.models.generateContent(fallbackParams);
-          currentKeyIndex = keyIndex;
+          currentKeyIndex = (keyIndex + 1) % keys.length;
           return fallbackResponse;
         }
         throw modelError; // Re-throw to be caught by the outer catch block
       }
     } catch (error: any) {
-      console.warn(`API Key ${keyIndex + 1} failed:`, error.message || error);
+      console.warn(`[Gemini API] Key #${keyIndex + 1} (${maskedKey}) failed:`, error.message || error);
       lastError = error;
       
       // If it's a 429 (Too Many Requests) or 403 (Quota Exceeded), try the next key
@@ -101,13 +106,18 @@ export const generateContentStreamWithFallback = async function* (params: Genera
   for (let i = 0; i < keys.length; i++) {
     const keyIndex = (startIndex + i) % keys.length;
     const apiKey = keys[keyIndex];
+    const maskedKey = apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
     
     try {
+      // Log which key is being used (safely hiding the full key)
+      console.log(`[Gemini API Stream] Sending request using Key #${keyIndex + 1} (${maskedKey})`);
+
       const ai = new GoogleGenAI({ apiKey });
       
       try {
         const stream = await ai.models.generateContentStream(params);
-        currentKeyIndex = keyIndex;
+        // Move to the NEXT key for the next request (True Round-Robin)
+        currentKeyIndex = (keyIndex + 1) % keys.length;
         for await (const chunk of stream) {
           yield chunk;
         }
@@ -115,10 +125,10 @@ export const generateContentStreamWithFallback = async function* (params: Genera
       } catch (modelError: any) {
         const errorMessage = modelError?.message?.toLowerCase() || '';
         if (errorMessage.includes('503') || errorMessage.includes('unavailable') || errorMessage.includes('high demand')) {
-          console.warn('Primary model overloaded for stream, trying fallback model gemini-2.5-flash...');
+          console.warn(`[Gemini API Stream] Primary model overloaded on Key #${keyIndex + 1}, trying fallback model gemini-2.5-flash...`);
           const fallbackParams = { ...params, model: 'gemini-2.5-flash' };
           const fallbackStream = await ai.models.generateContentStream(fallbackParams);
-          currentKeyIndex = keyIndex;
+          currentKeyIndex = (keyIndex + 1) % keys.length;
           for await (const chunk of fallbackStream) {
             yield chunk;
           }
@@ -127,7 +137,7 @@ export const generateContentStreamWithFallback = async function* (params: Genera
         throw modelError;
       }
     } catch (error: any) {
-      console.warn(`API Key ${keyIndex + 1} failed for stream:`, error.message || error);
+      console.warn(`[Gemini API Stream] Key #${keyIndex + 1} (${maskedKey}) failed:`, error.message || error);
       lastError = error;
       
       const errorMessage = error?.message?.toLowerCase() || '';

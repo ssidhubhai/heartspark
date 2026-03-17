@@ -104,7 +104,7 @@ export function CrushQuiz() {
   const generateCustomResult = async (finalAnswers: number[]) => {
     setIsGenerating(true);
     try {
-      const prompt = `
+      const prompt = `You are Heart Spark, a fun and insightful relationship coach.
         Based on this specific situation: "${customSituation}"
         The user answered a 5-question quiz about their crush.
         Their total score was ${finalAnswers.reduce((a, b) => a + b, 0)} out of 15 (higher means more positive signs).
@@ -141,7 +141,7 @@ export function CrushQuiz() {
 
     setIsGenerating(true);
     try {
-      const prompt = `
+      const prompt = `You are Heart Spark, an expert at reading social cues and relationship dynamics.
         Create a 5-question multiple choice quiz to determine if someone's crush likes them back, tailored specifically to this situation:
         "${customSituation}"
         
@@ -194,7 +194,7 @@ export function CrushQuiz() {
 
   const handleShare = async () => {
     const result = calculateResult();
-    const text = `I just took the Crush Likelihood Quiz and got: ${result.title}! Take the quiz at HeartSpark to find out if your crush likes you back!`;
+    const text = `I just took the Crush Likelihood Quiz and got: ${result.title}! Take the quiz at Heart Spark to find out if your crush likes you back!`;
     await shareAsImage('quiz-result', 'Crush Quiz Result', text);
   };
 
@@ -205,10 +205,10 @@ export function CrushQuiz() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white">
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400">
           Crush Likelihood Quiz
         </h1>
-        <p className="text-lg text-slate-600 dark:text-slate-400">
+        <p className="text-lg text-zinc-600 dark:text-zinc-400">
           Answer honestly to find out if they like you back!
         </p>
         
@@ -216,7 +216,7 @@ export function CrushQuiz() {
           <Button 
             variant="outline" 
             onClick={() => setQuizMode('custom_setup')}
-            className="mt-4 border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/30"
+            className="mt-4 border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30"
           >
             <Wand2 className="w-4 h-4 mr-2" /> Make a Custom AI Quiz for My Situation
           </Button>
@@ -231,24 +231,24 @@ export function CrushQuiz() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <Card className="space-y-6">
+            <Card className="space-y-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
+                <div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-pink-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">AI Custom Quiz</h2>
+                <h2 className="text-2xl font-bold text-zinc-800 dark:text-white">AI Custom Quiz</h2>
               </div>
               
               <form onSubmit={generateCustomQuiz} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Describe your situation with your crush:
                   </label>
                   <textarea
                     value={customSituation}
                     onChange={(e) => setCustomSituation(e.target.value)}
                     placeholder="e.g., We work together in the same office and always get coffee at 10am, but they recently started acting distant..."
-                    className="w-full h-32 p-4 rounded-xl border-2 border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-purple-500 outline-none resize-none transition-all"
+                    className="w-full h-32 p-4 rounded-xl border-2 border-pink-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:border-pink-500 outline-none resize-none transition-all"
                     required
                   />
                 </div>
@@ -258,14 +258,14 @@ export function CrushQuiz() {
                     type="button" 
                     variant="outline" 
                     onClick={() => setQuizMode('standard')}
-                    className="flex-1"
+                    className="flex-1 border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30"
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={isGenerating || !customSituation.trim()} 
-                    className="flex-1 bg-purple-500 hover:bg-purple-600"
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none"
                   >
                     {isGenerating ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -285,13 +285,13 @@ export function CrushQuiz() {
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="space-y-6">
-              <div className="flex justify-between items-center text-sm font-medium text-slate-500 dark:text-slate-400">
+            <Card className="space-y-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8">
+              <div className="flex justify-between items-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
                 <span>Question {currentQuestion + 1} of {activeQuestions.length}</span>
                 <span>{Math.round(((currentQuestion) / activeQuestions.length) * 100)}% Completed</span>
               </div>
               
-              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-pink-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
                 <motion.div 
                   className="h-full bg-gradient-to-r from-pink-500 to-purple-500"
                   initial={{ width: `${(currentQuestion / activeQuestions.length) * 100}%` }}
@@ -299,7 +299,7 @@ export function CrushQuiz() {
                 />
               </div>
 
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white py-4">
+              <h2 className="text-2xl font-bold text-zinc-800 dark:text-white py-4 leading-tight">
                 {activeQuestions[currentQuestion].question}
               </h2>
 
@@ -308,10 +308,10 @@ export function CrushQuiz() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(option.score)}
-                    className="w-full text-left p-4 rounded-xl border-2 border-pink-100 dark:border-slate-700 hover:border-pink-500 dark:hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-slate-800 transition-all flex items-center justify-between group"
+                    className="w-full text-left p-5 rounded-xl border-2 border-pink-100 dark:border-zinc-800 hover:border-pink-500 dark:hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-between group shadow-sm hover:shadow-md"
                   >
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{option.text}</span>
-                    <CheckCircle2 className="w-5 h-5 text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-zinc-700 dark:text-zinc-300 font-medium text-lg">{option.text}</span>
+                    <CheckCircle2 className="w-6 h-6 text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
@@ -320,36 +320,45 @@ export function CrushQuiz() {
         ) : (
           <motion.div
             key="result"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, type: "spring" }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", damping: 15 }}
           >
-            <Card id="quiz-result" className="text-center space-y-6 bg-gradient-to-b from-white to-purple-50 dark:from-slate-800 dark:to-slate-800/50 border-purple-200 dark:border-purple-900/50">
-              <div className="inline-block p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4">
-                <span className="text-6xl">{calculateResult().title.split(' ').pop()}</span>
+            <Card id="quiz-result" className="text-center space-y-8 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500"></div>
+              
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-2 mt-4 shadow-inner">
+                <span className="text-5xl">{calculateResult().title.split(' ').pop()}</span>
               </div>
               
-              <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
-                {calculateResult().title.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')}
-              </h2>
+              <div className="space-y-2">
+                <h2 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">
+                  Your Result
+                </h2>
+                <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+                  {calculateResult().title.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')}
+                </h3>
+              </div>
               
-              <p className="text-xl text-slate-700 dark:text-slate-300 font-medium px-4">
-                {calculateResult().desc}
-              </p>
+              <div className="py-6 bg-pink-50/50 dark:bg-pink-900/10 rounded-2xl border border-pink-100 dark:border-pink-900/20 px-6">
+                <p className="text-lg text-zinc-700 dark:text-zinc-300 font-medium leading-relaxed">
+                  {calculateResult().desc}
+                </p>
+              </div>
 
-              <div className="flex flex-wrap justify-center gap-4 pt-8" data-html2canvas-ignore>
-                <Button variant="outline" onClick={resetQuiz}>
+              <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-pink-100 dark:border-zinc-800" data-html2canvas-ignore>
+                <Button variant="outline" onClick={resetQuiz} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                   <RefreshCw className="w-4 h-4 mr-2" /> Retake Quiz
                 </Button>
                 {quizMode === 'custom_playing' && (
-                  <Button variant="outline" onClick={() => setQuizMode('standard')}>
+                  <Button variant="outline" onClick={() => setQuizMode('standard')} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                     Back to Standard
                   </Button>
                 )}
-                <Button onClick={handleShare}>
+                <Button onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
-                <Button variant="outline" onClick={handleDownload}>
+                <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                   <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               </div>

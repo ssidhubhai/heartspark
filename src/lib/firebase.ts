@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -60,6 +60,18 @@ export const registerWithEmail = async (email: string, password: string, name: s
     return result.user;
   } catch (error) {
     console.error("Error registering with Email", error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email: string) => {
+  if (!auth) {
+    throw new Error("Firebase is not configured.");
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error("Error sending password reset email", error);
     throw error;
   }
 };

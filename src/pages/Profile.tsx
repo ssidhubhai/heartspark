@@ -105,9 +105,9 @@ export function Profile() {
   if (!isConfigured) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 space-y-4">
-        <AlertCircle className="w-16 h-16 text-indigo-500 mx-auto" />
-        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Firebase Required</h2>
-        <p className="text-slate-600 dark:text-slate-400">
+        <AlertCircle className="w-16 h-16 text-pink-500 mx-auto" />
+        <h2 className="text-3xl font-bold text-zinc-800 dark:text-white">Firebase Required</h2>
+        <p className="text-zinc-600 dark:text-zinc-400">
           Profile requires a database. Please add your Firebase configuration to the .env file!
         </p>
       </div>
@@ -117,9 +117,9 @@ export function Profile() {
   if (!user) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 space-y-4">
-        <User className="w-16 h-16 text-indigo-500 mx-auto" />
-        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Profile</h2>
-        <p className="text-slate-600 dark:text-slate-400">
+        <User className="w-16 h-16 text-pink-500 mx-auto" />
+        <h2 className="text-3xl font-bold text-zinc-800 dark:text-white">Profile</h2>
+        <p className="text-zinc-600 dark:text-zinc-400">
           Please login to view your profile and manage your stories.
         </p>
       </div>
@@ -130,11 +130,11 @@ export function Profile() {
     <div className="max-w-3xl mx-auto space-y-8 pb-20 relative">
       <div className="text-center space-y-4">
         <div className="relative w-24 h-24 mx-auto">
-          <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg">
+          <div className="w-24 h-24 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center overflow-hidden border-4 border-white dark:border-zinc-800 shadow-lg">
             {user.photoURL ? (
               <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
-              <User className="w-12 h-12 text-indigo-500" />
+              <User className="w-12 h-12 text-pink-500" />
             )}
           </div>
           <button 
@@ -142,39 +142,39 @@ export function Profile() {
               setAvatarUrl(user.photoURL || '');
               setShowAvatarModal(true);
             }}
-            className="absolute bottom-0 right-0 bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110"
+            className="absolute bottom-0 right-0 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110"
             title="Edit Avatar"
           >
             <Edit2 className="w-4 h-4" />
           </button>
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white">
+        <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white">
           {user.displayName || 'Anonymous User'}
         </h1>
-        <p className="text-lg text-slate-600 dark:text-slate-400">
+        <p className="text-lg text-zinc-600 dark:text-zinc-400">
           {user.email}
         </p>
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
-          <MessageCircle className="w-6 h-6 text-indigo-500" /> Your Stories
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2 border-b border-pink-100 dark:border-zinc-800 pb-2">
+          <MessageCircle className="w-6 h-6 text-pink-500" /> Your Stories
         </h2>
 
         {loading ? (
-          <div className="text-center py-10 text-slate-500">Loading your stories...</div>
+          <div className="text-center py-10 text-zinc-500">Loading your stories...</div>
         ) : userStories.length === 0 ? (
-          <div className="text-center py-10 text-slate-500 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+          <div className="text-center py-10 text-zinc-500 bg-white/50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-pink-200 dark:border-zinc-800 backdrop-blur-sm">
             <p>You haven't posted any stories yet.</p>
             <Link to="/stories">
-              <Button className="mt-4 bg-indigo-500 hover:bg-indigo-600">Go to Community</Button>
+              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0">Go to Community</Button>
             </Link>
           </div>
         ) : (
           userStories.map((story) => (
-            <Card key={story.id} className="hover:shadow-md transition-shadow">
+            <Card key={story.id} className="hover:shadow-xl transition-all duration-300 border-pink-100/50 dark:border-pink-900/20 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white pr-8">{story.title}</h3>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white pr-8">{story.title}</h3>
                 <button 
                   onClick={() => handleDeletePost(story.id)} 
                   className={`p-2 rounded-full transition-colors flex items-center gap-1 text-sm ${
@@ -188,14 +188,14 @@ export function Profile() {
                   {deletingPostId === story.id && <span className="font-bold pr-1">Confirm?</span>}
                 </button>
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
                 Posted {story.createdAt ? new Date(story.createdAt.toMillis()).toLocaleDateString() : 'Just now'}
               </p>
-              <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed mb-4">
+              <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed mb-4">
                 {story.content}
               </p>
               
-              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400 pt-4 border-t border-pink-50 dark:border-zinc-800">
                 <span className="flex items-center gap-1">
                   <MessageCircle className="w-4 h-4" /> {story.commentCount || 0} comments
                 </span>
@@ -222,26 +222,26 @@ export function Profile() {
 
       {/* Avatar Modal */}
       {showAvatarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <Card className="w-full max-w-md bg-white dark:bg-slate-800 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
+          <Card className="w-full max-w-md bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl relative shadow-2xl border-pink-100 dark:border-pink-900/30 animate-in fade-in zoom-in duration-200">
             <button 
               onClick={() => setShowAvatarModal(false)} 
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
             
-            <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white flex items-center gap-2">
-              Update Avatar <ImageIcon className="w-6 h-6 text-indigo-500" />
+            <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+              Update Avatar <ImageIcon className="w-6 h-6 text-pink-500" />
             </h2>
             
             <div className="space-y-6">
               <div className="flex justify-center">
-                <div className="w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center overflow-hidden border-4 border-indigo-100 dark:border-indigo-900/30">
+                <div className="w-32 h-32 bg-pink-50 dark:bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border-4 border-pink-100 dark:border-pink-900/30">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-12 h-12 text-slate-400" />
+                    <User className="w-12 h-12 text-pink-300 dark:text-zinc-600" />
                   )}
                 </div>
               </div>
@@ -250,17 +250,17 @@ export function Profile() {
                 <Button 
                   onClick={generateRandomAvatar} 
                   variant="outline" 
-                  className="w-full flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 border-pink-200 dark:border-zinc-700 hover:bg-pink-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                 >
                   <RefreshCw className="w-4 h-4" /> Generate Random Avatar
                 </Button>
                 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                    <div className="w-full border-t border-pink-100 dark:border-zinc-800"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-slate-800 text-slate-500">Or paste image URL</span>
+                    <span className="px-2 bg-white dark:bg-zinc-900 text-zinc-500">Or paste image URL</span>
                   </div>
                 </div>
 
@@ -269,14 +269,14 @@ export function Profile() {
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="https://example.com/my-avatar.png"
-                  className="w-full h-12 px-4 rounded-xl border-2 border-indigo-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full h-12 px-4 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 dark:focus:border-pink-500 outline-none transition-all text-zinc-900 dark:text-white placeholder-zinc-400"
                 />
               </div>
 
               <Button 
                 onClick={handleUpdateAvatar} 
                 disabled={updatingAvatar || !avatarUrl} 
-                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700"
+                className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0"
               >
                 {updatingAvatar ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
