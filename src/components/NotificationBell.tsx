@@ -81,7 +81,7 @@ export function NotificationBell() {
     if (!user) return;
 
     const checkPeriodicNotification = () => {
-      if (Notification.permission !== 'granted') return;
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
       const lastPeriodicNotif = localStorage.getItem('lastPeriodicNotif');
       const now = Date.now();
