@@ -140,20 +140,21 @@ export function CrushMessageAnalyzer() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
+    <div className="max-w-3xl mx-auto h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto pb-12 space-y-8 px-1 sm:px-2">
+        <div className="text-center space-y-4 pt-4">
+        <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white flex items-center justify-center gap-3 tracking-tight">
           Crush Message Analyzer <Brain className="w-8 h-8 text-pink-500 animate-pulse" />
         </h1>
-        <p className="text-lg text-zinc-600 dark:text-zinc-400">
+        <p className="text-lg text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">
           Confused by their text? Let Heart Spark decode the hidden meaning, calculate a flirting score, and generate the perfect reply.
         </p>
       </div>
 
-      <Card className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30">
-        <form onSubmit={handleAnalyze} className="space-y-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <Card className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden">
+        <form onSubmit={handleAnalyze} className="space-y-6 p-2 md:p-4">
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 ml-1">
               What did they text you? (Or upload a screenshot)
             </label>
             <textarea
@@ -164,7 +165,7 @@ export function CrushMessageAnalyzer() {
                 e.target.style.height = `${e.target.scrollHeight}px`;
               }}
               placeholder="e.g., 'haha okay' or 'what are you up to later?'"
-              className="w-full min-h-[8rem] max-h-[24rem] p-4 rounded-xl border-2 border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none resize-none transition-all overflow-y-auto"
+              className="w-full min-h-[8rem] max-h-[24rem] p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:border-pink-500/50 focus:ring-2 focus:ring-pink-500/20 outline-none resize-none transition-all overflow-y-auto placeholder:text-zinc-400"
             />
             
             <div className="flex items-center gap-4 mt-2">
@@ -179,7 +180,7 @@ export function CrushMessageAnalyzer() {
                 type="button" 
                 variant="outline" 
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30"
+                className="flex items-center gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
               >
                 <ImageIcon className="w-4 h-4" /> Add Screenshot
               </Button>
@@ -198,8 +199,8 @@ export function CrushMessageAnalyzer() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 ml-1">
               Context (Optional)
             </label>
             <input
@@ -207,14 +208,14 @@ export function CrushMessageAnalyzer() {
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="e.g., We just met yesterday, or We've been friends for 3 years"
-              className="w-full h-12 px-4 rounded-xl border-2 border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 outline-none transition-all"
+              className="w-full h-14 px-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:border-pink-500/50 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all placeholder:text-zinc-400"
             />
           </div>
 
           <Button 
             type="submit" 
             disabled={loading || (!message.trim() && !image)} 
-            className="w-full h-14 text-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] transition-all"
+            className="w-full h-14 text-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] rounded-2xl transition-all mt-4"
           >
             {loading ? (
               <>✨ Analyzing emotional signals... <Loader2 className="w-5 h-5 animate-spin" /></>
@@ -226,29 +227,29 @@ export function CrushMessageAnalyzer() {
       </Card>
 
       {analysis && (
-        <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-pink-100 dark:border-pink-900/30">
-            <div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-pink-500" />
+        <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800/50">
+            <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-pink-500" />
             </div>
-            <h3 className="text-xl font-bold text-zinc-800 dark:text-white">AI Analysis</h3>
+            <h3 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">AI Analysis</h3>
           </div>
           <div className="prose dark:prose-invert max-w-none">
             <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
               <Markdown>{analysis}</Markdown>
             </div>
           </div>
-          <div className="flex flex-wrap gap-4 mt-8 pt-4 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-            <Button onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+          <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
+            <Button onClick={handleShare} className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none rounded-xl shadow-sm">
               <Share2 className="w-4 h-4 mr-2" /> Share Analysis
             </Button>
-            <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
+            <Button variant="outline" onClick={handleDownload} className="border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl">
               <Download className="w-4 h-4 mr-2" /> Download
             </Button>
           </div>
           
-          <div className="mt-6 pt-6 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-            <form onSubmit={handleFollowUp} className="flex gap-2 items-end bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border-2 border-pink-200 dark:border-pink-900/30 p-2 focus-within:border-pink-500 transition-colors">
+          <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
+            <form onSubmit={handleFollowUp} className="relative flex items-end gap-2 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 p-2 pl-4 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500/50 transition-all shadow-sm">
               <textarea
                 value={followUp}
                 onChange={(e) => {
@@ -263,20 +264,21 @@ export function CrushMessageAnalyzer() {
                   }
                 }}
                 placeholder="Ask a follow-up question..."
-                className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-white resize-none py-2 px-2 max-h-[150px] min-h-[40px]"
+                className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3.5 max-h-[150px] min-h-[48px] placeholder:text-zinc-400 text-base"
                 rows={1}
               />
               <button 
                 type="submit" 
                 disabled={followUpLoading || !followUp.trim()} 
-                className="p-2 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 text-white rounded-xl transition-colors border-none"
+                className="p-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 text-white dark:text-zinc-900 rounded-full transition-all shadow-sm mb-0.5 mr-0.5 border-none"
               >
-                {followUpLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                {followUpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               </button>
             </form>
           </div>
         </Card>
       )}
+      </div>
     </div>
   );
 }

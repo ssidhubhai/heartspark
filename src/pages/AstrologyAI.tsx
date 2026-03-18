@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles } from 'lucide-react';
+import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
@@ -33,6 +33,7 @@ export function AstrologyAI() {
   const [loading, setLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Initial form state
   const [name, setName] = useState('');
@@ -41,53 +42,83 @@ export function AstrologyAI() {
   const [place, setPlace] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('astrology_threads');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setThreads(parsed);
-          if (parsed.length > 0) {
-            setActiveThreadId(parsed[0].id);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to parse history', e);
-      }
-    } else {
-      // Migrate old history if exists
-      const oldHistory = localStorage.getItem('astrology_history');
-      if (oldHistory) {
+    try {
+      const saved = localStorage.getItem('astrology_threads');
+      if (saved) {
         try {
-          const parsedMessages = JSON.parse(oldHistory);
-          if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
-            const newThread: Thread = {
-              id: Date.now().toString(),
-              title: 'Previous Reading',
-              messages: parsedMessages,
-              details: { name: 'User', dob: '', time: '', place: '' },
-              updatedAt: Date.now()
-            };
-            setThreads([newThread]);
-            setActiveThreadId(newThread.id);
-            localStorage.removeItem('astrology_history');
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setThreads(parsed);
+            if (parsed.length > 0) {
+              setActiveThreadId(parsed[0].id);
+            }
           }
         } catch (e) {
-          console.error('Failed to migrate old history', e);
+          console.error('Failed to parse history', e);
+        }
+      } else {
+        // Migrate old history if exists
+        const oldHistory = localStorage.getItem('astrology_history');
+        if (oldHistory) {
+          try {
+            const parsedMessages = JSON.parse(oldHistory);
+            if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
+              const newThread: Thread = {
+                id: Date.now().toString(),
+                title: 'Previous Reading',
+                messages: parsedMessages,
+                details: { name: 'User', dob: '', time: '', place: '' },
+                updatedAt: Date.now()
+              };
+              setThreads([newThread]);
+              setActiveThreadId(newThread.id);
+              localStorage.removeItem('astrology_history');
+            }
+          } catch (e) {
+            console.error('Failed to migrate old history', e);
+          }
         }
       }
+    } catch (e) {
+      console.error('localStorage error:', e);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('astrology_threads', JSON.stringify(threads));
+    try {
+      if (threads.length > 0) {
+        localStorage.setItem('astrology_threads', JSON.stringify(threads));
+      } else {
+        localStorage.removeItem('astrology_threads');
+      }
+    } catch (e) {
+      console.error('localStorage setItem error:', e);
+    }
   }, [threads]);
 
   const activeThread = threads.find(t => t.id === activeThreadId);
 
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
+
+  useLayoutEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+    setIsAutoScrollEnabled(true);
+  }, [activeThreadId]);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeThread?.messages]);
+    if (isAutoScrollEnabled && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [activeThread?.messages, isAutoScrollEnabled]);
+
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAutoScrollEnabled(isNearBottom);
+  };
 
   const startNewReading = () => {
     setActiveThreadId(null);
@@ -202,6 +233,7 @@ export function AstrologyAI() {
     
     setInput('');
     setLoading(true);
+    setIsAutoScrollEnabled(true);
 
     try {
       const currentMessages = [...activeThread.messages, userMsg];
@@ -279,7 +311,7 @@ export function AstrologyAI() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6 relative">
+    <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6 relative">
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
@@ -290,16 +322,16 @@ export function AstrologyAI() {
 
       {/* Sidebar */}
       <div className={`
-        absolute md:relative z-50 md:z-auto
-        w-72 h-full bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl shadow-2xl md:shadow-none border border-zinc-200 dark:border-zinc-800
+        absolute md:relative z-50 md:z-10
+        w-72 h-full bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl rounded-2xl shadow-2xl md:shadow-sm border border-zinc-200/50 dark:border-zinc-800/50
         flex flex-col transition-all duration-300 ease-in-out
         ${showSidebar ? 'translate-x-0 md:w-72 md:opacity-100' : '-translate-x-[120%] md:w-0 md:opacity-0 md:overflow-hidden md:border-none'}
       `}>
         <div className="p-4 flex justify-between items-center">
-          <Button onClick={startNewReading} className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-sm border-none">
+          <Button onClick={startNewReading} className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 shadow-sm border-none rounded-xl">
             <Plus className="w-4 h-4 mr-2" /> New Reading
           </Button>
-          <Button variant="outline" className="ml-2 p-2 md:hidden border-pink-200 dark:border-pink-900/30" onClick={() => setShowSidebar(false)}>
+          <Button variant="outline" className="ml-2 p-2 border-zinc-200 dark:border-zinc-800 rounded-xl" onClick={() => setShowSidebar(false)}>
             <X className="w-4 h-4 text-zinc-500" />
           </Button>
         </div>
@@ -314,15 +346,15 @@ export function AstrologyAI() {
                 if (window.innerWidth < 768) setShowSidebar(false);
               }}
               className={`
-                w-full text-left p-2.5 rounded-xl flex items-center justify-between group cursor-pointer transition-colors
+                w-full text-left p-3 rounded-xl flex items-center justify-between group cursor-pointer transition-all
                 ${activeThreadId === thread.id 
-                  ? 'bg-zinc-200/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' 
-                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400'}
+                  ? 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-medium' 
+                  : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400'}
               `}
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
-                <span className="truncate text-sm font-medium">{thread.title}</span>
+                <MessageSquare className={`w-4 h-4 shrink-0 ${activeThreadId === thread.id ? 'text-pink-500' : 'opacity-50'}`} />
+                <span className="truncate text-sm">{thread.title}</span>
               </div>
               <button 
                 onClick={(e) => deleteThread(thread.id, e)}
@@ -339,29 +371,24 @@ export function AstrologyAI() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-transparent relative z-10">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/50 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm z-10">
+        <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 bg-transparent z-20">
           <div className="flex items-center gap-3">
             {!showSidebar && (
-              <button className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setShowSidebar(true)}>
+              <button className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-xl border border-zinc-200/50 dark:border-zinc-800/50" onClick={() => setShowSidebar(true)}>
                 <Menu className="w-5 h-5" />
               </button>
             )}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-                <Star className="w-5 h-5 text-pink-600 dark:text-pink-400" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 leading-tight">
-                  AstrologyAI
-                </h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Professional Astrological Advisor</p>
-              </div>
+              <h1 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                Astrology AI <span className="text-xs font-normal px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full">Guide</span>
+              </h1>
             </div>
           </div>
-          <Link to="/love-gpt" className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-400 rounded-full hover:shadow-md transition-all text-xs md:text-sm font-bold border border-pink-200 dark:border-pink-800/50 whitespace-nowrap">
-            💖 <span className="hidden sm:inline">Try</span> Heart Spark
+          <Link to="/love-gpt" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all text-sm font-medium border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
+            <Heart className="w-4 h-4 text-pink-500" />
+            <span className="hidden sm:inline">Heart Spark</span>
           </Link>
         </div>
 
@@ -460,33 +487,40 @@ export function AstrologyAI() {
         ) : (
           <>
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 scroll-smooth">
-              <div className="max-w-3xl mx-auto space-y-8">
+            <div 
+              ref={chatContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto pb-32"
+            >
+              <div className="max-w-[800px] mx-auto w-full px-4 py-6 flex flex-col min-h-full">
                 {activeThread.messages.map((msg, i) => (
-                  <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
+                  <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300 mb-8`}>
                     {msg.role === 'model' && (
-                      <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center shrink-0 mt-1">
-                        <Star className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                        <Star className="w-5 h-5 text-white" />
                       </div>
                     )}
                     
                     <div className={`relative max-w-[85%] md:max-w-[75%] ${
                       msg.role === 'user' 
-                        ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-2xl rounded-tr-sm px-5 py-3.5 shadow-md' 
-                        : 'bg-white dark:bg-zinc-900 border border-pink-100 dark:border-pink-900/30 text-zinc-800 dark:text-zinc-200 rounded-2xl rounded-tl-sm px-5 py-3.5 shadow-sm'
+                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-3xl rounded-tr-sm px-5 py-3.5' 
+                        : 'bg-transparent text-zinc-800 dark:text-zinc-200 px-2 py-2'
                     }`}>
                       <div className={`prose prose-zinc dark:prose-invert max-w-none ${msg.role === 'user' ? 'prose-p:leading-relaxed' : 'prose-p:leading-7'} markdown-body`}>
                         <Markdown>{msg.text}</Markdown>
                       </div>
                       
                       {msg.role === 'model' && msg.text && (
-                        <button 
-                          onClick={() => handleCopy(msg.text, i)}
-                          className="absolute -left-10 top-2 p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm"
-                          title="Copy response"
-                        >
-                          {copiedIndex === i ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                        </button>
+                        <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleCopy(msg.text, i)}
+                            className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm flex items-center gap-1.5 text-xs font-medium"
+                            title="Copy response"
+                          >
+                            {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            {copiedIndex === i ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -498,15 +532,15 @@ export function AstrologyAI() {
                   </div>
                 ))}
                 {loading && (
-                  <div className="flex gap-4 justify-start">
-                    <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center shrink-0 mt-1">
-                      <Star className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+                  <div className="flex gap-4 justify-start animate-in fade-in mb-8">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                      <Star className="w-5 h-5 text-white" />
                     </div>
-                    <div className="px-5 py-3.5 flex items-center gap-2 bg-white dark:bg-zinc-900 border border-pink-100 dark:border-pink-900/30 rounded-2xl rounded-tl-sm shadow-sm">
-                      <span className="flex gap-1">
-                        <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                        <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                        <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <div className="px-2 py-4 flex items-center gap-2">
+                      <span className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                       </span>
                     </div>
                   </div>
@@ -515,10 +549,10 @@ export function AstrologyAI() {
               </div>
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 md:p-6 bg-white dark:bg-zinc-950">
-              <div className="max-w-3xl mx-auto relative">
-                <form onSubmit={handleSend} className="relative flex items-end gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-pink-200 dark:border-pink-900/30 p-2 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500 transition-all shadow-sm">
+            {/* Floating Pill Input Area */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 pt-10 pb-6 px-4 z-20">
+              <div className="max-w-[800px] mx-auto relative">
+                <form onSubmit={handleSend} className="relative flex items-end gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 p-2 pl-4 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500/50 transition-all shadow-lg shadow-zinc-200/50 dark:shadow-none">
                   <textarea
                     value={input}
                     onChange={(e) => {
@@ -533,18 +567,18 @@ export function AstrologyAI() {
                       }
                     }}
                     placeholder="Ask a follow-up question..."
-                    className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3 px-3 max-h-[200px] min-h-[44px] placeholder:text-zinc-400"
+                    className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3.5 max-h-[200px] min-h-[48px] placeholder:text-zinc-400 text-base"
                     rows={1}
                   />
                   <button 
                     type="submit" 
                     disabled={loading || !input.trim()} 
-                    className="p-2.5 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 text-white rounded-xl transition-all shadow-sm mb-0.5 mr-0.5"
+                    className="p-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 text-white dark:text-zinc-900 rounded-full transition-all shadow-sm mb-0.5 mr-0.5 border-none"
                   >
                     <Send className="w-4 h-4" />
                   </button>
                 </form>
-                <p className="text-center text-xs text-zinc-400 mt-3">
+                <p className="text-center text-xs text-zinc-400 mt-3 font-medium">
                   AstrologyAI provides insights for entertainment and self-reflection.
                 </p>
               </div>

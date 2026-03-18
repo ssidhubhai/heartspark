@@ -26,9 +26,11 @@ export function Layout({ children }: { children: ReactNode }) {
     }
   }, [isDarkMode]);
 
-  // Close menu on route change
+  // Close menu and scroll to top on route change
   useEffect(() => {
     setIsMenuOpen(false);
+    window.scrollTo(0, 0);
+    document.getElementById('main-content')?.scrollTo(0, 0);
   }, [location.pathname]);
 
   const navLinks = [
@@ -287,7 +289,10 @@ export function Layout({ children }: { children: ReactNode }) {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <main id="main-content" className={cn(
+        "flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10",
+        location.pathname === '/' ? "py-8" : "py-4 h-[calc(100dvh-4rem)] overflow-y-auto"
+      )}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -302,11 +307,12 @@ export function Layout({ children }: { children: ReactNode }) {
         </AnimatePresence>
       </main>
 
-      {/* Footer */}
-      <footer className={cn(
-        "py-12 border-t transition-colors duration-300 relative z-10",
-        isDarkMode ? "border-zinc-800 bg-zinc-950/80 backdrop-blur-md" : "border-pink-200 bg-white/80 backdrop-blur-md"
-      )}>
+      {/* Footer - Only show on home page */}
+      {location.pathname === '/' && (
+        <footer className={cn(
+          "py-12 border-t transition-colors duration-300 relative z-10",
+          isDarkMode ? "border-zinc-800 bg-zinc-950/80 backdrop-blur-md" : "border-pink-200 bg-white/80 backdrop-blur-md"
+        )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-center md:text-left">
             <div className="space-y-4">
@@ -346,6 +352,7 @@ export function Layout({ children }: { children: ReactNode }) {
               <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Contact</h3>
               <ul className="space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
                 <li><a href="mailto:shubh656577@gmail.com" className="hover:text-pink-600 dark:hover:text-pink-400 transition-colors">shubh656577@gmail.com</a></li>
+                <li><a href="mailto:shubh656577@gmail.com?subject=HeartSpark%20Feedback" className="hover:text-pink-600 dark:hover:text-pink-400 transition-colors">Submit Feedback</a></li>
               </ul>
             </div>
           </div>
@@ -358,6 +365,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
+      )}
       
       <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
     </div>

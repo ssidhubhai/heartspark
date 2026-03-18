@@ -25,8 +25,10 @@ export function NotificationBell() {
     if (!user || !db) return;
 
     // Request browser notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    if (typeof window !== 'undefined' && 'Notification' in window && window.Notification) {
+      if (window.Notification.permission === 'default') {
+        window.Notification.requestPermission();
+      }
     }
 
     const q = query(
@@ -41,13 +43,13 @@ export function NotificationBell() {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const data = change.doc.data();
-          if (!data.read && 'Notification' in window && Notification.permission === 'granted') {
+          if (!data.read && typeof window !== 'undefined' && 'Notification' in window && window.Notification && window.Notification.permission === 'granted') {
             // Show browser notification for new items
             // Only if it's actually new (created in the last minute)
             const now = Date.now();
             const created = data.createdAt?.toMillis() || now;
             if (now - created < 60000) {
-              new Notification('HeartSpark', {
+              new window.Notification('HeartSpark', {
                 body: data.message,
                 icon: 'https://api.iconify.design/lucide:heart.svg?color=%23ef4444'
               });
@@ -81,20 +83,24 @@ export function NotificationBell() {
     if (!user) return;
 
     const checkPeriodicNotification = () => {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      if (typeof window === 'undefined' || !('Notification' in window) || !window.Notification || window.Notification.permission !== 'granted') return;
 
-      const lastPeriodicNotif = localStorage.getItem('lastPeriodicNotif');
-      const now = Date.now();
-      
-      // 10 hours in milliseconds
-      const TEN_HOURS = 10 * 60 * 60 * 1000;
+      try {
+        const lastPeriodicNotif = localStorage.getItem('lastPeriodicNotif');
+        const now = Date.now();
+        
+        // 10 hours in milliseconds
+        const TEN_HOURS = 10 * 60 * 60 * 1000;
 
-      if (!lastPeriodicNotif || now - parseInt(lastPeriodicNotif) > TEN_HOURS) {
-        new Notification('HeartSpark', {
-          body: 'Check out new interesting stories and updates in the community!',
-          icon: 'https://api.iconify.design/lucide:heart.svg?color=%23ef4444'
-        });
-        localStorage.setItem('lastPeriodicNotif', now.toString());
+        if (!lastPeriodicNotif || now - parseInt(lastPeriodicNotif) > TEN_HOURS) {
+          new window.Notification('HeartSpark', {
+            body: 'Check out new interesting stories and updates in the community!',
+            icon: 'https://api.iconify.design/lucide:heart.svg?color=%23ef4444'
+          });
+          localStorage.setItem('lastPeriodicNotif', now.toString());
+        }
+      } catch (e) {
+        console.error('localStorage error in periodic notification:', e);
       }
     };
 

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X, Copy, Check } from 'lucide-react';
+import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
@@ -21,32 +21,36 @@ interface Thread {
 
 export function LoveGPT() {
   const [threads, setThreads] = useState<Thread[]>(() => {
-    const saved = localStorage.getItem('lovegpt_threads');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error('Failed to parse history', e);
-      }
-    }
-    
-    const oldHistory = localStorage.getItem('lovegpt_history');
-    if (oldHistory) {
-      try {
-        const parsedMessages = JSON.parse(oldHistory);
-        if (parsedMessages && parsedMessages.length > 0) {
-          localStorage.removeItem('lovegpt_history');
-          return [{
-            id: Date.now().toString(),
-            title: 'Previous Chat',
-            messages: parsedMessages,
-            updatedAt: Date.now()
-          }];
+    try {
+      const saved = localStorage.getItem('lovegpt_threads');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.length > 0) return parsed;
+        } catch (e) {
+          console.error('Failed to parse history', e);
         }
-      } catch (e) {
-        console.error('Failed to migrate old history', e);
       }
+      
+      const oldHistory = localStorage.getItem('lovegpt_history');
+      if (oldHistory) {
+        try {
+          const parsedMessages = JSON.parse(oldHistory);
+          if (parsedMessages && parsedMessages.length > 0) {
+            localStorage.removeItem('lovegpt_history');
+            return [{
+              id: Date.now().toString(),
+              title: 'Previous Chat',
+              messages: parsedMessages,
+              updatedAt: Date.now()
+            }];
+          }
+        } catch (e) {
+          console.error('Failed to migrate old history', e);
+        }
+      }
+    } catch (e) {
+      console.error('localStorage error:', e);
     }
 
     return [{
@@ -64,22 +68,50 @@ export function LoveGPT() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
 
   useEffect(() => {
-    if (threads.length > 0) {
-      localStorage.setItem('lovegpt_threads', JSON.stringify(threads));
-    } else {
-      localStorage.removeItem('lovegpt_threads');
+    try {
+      if (threads.length > 0) {
+        localStorage.setItem('lovegpt_threads', JSON.stringify(threads));
+      } else {
+        localStorage.removeItem('lovegpt_threads');
+      }
+    } catch (e) {
+      console.error('localStorage setItem error:', e);
     }
   }, [threads]);
 
   const activeThread = threads.find(t => t.id === activeThreadId);
+  const isNewChat = activeThread?.messages.length === 1 && activeThread.messages[0].role === 'model';
 
+  // Fix A: Scroll to bottom instantly on thread change to prevent jumping animation
+  useLayoutEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+    setIsAutoScrollEnabled(true);
+  }, [activeThreadId]);
+
+  // Fix B: Only auto-scroll if user is near the bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeThread?.messages]);
+    if (isAutoScrollEnabled && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [activeThread?.messages, isAutoScrollEnabled]);
+
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    // If user is within 150px of the bottom, enable auto-scroll
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAutoScrollEnabled(isNearBottom);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -125,8 +157,8 @@ export function LoveGPT() {
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if ((!input.trim() && !image) || !activeThread) return;
 
     const userMsg: Message = { role: 'user', text: input, image: image || undefined };
@@ -152,6 +184,7 @@ export function LoveGPT() {
     setInput('');
     setImage(null);
     setLoading(true);
+    setIsAutoScrollEnabled(true); // Re-enable auto-scroll when user sends a message
 
     try {
       const currentMessages = [...activeThread.messages, userMsg];
@@ -240,8 +273,23 @@ export function LoveGPT() {
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
+    // Use setTimeout to allow state to update before sending
+    setTimeout(() => {
+      const formEvent = new Event('submit', { cancelable: true }) as unknown as React.FormEvent;
+      handleSend(formEvent);
+    }, 0);
+  };
+
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6 relative">
+    <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
+      {/* Ambient Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-pink-400/10 dark:bg-pink-900/10 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute top-[40%] -right-[10%] w-[40%] h-[60%] rounded-full bg-purple-400/10 dark:bg-purple-900/10 blur-[120px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+      </div>
+
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
@@ -252,17 +300,17 @@ export function LoveGPT() {
 
       {/* Sidebar */}
       <div className={`
-        absolute md:relative z-50 md:z-auto
-        w-72 h-full bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl shadow-2xl md:shadow-none border border-zinc-200 dark:border-zinc-800
+        absolute md:relative z-50 md:z-10
+        w-72 h-full bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl rounded-2xl shadow-2xl md:shadow-sm border border-zinc-200/50 dark:border-zinc-800/50
         flex flex-col transition-all duration-300 ease-in-out
         ${showSidebar ? 'translate-x-0 md:w-72 md:opacity-100' : '-translate-x-[120%] md:w-0 md:opacity-0 md:overflow-hidden md:border-none'}
       `}>
         <div className="p-4 flex justify-between items-center">
-          <Button onClick={startNewChat} className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-sm border-none">
+          <Button onClick={startNewChat} className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 shadow-sm border-none rounded-xl">
             <Plus className="w-4 h-4 mr-2" /> New Chat
           </Button>
-          <Button variant="outline" className="ml-2 p-2 md:hidden border-pink-200 dark:border-pink-800" onClick={() => setShowSidebar(false)}>
-            <X className="w-4 h-4 text-pink-500" />
+          <Button variant="outline" className="ml-2 p-2 border-zinc-200 dark:border-zinc-800 rounded-xl" onClick={() => setShowSidebar(false)}>
+            <X className="w-4 h-4 text-zinc-500" />
           </Button>
         </div>
 
@@ -276,15 +324,15 @@ export function LoveGPT() {
                 if (window.innerWidth < 768) setShowSidebar(false);
               }}
               className={`
-                w-full text-left p-2.5 rounded-xl flex items-center justify-between group cursor-pointer transition-colors
+                w-full text-left p-3 rounded-xl flex items-center justify-between group cursor-pointer transition-all
                 ${activeThreadId === thread.id 
-                  ? 'bg-zinc-200/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' 
-                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400'}
+                  ? 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-medium' 
+                  : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400'}
               `}
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
-                <span className="truncate text-sm font-medium">{thread.title}</span>
+                <MessageSquare className={`w-4 h-4 shrink-0 ${activeThreadId === thread.id ? 'text-pink-500' : 'opacity-50'}`} />
+                <span className="truncate text-sm">{thread.title}</span>
               </div>
               <button 
                 onClick={(e) => deleteThread(thread.id, e)}
@@ -298,108 +346,147 @@ export function LoveGPT() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-transparent relative z-10">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/50 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm z-10">
+        <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 bg-transparent z-20">
           <div className="flex items-center gap-3">
             {!showSidebar && (
-              <button className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setShowSidebar(true)}>
+              <button className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-xl border border-zinc-200/50 dark:border-zinc-800/50" onClick={() => setShowSidebar(true)}>
                 <Menu className="w-5 h-5" />
               </button>
             )}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-pink-600 dark:text-pink-400" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 leading-tight">
-                  Heart Spark Coach
-                </h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Professional Relationship Assistant</p>
-              </div>
+              <h1 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                Heart Spark <span className="text-xs font-normal px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full">Coach</span>
+              </h1>
             </div>
           </div>
-          <Link to="/astrology" className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400 rounded-full hover:shadow-md transition-all text-xs md:text-sm font-bold border border-amber-200 dark:border-amber-800/50 whitespace-nowrap">
-            ✨ <span className="hidden sm:inline">Try</span> Astrology AI
+          <Link to="/astrology" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all text-sm font-medium border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span className="hidden sm:inline">Astrology AI</span>
           </Link>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 scroll-smooth">
-          <div className="max-w-3xl mx-auto space-y-8">
-            {activeThread?.messages.map((msg, i) => (
-              <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
-                {msg.role === 'model' && (
-                  <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                    <Bot className="w-5 h-5 text-pink-600 dark:text-pink-400" />
-                  </div>
-                )}
+        <div 
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto pb-32"
+        >
+          <div className="max-w-[800px] mx-auto w-full px-4 py-6 flex flex-col min-h-full">
+            {isNewChat ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center mt-8 mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-purple-500 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-pink-500/20 transform hover:scale-105 transition-transform">
+                  <Bot className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-4 tracking-tight">
+                  How can I help your heart today?
+                </h2>
+                <p className="text-zinc-500 dark:text-zinc-400 max-w-md mx-auto mb-12 text-lg">
+                  I'm Heart Spark, your AI relationship coach. Ask me anything about love, dating, or relationships.
+                </p>
                 
-                <div className={`relative max-w-[85%] md:max-w-[75%] ${
-                  msg.role === 'user' 
-                    ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-2xl rounded-tr-sm px-5 py-3.5 shadow-md' 
-                    : 'bg-white dark:bg-zinc-900 border border-pink-100 dark:border-pink-900/30 text-zinc-800 dark:text-zinc-200 rounded-2xl rounded-tl-sm px-5 py-3.5 shadow-sm'
-                }`}>
-                  {msg.image && (
-                    <img src={msg.image} alt="Uploaded" className="max-w-full rounded-xl mb-3 max-h-64 object-contain border border-zinc-200 dark:border-zinc-700" />
-                  )}
-                  <div className={`prose prose-zinc dark:prose-invert max-w-none ${msg.role === 'user' ? 'prose-p:leading-relaxed' : 'prose-p:leading-7'} markdown-body`}>
-                    <Markdown>{msg.text}</Markdown>
-                  </div>
-                  
-                  {msg.role === 'model' && msg.text && (
-                    <button 
-                      onClick={() => handleCopy(msg.text, i)}
-                      className="absolute -left-10 top-2 p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm"
-                      title="Copy response"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
+                  {[
+                    "How do I know if they like me?",
+                    "Give me a cute good morning text",
+                    "What are some fun date ideas?",
+                    "How to handle a long-distance relationship?"
+                  ].map((suggestion, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="p-4 rounded-2xl bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 hover:bg-white dark:hover:bg-zinc-800 hover:border-pink-200 dark:hover:border-pink-900/50 transition-all text-left text-zinc-700 dark:text-zinc-300 text-sm shadow-sm hover:shadow-md group"
                     >
-                      {copiedIndex === i ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                      <div className="flex items-center justify-between">
+                        <span>{suggestion}</span>
+                        <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Send className="w-3 h-3 text-zinc-500" />
+                        </div>
+                      </div>
                     </button>
-                  )}
+                  ))}
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {activeThread?.messages.map((msg, i) => {
+                  // Skip the initial greeting if it's not a new chat to keep the UI clean like ChatGPT
+                  if (i === 0 && msg.role === 'model' && msg.text.includes('Hello! I am Heart Spark')) return null;
 
-                {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                    <User className="w-5 h-5 text-white" />
+                  return (
+                    <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                      {msg.role === 'model' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                          <Bot className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                      
+                      <div className={`relative max-w-[85%] md:max-w-[75%] ${
+                        msg.role === 'user' 
+                          ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-3xl rounded-tr-sm px-5 py-3.5' 
+                          : 'bg-transparent text-zinc-800 dark:text-zinc-200 px-2 py-2'
+                      }`}>
+                        {msg.image && (
+                          <img src={msg.image} alt="Uploaded" className="max-w-full rounded-2xl mb-3 max-h-64 object-contain border border-zinc-200 dark:border-zinc-700 shadow-sm" />
+                        )}
+                        <div className={`prose prose-zinc dark:prose-invert max-w-none ${msg.role === 'user' ? 'prose-p:leading-relaxed' : 'prose-p:leading-7'} markdown-body`}>
+                          <Markdown>{msg.text}</Markdown>
+                        </div>
+                        
+                        {msg.role === 'model' && msg.text && (
+                          <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => handleCopy(msg.text, i)}
+                              className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm flex items-center gap-1.5 text-xs font-medium"
+                              title="Copy response"
+                            >
+                              {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                              {copiedIndex === i ? 'Copied' : 'Copy'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {loading && (
+                  <div className="flex gap-4 justify-start animate-in fade-in">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                      <Bot className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="px-2 py-4 flex items-center gap-2">
+                      <span className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </span>
+                    </div>
                   </div>
                 )}
-              </div>
-            ))}
-            {loading && (
-              <div className="flex gap-4 justify-start">
-                <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                  <Bot className="w-5 h-5 text-pink-600 dark:text-pink-400" />
-                </div>
-                <div className="px-5 py-3.5 flex items-center gap-2 bg-white dark:bg-zinc-900 border border-pink-100 dark:border-pink-900/30 rounded-2xl rounded-tl-sm shadow-sm">
-                  <span className="flex gap-1">
-                    <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                  </span>
-                </div>
+                <div ref={messagesEndRef} className="h-4" />
               </div>
             )}
-            <div ref={messagesEndRef} className="h-4" />
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="p-4 md:p-6 bg-white dark:bg-zinc-950">
-          <div className="max-w-3xl mx-auto relative">
+        {/* Floating Pill Input Area */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 pt-10 pb-6 px-4 z-20">
+          <div className="max-w-[800px] mx-auto relative">
             {image && (
-              <div className="absolute bottom-full mb-4 left-0">
-                <div className="relative inline-block">
-                  <img src={image} alt="Preview" className="h-24 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm object-cover" />
+              <div className="absolute bottom-full mb-4 left-4">
+                <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
+                  <img src={image} alt="Preview" className="h-20 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-md object-cover" />
                   <button 
                     onClick={() => setImage(null)}
-                    className="absolute -top-2 -right-2 bg-zinc-800 text-white rounded-full p-1.5 shadow-md hover:bg-zinc-700 transition-colors"
+                    className="absolute -top-2 -right-2 bg-zinc-800 text-white rounded-full p-1 shadow-md hover:bg-zinc-700 transition-colors"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             )}
-            <form onSubmit={handleSend} className="relative flex items-end gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-pink-200 dark:border-pink-900/30 p-2 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500 transition-all shadow-sm">
+            <form onSubmit={handleSend} className="relative flex items-end gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 p-2 pl-4 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500/50 transition-all shadow-lg shadow-zinc-200/50 dark:shadow-none">
               <input
                 type="file"
                 accept="image/*"
@@ -410,7 +497,7 @@ export function LoveGPT() {
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2.5 text-pink-400 hover:text-pink-600 dark:hover:text-pink-300 transition-colors rounded-xl hover:bg-pink-50 dark:hover:bg-pink-900/30"
+                className="p-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 mb-0.5"
                 title="Attach image"
               >
                 <ImageIcon className="w-5 h-5" />
@@ -425,22 +512,22 @@ export function LoveGPT() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (input.trim() || image) handleSend(e);
+                    if (input.trim() || image) handleSend();
                   }
                 }}
                 placeholder="Message Heart Spark..."
-                className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3 max-h-[200px] min-h-[44px] placeholder:text-zinc-400"
+                className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3.5 max-h-[200px] min-h-[48px] placeholder:text-zinc-400 text-base"
                 rows={1}
               />
               <button 
                 type="submit" 
                 disabled={loading || (!input.trim() && !image)} 
-                className="p-2.5 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 disabled:from-pink-400 disabled:to-purple-400 text-white rounded-xl transition-all shadow-sm mb-0.5 mr-0.5 border-none"
+                className="p-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 text-white dark:text-zinc-900 rounded-full transition-all shadow-sm mb-0.5 mr-0.5 border-none"
               >
                 <Send className="w-4 h-4" />
               </button>
             </form>
-            <p className="text-center text-xs text-zinc-400 mt-3">
+            <p className="text-center text-xs text-zinc-400 mt-3 font-medium">
               Heart Spark can make mistakes. Consider verifying important information.
             </p>
           </div>
