@@ -86,7 +86,7 @@ export function Home() {
         if ((isRiya(n1) && isSagar(n2)) || (isRiya(n2) && isSagar(n1))) {
           score = 93;
         } else if ((isRiya(n1) && isSiddharth(n2)) || (isRiya(n2) && isSiddharth(n1))) {
-          score = 93;
+          score = 90;
         }
 
         if (score > 90) message = "Exceptional compatibility. A profound connection is indicated.";
