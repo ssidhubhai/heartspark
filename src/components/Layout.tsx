@@ -52,7 +52,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className={cn(
-      "min-h-screen flex flex-col transition-colors duration-300 font-sans relative overflow-hidden",
+      "flex flex-col transition-colors duration-300 font-sans relative overflow-hidden",
+      (location.pathname === '/love-gpt' || location.pathname === '/astrology') ? "h-[100dvh]" : "min-h-screen",
       isDarkMode ? "bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950 text-zinc-100" : "bg-gradient-to-br from-pink-50 via-purple-50 to-rose-50 text-zinc-900"
     )}>
       <FloatingHearts />
@@ -290,8 +291,10 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main id="main-content" className={cn(
-        "flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10",
-        location.pathname === '/' ? "py-8" : "py-4 h-[calc(100dvh-4rem)] overflow-y-auto"
+        "w-full relative z-10",
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology') ? "flex-1 overflow-hidden" : "flex-grow",
+        location.pathname === '/' ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : 
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories') ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
       )}>
         <AnimatePresence mode="wait">
           <motion.div

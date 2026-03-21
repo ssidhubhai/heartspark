@@ -1,86 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import React, { useState } from 'react';
 import { updateProfile } from 'firebase/auth';
-import { db, auth } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { User, Trash2, MessageCircle, AlertCircle, Edit2, Image as ImageIcon, Loader2, X, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-interface Story {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: any;
-  reactions: {
-    aww: number;
-    redFlag: number;
-    drama: number;
-    heartbreak: number;
-    slay: number;
-  };
-  commentCount: number;
-}
+import { User, AlertCircle, Edit2, Image as ImageIcon, Loader2, X, RefreshCw } from 'lucide-react';
 
 export function Profile() {
   const { user, isConfigured } = useAuth();
-  const [userStories, setUserStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
-
-  useEffect(() => {
-    if (!db || !user) {
-      setLoading(false);
-      return;
-    }
-
-    const q = query(
-      collection(db, 'community_stories'),
-      where('userId', '==', user.uid)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const storyData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Story[];
-
-      // Sort client-side to avoid needing a composite index in Firestore
-      storyData.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis() || 0;
-        const timeB = b.createdAt?.toMillis() || 0;
-        return timeB - timeA;
-      });
-
-      setUserStories(storyData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  const handleDeletePost = async (storyId: string) => {
-    if (!db) return;
-    
-    if (deletingPostId !== storyId) {
-      setDeletingPostId(storyId);
-      setTimeout(() => setDeletingPostId(null), 3000);
-      return;
-    }
-
-    try {
-      await deleteDoc(doc(db, 'community_stories', storyId));
-      setDeletingPostId(null);
-    } catch (error: any) {
-      console.error("Error deleting post:", error);
-      alert("Failed to delete post. You might not have permission, or there was a network error.");
-      setDeletingPostId(null);
-    }
-  };
 
   const handleUpdateAvatar = async () => {
     if (!auth?.currentUser || !avatarUrl.trim()) return;
@@ -156,70 +86,6 @@ export function Profile() {
         </p>
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2 border-b border-pink-100 dark:border-zinc-800 pb-2">
-          <MessageCircle className="w-6 h-6 text-pink-500" /> Your Stories
-        </h2>
-
-        {loading ? (
-          <div className="text-center py-10 text-zinc-500">Loading your stories...</div>
-        ) : userStories.length === 0 ? (
-          <div className="text-center py-10 text-zinc-500 bg-white/50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-pink-200 dark:border-zinc-800 backdrop-blur-sm">
-            <p>You haven't posted any stories yet.</p>
-            <Link to="/stories">
-              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0">Go to Community</Button>
-            </Link>
-          </div>
-        ) : (
-          userStories.map((story) => (
-            <Card key={story.id} className="hover:shadow-xl transition-all duration-300 border-pink-100/50 dark:border-pink-900/20 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white pr-8">{story.title}</h3>
-                <button 
-                  onClick={() => handleDeletePost(story.id)} 
-                  className={`p-2 rounded-full transition-colors flex items-center gap-1 text-sm ${
-                    deletingPostId === story.id 
-                      ? 'bg-red-500 text-white hover:bg-red-600' 
-                      : 'text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30'
-                  }`}
-                  title="Delete your post"
-                >
-                  <Trash2 className="w-5 h-5" />
-                  {deletingPostId === story.id && <span className="font-bold pr-1">Confirm?</span>}
-                </button>
-              </div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
-                Posted {story.createdAt ? new Date(story.createdAt.toMillis()).toLocaleDateString() : 'Just now'}
-              </p>
-              <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed mb-4">
-                {story.content}
-              </p>
-              
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400 pt-4 border-t border-pink-50 dark:border-zinc-800">
-                <span className="flex items-center gap-1">
-                  <MessageCircle className="w-4 h-4" /> {story.commentCount || 0} comments
-                </span>
-                <span className="flex items-center gap-1">
-                  🥺 {story.reactions?.aww || 0}
-                </span>
-                <span className="flex items-center gap-1">
-                  🚩 {story.reactions?.redFlag || 0}
-                </span>
-                <span className="flex items-center gap-1">
-                  🍿 {story.reactions?.drama || 0}
-                </span>
-                <span className="flex items-center gap-1">
-                  💔 {story.reactions?.heartbreak || 0}
-                </span>
-                <span className="flex items-center gap-1">
-                  👑 {story.reactions?.slay || 0}
-                </span>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
-
       {/* Avatar Modal */}
       {showAvatarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
@@ -276,6 +142,7 @@ export function Profile() {
               <Button 
                 onClick={handleUpdateAvatar} 
                 disabled={updatingAvatar || !avatarUrl} 
+                variant="custom"
                 className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0"
               >
                 {updatingAvatar ? (

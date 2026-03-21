@@ -56,7 +56,7 @@ export function MiniGames() {
               <p className="text-zinc-600 dark:text-zinc-400">
                 How many hearts can you tap in 10 seconds? Test your speed!
               </p>
-              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Play Now</Button>
+              <Button variant="custom" className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Play Now</Button>
             </Card>
 
             <Card className="flex flex-col items-center text-center space-y-4 hover:border-pink-300 dark:hover:border-pink-700 transition-colors cursor-pointer bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30" onClick={() => handleGameChange('memory')}>
@@ -67,7 +67,7 @@ export function MiniGames() {
               <p className="text-zinc-600 dark:text-zinc-400">
                 Match the romantic pairs as fast as you can!
               </p>
-              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Play Now</Button>
+              <Button variant="custom" className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Play Now</Button>
             </Card>
 
             <Card className="flex flex-col items-center text-center space-y-4 hover:border-pink-300 dark:hover:border-pink-700 transition-colors cursor-pointer bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30" onClick={() => handleGameChange('truth_dare')}>
@@ -78,7 +78,7 @@ export function MiniGames() {
               <p className="text-zinc-600 dark:text-zinc-400">
                 Spicy and fun questions to get to know each other better!
               </p>
-              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Play Now</Button>
+              <Button variant="custom" className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Play Now</Button>
             </Card>
 
             <Card className="flex flex-col items-center text-center space-y-4 hover:border-pink-300 dark:hover:border-pink-700 transition-colors cursor-pointer bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30" onClick={() => navigate('/quiz')}>
@@ -89,7 +89,7 @@ export function MiniGames() {
               <p className="text-zinc-600 dark:text-zinc-400">
                 Assess your relationship status through structured psychological quizzes.
               </p>
-              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Take Quiz</Button>
+              <Button variant="custom" className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Take Quiz</Button>
             </Card>
 
             <Card className="flex flex-col items-center text-center space-y-4 hover:border-pink-300 dark:hover:border-pink-700 transition-colors cursor-pointer bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30" onClick={() => navigate('/flirting-test')}>
@@ -100,7 +100,7 @@ export function MiniGames() {
               <p className="text-zinc-600 dark:text-zinc-400">
                 Evaluate your interpersonal communication and flirting skills.
               </p>
-              <Button className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Start Test</Button>
+              <Button variant="custom" className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Start Test</Button>
             </Card>
           </motion.div>
         )}
@@ -198,7 +198,7 @@ function TapGame({ onBack }: { onBack: () => void }) {
           <Heart className="w-16 h-16 text-pink-500 fill-pink-500 animate-pulse" />
           <h2 className="text-2xl font-bold text-zinc-800 dark:text-white">Tap the Heart!</h2>
           <p className="text-zinc-600 dark:text-zinc-400">Tap as many hearts as you can in 10 seconds.</p>
-          <Button onClick={startGame} size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Start Game</Button>
+          <Button variant="custom" onClick={startGame} size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">Start Game</Button>
         </div>
       )}
 
@@ -221,7 +221,7 @@ function TapGame({ onBack }: { onBack: () => void }) {
           <h2 className="text-3xl font-bold text-zinc-800 dark:text-white">Game Over!</h2>
           <p className="text-xl text-zinc-600 dark:text-zinc-400">You tapped <span className="font-bold text-pink-500">{score}</span> hearts!</p>
           <div className="flex gap-4 mt-4">
-            <Button onClick={startGame} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+            <Button variant="custom" onClick={startGame} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
               <RefreshCw className="w-4 h-4 mr-2" /> Play Again
             </Button>
           </div>
@@ -313,7 +313,7 @@ function MemoryGame({ onBack }: { onBack: () => void }) {
           <h2 className="text-3xl font-bold text-zinc-800 dark:text-white">You Won!</h2>
           <p className="text-xl text-zinc-600 dark:text-zinc-400">Completed in <span className="font-bold text-pink-500">{moves}</span> moves!</p>
           <div className="flex gap-4 mt-4">
-            <Button onClick={initializeGame} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+            <Button variant="custom" onClick={initializeGame} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
               <RefreshCw className="w-4 h-4 mr-2" /> Play Again
             </Button>
           </div>
@@ -398,7 +398,7 @@ function TruthOrDareGame({ onBack }: { onBack: () => void }) {
             <h2 className="text-3xl font-bold text-zinc-800 dark:text-white">Truth or Dare?</h2>
             <p className="text-zinc-600 dark:text-zinc-400">Choose your fate!</p>
             <div className="flex gap-4 w-full">
-              <Button onClick={() => handleChoice('Truth')} className="flex-1 h-16 text-xl bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+              <Button variant="custom" onClick={() => handleChoice('Truth')} className="flex-1 h-16 text-xl bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                 Truth
               </Button>
               <Button onClick={() => handleChoice('Dare')} className="flex-1 h-16 text-xl bg-zinc-800 hover:bg-zinc-700 text-white border-none">

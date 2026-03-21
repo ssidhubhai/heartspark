@@ -94,6 +94,7 @@ export function AIAdvice() {
 
           <Button 
             type="submit" 
+            variant="custom"
             className="w-full h-14 text-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] transition-all flex items-center justify-center gap-2"
             disabled={isLoading || !names || !topic}
           >
@@ -168,7 +169,7 @@ export function AIAdvice() {
               </div>
 
               <div className="flex flex-wrap justify-center gap-4 pt-6 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-                <Button onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Advice
                 </Button>
                 <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles } from 'lucide-react';
+import { Send, Image as ImageIcon, Trash2, Settings, Loader2, Bot, User, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, PanelLeftClose } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
@@ -62,7 +62,7 @@ export function LoveGPT() {
   });
 
   const [activeThreadId, setActiveThreadId] = useState<string | null>(() => threads.length > 0 ? threads[0].id : null);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 768);
 
   const [input, setInput] = useState('');
   const [image, setImage] = useState<string | null>(null);
@@ -283,7 +283,7 @@ export function LoveGPT() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
+    <div className="max-w-7xl mx-auto h-full px-0 md:px-4 lg:px-8 flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
       {/* Ambient Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-pink-400/10 dark:bg-pink-900/10 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
@@ -310,7 +310,7 @@ export function LoveGPT() {
             <Plus className="w-4 h-4 mr-2" /> New Chat
           </Button>
           <Button variant="outline" className="ml-2 p-2 border-zinc-200 dark:border-zinc-800 rounded-xl" onClick={() => setShowSidebar(false)}>
-            <X className="w-4 h-4 text-zinc-500" />
+            <PanelLeftClose className="w-4 h-4 text-zinc-500" />
           </Button>
         </div>
 

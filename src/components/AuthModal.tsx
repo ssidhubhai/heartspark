@@ -182,7 +182,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0" disabled={loading}>
+                <Button variant="custom" type="submit" className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0" disabled={loading}>
                   {loading ? 'Please wait...' : (isForgotPassword ? 'Send Reset Link' : (isLogin ? 'Login' : 'Sign Up'))}
                 </Button>
               </form>

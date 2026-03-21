@@ -137,6 +137,12 @@ export function Home() {
 
   const features = [
     {
+      title: "Community Stories",
+      description: "Read, share, and get inspired by real love stories from our community.",
+      icon: <BookHeart className="w-6 h-6 text-pink-500" />,
+      path: "/stories",
+    },
+    {
       title: "Heart Spark Coach",
       description: "Your personal AI relationship advisor. Includes Astrology readings!",
       icon: <Bot className="w-6 h-6 text-pink-500" />,
@@ -155,12 +161,6 @@ export function Home() {
       description: "Test your bond with quizzes, memory games, and truth or dare.",
       icon: <Gamepad2 className="w-6 h-6 text-rose-500" />,
       path: "/games",
-    },
-    {
-      title: "Community Stories",
-      description: "Read, share, and get inspired by real love stories from our community.",
-      icon: <BookHeart className="w-6 h-6 text-pink-500" />,
-      path: "/stories",
     }
   ];
 
@@ -250,6 +250,7 @@ export function Home() {
 
               <Button 
                 type="submit" 
+                variant="custom"
                 className="w-full h-14 text-lg font-bold rounded-full bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all border-none hover:-translate-y-1"
                 disabled={isCalculating || !name1 || !name2}
               >
@@ -408,7 +409,7 @@ export function Home() {
               </p>
             </div>
             <Button 
-              className="bg-white text-pink-600 hover:bg-pink-50 w-full md:w-auto whitespace-nowrap text-lg h-14 px-8 rounded-full shadow-lg hover:shadow-xl transition-all"
+              className="bg-white text-pink-600 hover:bg-pink-50 w-full md:w-auto whitespace-nowrap text-lg h-14 px-8 rounded-full shadow-lg hover:shadow-xl transition-all text-adaptive-readable"
               onClick={() => navigate('/tools/fortune')}
             >
               View Today's Reading <ArrowRight className="w-5 h-5 ml-2" />

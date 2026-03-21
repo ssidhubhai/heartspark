@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Button } from './Button';
 
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -76,18 +77,20 @@ export function InstallPrompt() {
               Add to your homescreen for quick access to perfect replies and community stories!
             </p>
             <div className="flex gap-2 mt-3">
-              <button
+              <Button
+                variant="custom"
                 onClick={handleInstall}
-                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors border-none"
               >
                 Install App
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={handleDismiss}
-                className="px-4 py-2 bg-pink-50 hover:bg-pink-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-pink-50 hover:bg-pink-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition-colors border-none"
               >
                 Not Now
-              </button>
+              </Button>
             </div>
           </div>
           <button onClick={handleDismiss} className="absolute top-2 right-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">

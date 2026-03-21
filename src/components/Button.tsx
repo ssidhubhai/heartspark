@@ -4,7 +4,7 @@ import { cn } from '../utils/cn';
 
 interface ButtonProps extends Omit<HTMLMotionProps<"button">, "whileHover" | "whileTap"> {
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'custom';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   isLoading?: boolean;
@@ -26,6 +26,7 @@ export function Button({
     secondary: "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700",
     outline: "border border-zinc-200 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/50",
     ghost: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
+    custom: "", // Allows full override via className
   };
 
   const sizes = {

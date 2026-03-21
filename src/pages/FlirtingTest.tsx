@@ -178,7 +178,7 @@ export function FlirtingTest() {
                 <Button variant="outline" onClick={resetTest} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                   <RefreshCw className="w-4 h-4 mr-2" /> Retake Test
                 </Button>
-                <Button onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
                 <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">

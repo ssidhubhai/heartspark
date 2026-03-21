@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart } from 'lucide-react';
+import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart, PanelLeftClose } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
@@ -27,7 +27,7 @@ interface Thread {
 export function AstrologyAI() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 768);
   
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -311,7 +311,7 @@ export function AstrologyAI() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6 relative">
+    <div className="max-w-7xl mx-auto h-full px-0 md:px-4 lg:px-8 flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
@@ -332,7 +332,7 @@ export function AstrologyAI() {
             <Plus className="w-4 h-4 mr-2" /> New Reading
           </Button>
           <Button variant="outline" className="ml-2 p-2 border-zinc-200 dark:border-zinc-800 rounded-xl" onClick={() => setShowSidebar(false)}>
-            <X className="w-4 h-4 text-zinc-500" />
+            <PanelLeftClose className="w-4 h-4 text-zinc-500" />
           </Button>
         </div>
 
@@ -451,6 +451,7 @@ export function AstrologyAI() {
 
                   <Button 
                     type="submit" 
+                    variant="custom"
                     className="w-full h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] transition-all border-none"
                     disabled={loading || !name || !dob || !place}
                   >

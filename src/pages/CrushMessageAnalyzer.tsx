@@ -214,6 +214,7 @@ export function CrushMessageAnalyzer() {
 
           <Button 
             type="submit" 
+            variant="custom"
             disabled={loading || (!message.trim() && !image)} 
             className="w-full h-14 text-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] rounded-2xl transition-all mt-4"
           >

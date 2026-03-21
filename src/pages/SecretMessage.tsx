@@ -94,6 +94,7 @@ export function SecretMessage() {
           <Button 
             onClick={generateMessage}
             disabled={isGenerating}
+            variant="custom"
             className="w-full h-14 text-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_25px_rgba(236,72,153,0.5)] transition-all"
           >
             {isGenerating ? (
@@ -132,10 +133,10 @@ export function SecretMessage() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-pink-100 dark:border-zinc-800" data-html2canvas-ignore>
-              <Button onClick={copyToClipboard} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none" variant={copied ? "secondary" : "primary"}>
+              <Button onClick={copyToClipboard} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none" variant={copied ? "secondary" : "custom"}>
                 <Copy className="w-5 h-5 mr-2" /> {copied ? "Copied!" : "Copy Text"}
               </Button>
-              <Button onClick={handleShare} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+              <Button variant="custom" onClick={handleShare} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                 <Send className="w-5 h-5 mr-2" /> Share Image
               </Button>
               <Button variant="outline" onClick={handleDownload} className="flex-1 min-w-[140px] border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">

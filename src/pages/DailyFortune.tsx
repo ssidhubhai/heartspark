@@ -61,6 +61,7 @@ export function DailyFortune() {
         >
           <Button 
             onClick={handleReveal} 
+            variant="custom"
             className="h-16 px-8 text-xl bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] border-none transition-all hover:-translate-y-1 rounded-2xl"
           >
             <Star className="w-6 h-6 mr-2" /> Crack the Cookie 🥠
@@ -121,7 +122,7 @@ export function DailyFortune() {
                 <Button variant="outline" onClick={handleReveal} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
                   <RefreshCw className="w-4 h-4 mr-2" /> Another Cookie
                 </Button>
-                <Button onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
                   <Share2 className="w-4 h-4 mr-2" /> Share Fortune
                 </Button>
                 <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
