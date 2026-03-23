@@ -135,83 +135,6 @@ export function CommunityStories() {
     });
   };
 
-  const seedDemoPosts = async () => {
-    if (!db || !user) {
-      showToast("Please login to seed posts", "error");
-      return;
-    }
-    setLoadingStories(true);
-    try {
-      const demoPosts = [
-        {
-          content: "I've been going to the same gym at 6 AM for months just to see him. Today, he came over and asked if I was using the bench. I panicked and said 'no, you can have it' even though I just started my set 😭. What do I do tomorrow?!",
-          author: "GymGirl99",
-          category: "Crush",
-          likes: 12,
-          commentCount: 0,
-          reactions: { aww: 5, slay: 7, redFlag: 0, drama: 0, heartbreak: 0 }
-        },
-        {
-          content: "We've known each other since middle school. Last night we were watching a movie and they fell asleep on my shoulder. My heart was beating so fast I thought it would wake them up. Should I risk the friendship and confess?",
-          author: "ConfusedHeart",
-          category: "Confession",
-          likes: 45,
-          commentCount: 0,
-          reactions: { aww: 20, slay: 0, redFlag: 0, drama: 5, heartbreak: 2 }
-        },
-        {
-          content: "A coworker asked me to get coffee this weekend. We talk a lot at work, but I can't tell if this is friendly or romantic. We've never hung out outside the office before. Help me decode this!",
-          author: "OfficeRomance",
-          category: "Advice",
-          likes: 8,
-          commentCount: 0,
-          reactions: { aww: 2, slay: 1, redFlag: 0, drama: 2, heartbreak: 0 },
-          poll: {
-            options: [
-              { id: 'opt_0', text: 'Definitely a date', votes: 15 },
-              { id: 'opt_1', text: 'Just friendly networking', votes: 5 },
-              { id: 'opt_2', text: 'Need more info', votes: 8 }
-            ],
-            votedUsers: []
-          }
-        },
-        {
-          content: "I confessed my feelings after 2 years of hiding them. It didn't go well. They said they value our friendship too much and see me as a sibling. I'm devastated. How do I move on without losing the friendship?",
-          author: "FriendzonedForever",
-          category: "Friendzone",
-          likes: 24,
-          commentCount: 0,
-          reactions: { aww: 0, slay: 0, redFlag: 0, drama: 2, heartbreak: 22 }
-        },
-        {
-          content: "We kept looking at each other for like an hour. Every time I looked up, they were already looking. I was too nervous to say hi and then they left. Should I go back tomorrow at the same time?",
-          author: "LibraryLover",
-          category: "Crush",
-          likes: 32,
-          commentCount: 0,
-          reactions: { aww: 15, slay: 5, redFlag: 0, drama: 0, heartbreak: 0 }
-        }
-      ];
-
-      for (const post of demoPosts) {
-        await addDoc(collection(db, 'community_stories'), {
-          ...post,
-          userId: user.uid,
-          createdAt: serverTimestamp(),
-          likedBy: [],
-          reactedUsers: [],
-          reportCount: 0
-        });
-      }
-      showToast("Demo posts added successfully!", "success");
-    } catch (error) {
-      console.error("Error seeding posts:", error);
-      showToast("Failed to seed posts", "error");
-    } finally {
-      setLoadingStories(false);
-    }
-  };
-
   // Real-time comments listener
   useEffect(() => {
     const storyId = selectedStory?.id || expandedStory;
@@ -278,24 +201,32 @@ export function CommunityStories() {
       }
     }
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      let storyData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Story[];
-      
-      // Client-side sort for My Posts to avoid requiring a composite index
-      if (activeSort === "👤 My Posts") {
-        storyData = storyData.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis() || 0;
-          const timeB = b.createdAt?.toMillis() || 0;
-          return timeB - timeA;
-        });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        let storyData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Story[];
+        
+        // Client-side sort for My Posts to avoid requiring a composite index
+        if (activeSort === "👤 My Posts") {
+          storyData = storyData.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
+          });
+        }
+        
+        setStories(storyData);
+        setLoadingStories(false);
+      },
+      (error) => {
+        console.error("Error fetching stories:", error);
+        setLoadingStories(false);
+        showToast("Failed to connect to the database. Please check your internet connection or Firebase configuration.", "error");
       }
-      
-      setStories(storyData);
-      setLoadingStories(false);
-    });
+    );
 
     return () => unsubscribe();
   }, [showReportedOnly, activeSort, user?.uid]);
@@ -468,6 +399,33 @@ export function CommunityStories() {
   const [activeReactionStoryId, setActiveReactionStoryId] = useState<
     string | null
   >(null);
+
+  const handleShare = async (story: Story, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const shareData = {
+      title: `Story by ${story.author} on Community`,
+      text: story.content,
+      url: `${window.location.origin}/community?story=${story.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        showToast("Thanks for sharing!", "success");
+      } else {
+        // Fallback for browsers that don't support navigator.share
+        await navigator.clipboard.writeText(`${shareData.text}\n\nRead more at: ${shareData.url}`);
+        showToast("Story copied to clipboard!", "success");
+      }
+    } catch (err) {
+      console.error("Error sharing:", err);
+      // Don't show error if user just cancelled the share dialog
+      if ((err as Error).name !== 'AbortError') {
+        showToast("Failed to share story", "error");
+      }
+    }
+  };
 
   const handleReaction = async (story: Story, emoji: string) => {
     if (!db) return;
@@ -1003,99 +961,6 @@ export function CommunityStories() {
                 <p className="text-zinc-500 dark:text-zinc-400">
                   Your story could be exactly what someone needs to hear today.
                 </p>
-                {user && (
-                  <Button 
-                    onClick={seedDemoPosts} 
-                    variant="outline" 
-                    className="mt-6 border-pink-900/30 text-pink-400 hover:bg-pink-900/20"
-                  >
-                    <Plus className="w-4 h-4 mr-2" /> Add Demo Posts
-                  </Button>
-                )}
-              </div>
-
-              {/* Fake Posts Demo */}
-              <div className="w-full space-y-6 opacity-60 pointer-events-none filter grayscale-[20%] mt-12">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.8, repeat: Infinity, repeatType: "reverse", repeatDelay: 4 }}
-                >
-                  <Card className="rounded-[24px] bg-white/60 dark:bg-white/5 backdrop-blur-md border border-pink-100 dark:border-white/10 p-5 sm:p-6 relative overflow-hidden shadow-xl">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20">
-                        G
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-zinc-900 dark:text-white">GymGirl99</span>
-                          <span className="px-2 py-0.5 bg-white/80 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 text-[10px] rounded-full font-medium uppercase tracking-wider">Crush</span>
-                        </div>
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400">2 hours ago</div>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">My gym crush finally talked to me! 🏋️‍♀️</h3>
-                    <p className="text-zinc-500 dark:text-zinc-400 line-clamp-2 text-sm">I've been going to the same gym at 6 AM for months just to see him. Today, he came over and asked if I was using the bench...</p>
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-pink-50 dark:border-white/5">
-                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400"><span className="text-xl">❤️</span><span className="text-sm font-medium">12</span></div>
-                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400"><span className="text-xl">💬</span><span className="text-sm font-medium">3</span></div>
-                    </div>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.8, repeat: Infinity, repeatType: "reverse", repeatDelay: 4.2 }}
-                >
-                  <Card className="rounded-[24px] bg-white/60 dark:bg-white/5 backdrop-blur-md border border-pink-100 dark:border-white/10 p-5 sm:p-6 relative overflow-hidden shadow-xl">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20">
-                        C
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-zinc-900 dark:text-white">ConfusedHeart</span>
-                          <span className="px-2 py-0.5 bg-white/80 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 text-[10px] rounded-full font-medium uppercase tracking-wider">Confession</span>
-                        </div>
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400">5 hours ago</div>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">I think I'm in love with my best friend.</h3>
-                    <p className="text-zinc-500 dark:text-zinc-400 line-clamp-2 text-sm">We've known each other since middle school. Last night we were watching a movie and they fell asleep on my shoulder...</p>
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-pink-50 dark:border-white/5">
-                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400"><span className="text-xl">❤️</span><span className="text-sm font-medium">45</span></div>
-                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400"><span className="text-xl">💬</span><span className="text-sm font-medium">12</span></div>
-                    </div>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.8, repeat: Infinity, repeatType: "reverse", repeatDelay: 4.4 }}
-                >
-                  <Card className="rounded-[24px] bg-white/60 dark:bg-white/5 backdrop-blur-md border border-pink-100 dark:border-white/10 p-5 sm:p-6 relative overflow-hidden shadow-xl">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20">
-                        S
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-zinc-900 dark:text-white">Seeker22</span>
-                          <span className="px-2 py-0.5 bg-white/80 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 text-[10px] rounded-full font-medium uppercase tracking-wider">Advice</span>
-                        </div>
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400">1 day ago</div>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">How do you know when to let go?</h3>
-                    <p className="text-zinc-500 dark:text-zinc-400 line-clamp-2 text-sm">I've been holding onto this relationship for 3 years, but lately it feels like I'm the only one trying. Any advice on how to move on?</p>
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-pink-50 dark:border-white/5">
-                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400"><span className="text-xl">❤️</span><span className="text-sm font-medium">89</span></div>
-                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400"><span className="text-xl">💬</span><span className="text-sm font-medium">34</span></div>
-                    </div>
-                  </Card>
-                </motion.div>
               </div>
             </motion.div>
           ) : (
@@ -1238,6 +1103,13 @@ export function CommunityStories() {
                               )
                             : 0}
                         </span>
+                      </button>
+                      <button
+                        onClick={(e) => handleShare(story, e)}
+                        className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-green-500 transition-colors"
+                        title="Share this story"
+                      >
+                        <Share2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>

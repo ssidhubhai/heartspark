@@ -86,7 +86,7 @@ export function Home() {
         if ((isRiya(n1) && isSagar(n2)) || (isRiya(n2) && isSagar(n1))) {
           score = 93;
         } else if ((isRiya(n1) && isSiddharth(n2)) || (isRiya(n2) && isSiddharth(n1))) {
-          score = 90;
+          score = 93;
         }
 
         if (score > 90) message = "Exceptional compatibility. A profound connection is indicated.";
@@ -143,10 +143,10 @@ export function Home() {
       path: "/stories",
     },
     {
-      title: "Heart Spark Coach",
-      description: "Your personal AI relationship advisor. Includes Astrology readings!",
+      title: "Astro Vibe",
+      description: "Your personal AI relationship astrologer. Get deep compatibility readings!",
       icon: <Bot className="w-6 h-6 text-pink-500" />,
-      path: "/love-gpt",
+      path: "/astrology",
       badge: "Popular"
     },
     {
@@ -334,6 +334,20 @@ export function Home() {
                 >
                   {result.message}
                 </motion.p>
+
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-800/30 mt-8 mb-4">
+                  <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center justify-center gap-2">
+                    Is this written in the stars? ✨
+                  </h3>
+                  <p className="text-sm text-indigo-700/80 dark:text-indigo-300/80 mb-4">
+                    Don't leave it to chance! Discover your true cosmic destiny and uncover hidden relationship dynamics with <span className="font-semibold text-purple-600 dark:text-purple-400">Astro Vibe</span>.
+                  </p>
+                  <Link to="/astrology">
+                    <Button variant="custom" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-none shadow-lg shadow-purple-500/30 w-full sm:w-auto">
+                      Consult the Stars
+                    </Button>
+                  </Link>
+                </div>
 
                 <div className="flex flex-wrap justify-center gap-3 pt-4 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
                   <Button variant="outline" size="sm" onClick={() => setResult(null)} className="border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20 text-pink-600 dark:text-pink-400">

@@ -35,7 +35,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'AI Coach', path: '/love-gpt' },
+    { name: 'Astro Vibe', path: '/astrology' },
     { name: 'Tools', path: '/tools' },
     { name: 'Games & Quizzes', path: '/games' },
   ];
@@ -67,14 +67,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2 group">
-                <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-purple-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)] group-hover:shadow-[0_0_25px_rgba(236,72,153,0.8)] group-hover:scale-110 transition-all duration-300">
-                  <Heart className="w-4 h-4 fill-current animate-pulse" />
-                </div>
-                <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400">
-                  Heart Spark
-                </span>
-              </Link>
+              {/* Logo removed as requested */}
             </div>
 
             {/* Desktop Nav */}

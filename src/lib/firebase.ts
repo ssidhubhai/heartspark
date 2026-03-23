@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, getDocFromServer, doc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY as string,
@@ -11,12 +11,26 @@ const firebaseConfig = {
   appId: (import.meta as any).env.VITE_FIREBASE_APP_ID as string
 };
 
-const isFirebaseConfigured = !!firebaseConfig.apiKey;
+const isFirebaseConfigured = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'TODO_KEYHERE' && !firebaseConfig.apiKey.includes('TODO');
 
 export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const auth = isFirebaseConfigured ? getAuth(app!) : null;
 export const db = isFirebaseConfigured ? getFirestore(app!) : null;
 export const googleProvider = isFirebaseConfigured ? new GoogleAuthProvider() : null;
+
+if (db) {
+  async function testConnection() {
+    try {
+      await getDocFromServer(doc(db!, 'test', 'connection'));
+    } catch (error) {
+      if(error instanceof Error && error.message.includes('the client is offline')) {
+        console.error("Please check your Firebase configuration. The client is offline, which typically means the Firestore database has not been provisioned or the configuration is incorrect.");
+      }
+      // Skip logging for other errors, as this is simply a connection test.
+    }
+  }
+  testConnection();
+}
 
 export const loginWithGoogle = async () => {
   if (!auth || !googleProvider) {

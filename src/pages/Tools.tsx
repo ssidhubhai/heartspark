@@ -6,10 +6,10 @@ import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Bot, Sparkles 
 export function Tools() {
   const tools = [
     {
-      title: "Heart Spark Coach",
-      description: "Talk to your personal AI relationship coach. Ask advice, send screenshots, and get help.",
+      title: "Astro Vibe",
+      description: "Talk to your personal AI relationship astrologer. Get deep compatibility readings.",
       icon: <Bot className="w-6 h-6 text-pink-500" />,
-      path: "/love-gpt",
+      path: "/astrology",
       color: "bg-pink-100 dark:bg-pink-900/30",
       badge: "Popular"
     },

@@ -19,7 +19,6 @@ import { LoveTitles } from './pages/LoveTitles';
 import { CoupleStory } from './pages/CoupleStory';
 import { DailyFortune } from './pages/DailyFortune';
 import { CrushMessageAnalyzer } from './pages/CrushMessageAnalyzer';
-import { LoveGPT } from './pages/LoveGPT';
 import { Profile } from './pages/Profile';
 import { CommunityStories } from './pages/CommunityStories';
 import { CrushPrediction } from './pages/CrushPrediction';
@@ -58,7 +57,6 @@ export default function App() {
             <Route path="/tools/fortune" element={<DailyFortune />} />
             <Route path="/tools/prediction" element={<CrushPrediction />} />
             <Route path="/analyzer" element={<CrushMessageAnalyzer />} />
-            <Route path="/love-gpt" element={<LoveGPT />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/stories" element={<CommunityStories />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />

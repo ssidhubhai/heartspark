@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart, PanelLeftClose } from 'lucide-react';
+import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart, PanelLeftClose, Edit2 } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
+import { calculatePlacements, AstrologicalPlacements } from '../utils/astrology';
 import Markdown from 'react-markdown';
 
 interface Message {
@@ -20,6 +21,12 @@ interface Thread {
     dob: string;
     time: string;
     place: string;
+    partnerName?: string;
+    partnerDob?: string;
+  };
+  placements?: {
+    user: AstrologicalPlacements;
+    partner: AstrologicalPlacements;
   };
   updatedAt: number;
 }
@@ -40,6 +47,9 @@ export function AstrologyAI() {
   const [dob, setDob] = useState('');
   const [time, setTime] = useState('');
   const [place, setPlace] = useState('');
+  const [partnerName, setPartnerName] = useState('');
+  const [partnerDob, setPartnerDob] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
 
   useEffect(() => {
     try {
@@ -127,6 +137,9 @@ export function AstrologyAI() {
     setDob('');
     setTime('');
     setPlace('');
+    setPartnerName('');
+    setPartnerDob('');
+    setAdditionalInfo('');
   };
 
   const deleteThread = (id: string, e: React.MouseEvent) => {
@@ -144,13 +157,59 @@ export function AstrologyAI() {
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
+  const handleEditMessage = (index: number) => {
+    const activeThread = threads.find(t => t.id === activeThreadId);
+    if (!activeThread) return;
+    
+    const messageToEdit = activeThread.messages[index];
+    if (messageToEdit.role !== 'user') return;
+    
+    // Set input to the message text
+    setInput(messageToEdit.text);
+    
+    // Truncate messages up to this point
+    const newMessages = activeThread.messages.slice(0, index);
+    
+    const updatedThread = {
+      ...activeThread,
+      messages: newMessages,
+      updatedAt: Date.now()
+    };
+    
+    const newThreads = threads.map(t => t.id === updatedThread.id ? updatedThread : t);
+    setThreads(newThreads);
+    localStorage.setItem('astrology_threads', JSON.stringify(newThreads));
+    
+    // Focus input
+    setTimeout(() => {
+      const inputEl = document.querySelector('textarea');
+      if (inputEl) inputEl.focus();
+    }, 0);
+  };
+
   const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !dob || !place) return;
+    if (!name || !dob || !place || !partnerName || !partnerDob) return;
 
     setLoading(true);
 
-    const initialPrompt = `My name is ${name}. I was born on ${dob} at ${time || 'unknown time'} in ${place}. Today's date is ${new Date().toLocaleDateString()}. Please provide an astrological reading for me, focusing on my personality, love life, and future. Act as Heart Spark, a highly professional, ethical, and insightful AI Astrologer. Use clear, professional language. Use Markdown formatting (bolding, bullet points) to structure your reading clearly. At the very end, suggest exactly 2 short follow-up questions I can ask you next. Format them clearly like:
+    const userPlacements = calculatePlacements(dob, time);
+    const partnerPlacements = calculatePlacements(partnerDob);
+
+    const initialPrompt = `My name is ${name}. I was born on ${dob} at ${time || 'unknown time'} in ${place}. 
+    I want to know about my compatibility with my crush/partner, ${partnerName}, who was born on ${partnerDob}.
+    ${additionalInfo ? `Here is some additional context about our relationship: ${additionalInfo}` : ''}
+    
+    ASTROLOGICAL DATA (Use this for a highly accurate reading):
+    My Placements: Sun in ${userPlacements.sun}, Moon in ${userPlacements.moon}, Venus in ${userPlacements.venus}, Mars in ${userPlacements.mars}, Mercury in ${userPlacements.mercury}.
+    ${partnerName}'s Placements: Sun in ${partnerPlacements.sun}, Moon in ${partnerPlacements.moon}, Venus in ${partnerPlacements.venus}, Mars in ${partnerPlacements.mars}, Mercury in ${partnerPlacements.mercury}.
+    
+    Today's date is ${new Date().toLocaleDateString()}. 
+    
+    Please provide an advanced, deep-dive astrological compatibility reading for us based on these exact planetary placements. Act as Astro Vibe, a highly professional, ethical, and insightful AI Relationship Astrologer. 
+    Your main focus MUST be providing the match of partner and crush. Design the algorithm in such a way it provides information of our relationship much and talks mainly of it. Reveal everything about our dynamic, potential challenges, and deep connection.
+    Use clear, professional language. Use Markdown formatting (bolding, bullet points) to structure your reading clearly. 
+    At the very end, suggest exactly 2 short follow-up questions I can ask you next about our relationship. Format them clearly like:
            "**Suggested Follow-ups:**
            - [Question 1]
            - [Question 2]"`;
@@ -159,9 +218,10 @@ export function AstrologyAI() {
     
     const newThread: Thread = {
       id: Date.now().toString(),
-      title: `${name}'s Reading`,
+      title: `${name} & ${partnerName}'s Vibe Check`,
       messages: [userMsg],
-      details: { name, dob, time, place },
+      details: { name, dob, time, place, partnerName, partnerDob },
+      placements: { user: userPlacements, partner: partnerPlacements },
       updatedAt: Date.now()
     };
 
@@ -241,16 +301,17 @@ export function AstrologyAI() {
       let context = currentMessages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Astrologer'}: ${m.text}`).join('\n');
 
       const prompt = `
-        You are Heart Spark, a highly professional, ethical, and insightful AI Astrologer.
-        You are doing a reading for ${activeThread.details.name} born on ${activeThread.details.dob} in ${activeThread.details.place}.
+        You are Astro Vibe, a highly professional, ethical, and insightful AI Relationship Astrologer.
+        You are doing a compatibility reading for ${activeThread.details.name} born on ${activeThread.details.dob} in ${activeThread.details.place}.
         Today's date is ${new Date().toLocaleDateString()}.
         
         CRITICAL INSTRUCTIONS:
-        1. Provide insightful, structured, and objective astrological analysis. Avoid overly mystical jargon unless explaining a specific concept.
-        2. Match the depth of your response to the user's query. A simple question gets a concise answer; a complex chart question gets a detailed breakdown.
-        3. Use Markdown formatting (bolding, bullet points, headers) to organize your readings clearly.
-        4. Always maintain a supportive but realistic tone. Do not make definitive predictions about health, death, or guaranteed outcomes.
-        5. At the very end of your response, provide exactly 2 suggested follow-up questions the user could ask you next. Format them clearly like:
+        1. Focus entirely on relationship compatibility, love dynamics, and connection between the user and their partner/crush.
+        2. Provide insightful, structured, and objective astrological analysis. Avoid overly mystical jargon unless explaining a specific concept.
+        3. Match the depth of your response to the user's query. A simple question gets a concise answer; a complex chart question gets a detailed breakdown.
+        4. Use Markdown formatting (bolding, bullet points, headers) to organize your readings clearly.
+        5. Always maintain a supportive but realistic tone. Do not make definitive predictions about health, death, or guaranteed outcomes.
+        6. At the very end of your response, provide exactly 2 suggested follow-up questions the user could ask you next about their relationship. Format them clearly like:
            "**Suggested Follow-ups:**
            - [Question 1]
            - [Question 2]"
@@ -382,7 +443,7 @@ export function AstrologyAI() {
             )}
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                Astrology AI <span className="text-xs font-normal px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full">Guide</span>
+                Astro Vibe <span className="text-xs font-bold px-2 py-0.5 bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 rounded-full shadow-sm">PREMIUM</span>
               </h1>
             </div>
           </div>
@@ -393,58 +454,108 @@ export function AstrologyAI() {
         </div>
 
         {!activeThread ? (
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 flex items-center justify-center">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center py-8">
             <div className="max-w-2xl w-full space-y-8">
               <Card className="w-full p-8 border-pink-100 dark:border-pink-900/30 shadow-sm bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
                 <div className="text-center mb-8">
                   <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Star className="w-6 h-6 text-pink-600 dark:text-pink-400 animate-pulse" />
                   </div>
-                  <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-2">Begin Your Reading</h2>
-                  <p className="text-zinc-500 dark:text-zinc-400">Enter your birth details to generate a personalized astrological profile.</p>
+                  <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-2">Deep Compatibility Analysis</h2>
+                  <p className="text-zinc-500 dark:text-zinc-400">Enter your details and your crush/partner's details to reveal everything about your cosmic connection.</p>
                 </div>
                 <form onSubmit={handleInitialSubmit} className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Full Name</label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full h-11 px-4 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Date of Birth</label>
-                        <input
-                          type="date"
-                          value={dob}
-                          onChange={(e) => setDob(e.target.value)}
-                          className="w-full h-11 px-4 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
-                          required
-                        />
+                  <div className="space-y-6">
+                    {/* User Details */}
+                    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 space-y-4">
+                      <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <User className="w-4 h-4 text-pink-500" /> Your Details
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Your Name</label>
+                          <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Your Date of Birth</label>
+                          <input
+                            type="date"
+                            value={dob}
+                            onChange={(e) => setDob(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Time of Birth (Optional)</label>
+                          <input
+                            type="time"
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Place of Birth</label>
+                          <input
+                            type="text"
+                            value={place}
+                            onChange={(e) => setPlace(e.target.value)}
+                            placeholder="City, Country"
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                            required
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Time of Birth (Optional)</label>
-                        <input
-                          type="time"
-                          value={time}
-                          onChange={(e) => setTime(e.target.value)}
-                          className="w-full h-11 px-4 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
-                        />
+                    </div>
+
+                    {/* Partner Details */}
+                    <div className="p-4 bg-pink-50/50 dark:bg-pink-900/10 rounded-2xl border border-pink-100 dark:border-pink-900/30 space-y-4">
+                      <h3 className="text-sm font-bold text-pink-600 dark:text-pink-400 flex items-center gap-2">
+                        <Heart className="w-4 h-4" /> Partner / Crush Details
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Their Name</label>
+                          <input
+                            type="text"
+                            value={partnerName}
+                            onChange={(e) => setPartnerName(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Their Date of Birth</label>
+                          <input
+                            type="date"
+                            value={partnerDob}
+                            onChange={(e) => setPartnerDob(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
+
+                    {/* Additional Information */}
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Place of Birth</label>
-                      <input
-                        type="text"
-                        value={place}
-                        onChange={(e) => setPlace(e.target.value)}
-                        placeholder="City, Country"
-                        className="w-full h-11 px-4 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
-                        required
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Additional Information (Optional)</label>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                        Give our AI more context for a hyper-accurate reading. <br/>
+                        <span className="italic">Example: "We met at a coffee shop 2 months ago and talk every day. I want to know if they see me romantically or just as a friend."</span>
+                      </p>
+                      <textarea
+                        value={additionalInfo}
+                        onChange={(e) => setAdditionalInfo(e.target.value)}
+                        placeholder="Tell us about your relationship, how you met, or specific questions you have..."
+                        className="w-full h-24 px-4 py-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all resize-none text-sm"
                       />
                     </div>
                   </div>
@@ -452,10 +563,10 @@ export function AstrologyAI() {
                   <Button 
                     type="submit" 
                     variant="custom"
-                    className="w-full h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] transition-all border-none"
-                    disabled={loading || !name || !dob || !place}
+                    className="w-full h-12 text-base bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white shadow-[0_0_15px_rgba(251,191,36,0.4)] hover:shadow-[0_0_25px_rgba(251,191,36,0.6)] transition-all border-none"
+                    disabled={loading || !name || !dob || !place || !partnerName || !partnerDob}
                   >
-                    {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> ✨ Reading the stars...</> : "Generate Reading"}
+                    {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> ✨ Analyzing Cosmic Connection...</> : "Consult the Stars"}
                   </Button>
                 </form>
               </Card>
@@ -466,10 +577,10 @@ export function AstrologyAI() {
                     <Sparkles className="w-4 h-4" /> What you'll discover
                   </h3>
                   <ul className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2">
-                    <li>• Your core personality traits (Sun, Moon, Rising)</li>
-                    <li>• Hidden strengths and potential challenges</li>
-                    <li>• Compatibility and love life insights</li>
-                    <li>• Career and life path guidance</li>
+                    <li>• Deep compatibility analysis (Sun, Moon, Venus)</li>
+                    <li>• Hidden relationship dynamics and challenges</li>
+                    <li>• How they truly perceive you</li>
+                    <li>• Future potential of your connection</li>
                   </ul>
                 </Card>
                 <Card className="p-6 bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20">
@@ -478,8 +589,8 @@ export function AstrologyAI() {
                   </h3>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">After your initial reading, you can ask follow-up questions like:</p>
                   <div className="space-y-2">
-                    <div className="text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-purple-100 dark:border-purple-900/30 text-zinc-700 dark:text-zinc-300">"Why do I always attract fire signs?"</div>
-                    <div className="text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-purple-100 dark:border-purple-900/30 text-zinc-700 dark:text-zinc-300">"What does my Venus sign say about my love language?"</div>
+                    <div className="text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-purple-100 dark:border-purple-900/30 text-zinc-700 dark:text-zinc-300">"Why do we always argue about small things?"</div>
+                    <div className="text-xs bg-white dark:bg-zinc-800 p-2 rounded-lg border border-purple-100 dark:border-purple-900/30 text-zinc-700 dark:text-zinc-300">"What is the best way to confess my feelings to them?"</div>
                   </div>
                 </Card>
               </div>
@@ -494,6 +605,31 @@ export function AstrologyAI() {
               className="flex-1 overflow-y-auto pb-32"
             >
               <div className="max-w-[800px] mx-auto w-full px-4 py-6 flex flex-col min-h-full">
+                {activeThread.placements && (
+                  <div className="mb-8 p-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-3xl border border-pink-100 dark:border-zinc-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-pink-500" /> Cosmic Profiles
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <div className="font-semibold text-pink-600 dark:text-pink-400 border-b border-pink-100 dark:border-zinc-800 pb-2">{activeThread.details.name}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-2.5 py-1 text-xs font-medium bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg shadow-sm text-zinc-700 dark:text-zinc-300">☀️ Sun in {activeThread.placements.user.sun}</span>
+                          <span className="px-2.5 py-1 text-xs font-medium bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg shadow-sm text-zinc-700 dark:text-zinc-300">🌙 Moon in {activeThread.placements.user.moon}</span>
+                          <span className="px-2.5 py-1 text-xs font-medium bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg shadow-sm text-zinc-700 dark:text-zinc-300">💖 Venus in {activeThread.placements.user.venus}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="font-semibold text-purple-600 dark:text-purple-400 border-b border-purple-100 dark:border-zinc-800 pb-2">{activeThread.details.partnerName || 'Partner'}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-2.5 py-1 text-xs font-medium bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg shadow-sm text-zinc-700 dark:text-zinc-300">☀️ Sun in {activeThread.placements.partner.sun}</span>
+                          <span className="px-2.5 py-1 text-xs font-medium bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg shadow-sm text-zinc-700 dark:text-zinc-300">🌙 Moon in {activeThread.placements.partner.moon}</span>
+                          <span className="px-2.5 py-1 text-xs font-medium bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg shadow-sm text-zinc-700 dark:text-zinc-300">💖 Venus in {activeThread.placements.partner.venus}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {activeThread.messages.map((msg, i) => (
                   <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300 mb-8`}>
                     {msg.role === 'model' && (
@@ -520,6 +656,19 @@ export function AstrologyAI() {
                           >
                             {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                             {copiedIndex === i ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      )}
+
+                      {msg.role === 'user' && !loading && (
+                        <div className="flex items-center justify-end gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleEditMessage(i)}
+                            className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm flex items-center gap-1.5 text-xs font-medium"
+                            title="Edit message"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            Edit
                           </button>
                         </div>
                       )}
@@ -580,7 +729,7 @@ export function AstrologyAI() {
                   </button>
                 </form>
                 <p className="text-center text-xs text-zinc-400 mt-3 font-medium">
-                  AstrologyAI provides insights for entertainment and self-reflection.
+                  Astro Vibe provides insights for entertainment and self-reflection.
                 </p>
               </div>
             </div>
