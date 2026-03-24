@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Share2, RefreshCw, CheckCircle2, Wand2, Loader2, Sparkles, Download } from 'lucide-react';
@@ -364,24 +364,29 @@ export function CrushQuiz() {
                   <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               </div>
-
-              {/* Cross-Promotion for Astro Vibe Check */}
-              <div className="mt-8 pt-6 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-                <div className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-2xl p-6 border border-pink-200/50 dark:border-pink-800/30 text-center">
-                  <h3 className="text-lg font-bold text-zinc-800 dark:text-white mb-2 flex items-center justify-center gap-2">
-                    Want a deeper connection analysis? <Sparkles className="w-5 h-5 text-purple-500" />
-                  </h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                    Don't leave it to chance! Discover your true cosmic destiny and uncover hidden relationship dynamics with <span className="font-semibold text-purple-600 dark:text-purple-400">Astro Vibe</span>.
-                  </p>
-                  <Link to="/astrology">
-                    <Button variant="custom" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-none shadow-lg shadow-purple-500/30">
-                      Consult the Stars
-                    </Button>
-                  </Link>
-                </div>
-              </div>
             </Card>
+
+            {/* Cross-Promotion for Astro Vibe */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8"
+            >
+              <Card className="bg-indigo-950/20 backdrop-blur-md border border-indigo-800/30 p-8 rounded-[2rem] text-center shadow-lg">
+                <h3 className="text-xl font-bold text-indigo-100 mb-2 flex items-center justify-center gap-2">
+                  Is this written in the stars? ✨
+                </h3>
+                <p className="text-sm text-indigo-300/80 mb-6">
+                  Discover your true cosmic destiny with <span className="font-bold text-purple-400">Astro Vibe.</span>
+                </p>
+                <Link to="/astrology">
+                  <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full sm:w-auto rounded-2xl h-12 font-bold shadow-lg shadow-purple-500/30 px-8">
+                    Consult the Stars
+                  </Button>
+                </Link>
+              </Card>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

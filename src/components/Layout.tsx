@@ -9,6 +9,7 @@ import { InstallPrompt } from './InstallPrompt';
 import { NotificationBell } from './NotificationBell';
 import { FloatingHearts } from './FloatingHearts';
 import { ShareModal } from './ShareModal';
+import { MobileBottomNav } from './MobileBottomNav';
 
 export function Layout({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,7 +68,14 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              {/* Logo removed as requested */}
+              <Link to="/" className="flex items-center gap-2 group">
+                <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-purple-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]">
+                  <Heart className="w-4 h-4 fill-current animate-pulse" />
+                </div>
+                <span className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600">
+                  Heart Spark
+                </span>
+              </Link>
             </div>
 
             {/* Desktop Nav */}
@@ -284,7 +292,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main id="main-content" className={cn(
-        "w-full relative z-10",
+        "w-full relative z-10 pb-20 md:pb-0",
         (location.pathname === '/love-gpt' || location.pathname === '/astrology') ? "flex-1 overflow-hidden" : "flex-grow",
         location.pathname === '/' ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : 
         (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories') ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
@@ -306,7 +314,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Footer - Only show on home page */}
       {location.pathname === '/' && (
         <footer className={cn(
-          "py-12 border-t transition-colors duration-300 relative z-10",
+          "py-12 pb-24 md:pb-12 border-t transition-colors duration-300 relative z-10",
           isDarkMode ? "border-zinc-800 bg-zinc-950/80 backdrop-blur-md" : "border-pink-200 bg-white/80 backdrop-blur-md"
         )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -364,6 +372,7 @@ export function Layout({ children }: { children: ReactNode }) {
       )}
       
       <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
+      <MobileBottomNav />
     </div>
   );
 }

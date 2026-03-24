@@ -17,6 +17,8 @@ import {
   arrayUnion,
   arrayRemove,
   where,
+  writeBatch,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -37,9 +39,11 @@ import {
   Shield,
   CheckCircle2,
   Share2,
+  Database,
 } from "lucide-react";
 import { generateContentWithFallback } from "../utils/ai";
 import { motion, AnimatePresence } from "motion/react";
+import seedStories from "../data/seedStories.json";
 
 interface PollOption {
   id: string;
@@ -70,7 +74,24 @@ interface Story {
   commentCount: number;
   reportCount?: number;
   reactedUsers?: string[];
+  comments?: any[]; // For local seeds
 }
+
+const localStories: Story[] = seedStories.map((s, index) => ({
+  id: `seed_${index}`,
+  content: s.content,
+  author: s.author || "Anonymous",
+  category: s.category || "General",
+  likes: s.likes || 0,
+  likedBy: [],
+  reactions: { aww: s.likes || 0, redFlag: 0, drama: 0, heartbreak: 0, slay: 0 },
+  commentCount: s.comments ? s.comments.length : 0,
+  reportCount: 0,
+  reactedUsers: [],
+  createdAt: Timestamp.fromMillis(Date.now() - (index + 1) * 3600000), // 1 hour apart
+  userId: `seed_user_${index}`,
+  comments: s.comments, // Keep local comments
+}));
 
 interface Comment {
   id: string;
@@ -138,7 +159,28 @@ export function CommunityStories() {
   // Real-time comments listener
   useEffect(() => {
     const storyId = selectedStory?.id || expandedStory;
-    if (!db || !storyId) return;
+    if (!storyId) return;
+
+    if (storyId.startsWith("seed_")) {
+      const seedIndex = parseInt(storyId.replace("seed_", ""));
+      const seedStory = seedStories[seedIndex];
+      if (seedStory && seedStory.comments) {
+        setComments(
+          seedStory.comments.map((c, i) => ({
+            id: `seed_comment_${i}`,
+            text: c.text,
+            author: c.user || "Anonymous",
+            createdAt: Timestamp.fromMillis(Date.now() - i * 60000),
+            userId: `seed_user_${i}`,
+          }))
+        );
+      } else {
+        setComments([]);
+      }
+      return;
+    }
+
+    if (!db) return;
 
     setLoadingComments(true);
     const q = query(
@@ -166,7 +208,17 @@ export function CommunityStories() {
 
   // Fetch stories
   useEffect(() => {
-    if (!db) return;
+    if (!db) {
+      if (!showReportedOnly && activeSort !== "👤 My Posts") {
+        let fallbackData = [...localStories];
+        if (activeSort === "🏆 Top (All Time)") {
+          fallbackData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        }
+        setStories(fallbackData);
+      }
+      setLoadingStories(false);
+      return;
+    }
 
     setLoadingStories(true);
 
@@ -209,8 +261,22 @@ export function CommunityStories() {
           ...doc.data(),
         })) as Story[];
         
-        // Client-side sort for My Posts to avoid requiring a composite index
-        if (activeSort === "👤 My Posts") {
+        // Merge local stories if not filtering by My Posts or Reported
+        if (!showReportedOnly && activeSort !== "👤 My Posts") {
+          storyData = [...storyData, ...localStories];
+          
+          // Re-sort the combined array
+          if (activeSort === "🏆 Top (All Time)") {
+            storyData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+          } else {
+            storyData.sort((a, b) => {
+              const timeA = a.createdAt?.toMillis() || 0;
+              const timeB = b.createdAt?.toMillis() || 0;
+              return timeB - timeA;
+            });
+          }
+        } else if (activeSort === "👤 My Posts") {
+          // Client-side sort for My Posts to avoid requiring a composite index
           storyData = storyData.sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || 0;
             const timeB = b.createdAt?.toMillis() || 0;
@@ -223,8 +289,18 @@ export function CommunityStories() {
       },
       (error) => {
         console.error("Error fetching stories:", error);
+        
+        // IF FIREBASE FAILS ENTIRELY, STILL SHOW LOCAL STORIES!
+        if (!showReportedOnly && activeSort !== "👤 My Posts") {
+           let fallbackData = [...localStories];
+           if (activeSort === "🏆 Top (All Time)") {
+             fallbackData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+           }
+           setStories(fallbackData);
+        }
+        
         setLoadingStories(false);
-        showToast("Failed to connect to the database. Please check your internet connection or Firebase configuration.", "error");
+        showToast("Failed to connect to the database. Showing community archive.", "error");
       }
     );
 
@@ -265,6 +341,75 @@ export function CommunityStories() {
     const urlRegex =
       /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/[^\s]*)?)/i;
     return urlRegex.test(text);
+  };
+
+  const handleSeedDatabase = async () => {
+    if (!db) return;
+    if (!user) {
+      showToast("Please login to seed the database.", "error");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to seed the database? This will add 100+ stories.")) return;
+    
+    setLoading(true);
+    try {
+      let batch = writeBatch(db);
+      let count = 0;
+      
+      for (const story of seedStories) {
+        const newStoryRef = doc(collection(db, "community_stories"));
+        
+        batch.set(newStoryRef, {
+          content: story.content,
+          author: story.author || "Anonymous",
+          category: story.category || "General",
+          likes: story.likes || 0,
+          likedBy: [],
+          reactions: { aww: 0, redFlag: 0, drama: 0, heartbreak: 0, slay: 0 },
+          commentCount: story.comments ? story.comments.length : 0,
+          reportCount: 0,
+          reactedUsers: [],
+          createdAt: serverTimestamp(),
+          userId: user.uid,
+        });
+        count++;
+
+        if (count % 400 === 0) {
+          await batch.commit();
+          batch = writeBatch(db);
+        }
+
+        if (story.comments && story.comments.length > 0) {
+          for (const comment of story.comments) {
+            const commentRef = doc(collection(db, `community_stories/${newStoryRef.id}/comments`));
+            batch.set(commentRef, {
+              text: comment.text,
+              author: comment.user || "Anonymous",
+              createdAt: serverTimestamp(),
+              userId: user.uid,
+            });
+            count++;
+
+            if (count % 400 === 0) {
+              await batch.commit();
+              batch = writeBatch(db);
+            }
+          }
+        }
+      }
+      
+      // Commit any remaining
+      if (count % 400 !== 0) {
+        await batch.commit();
+      }
+      
+      showToast(`Successfully seeded stories!`, "success");
+    } catch (error) {
+      console.error("Error seeding database:", error);
+      showToast("Failed to seed database. Check console for details.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePostStory = async (e: React.FormEvent) => {
@@ -400,8 +545,13 @@ export function CommunityStories() {
     string | null
   >(null);
 
+  const [isSharing, setIsSharing] = useState(false);
+
   const handleShare = async (story: Story, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (isSharing) return;
+    setIsSharing(true);
     
     const shareData = {
       title: `Story by ${story.author} on Community`,
@@ -424,15 +574,35 @@ export function CommunityStories() {
       if ((err as Error).name !== 'AbortError') {
         showToast("Failed to share story", "error");
       }
+    } finally {
+      setIsSharing(false);
     }
   };
 
   const handleReaction = async (story: Story, emoji: string) => {
-    if (!db) return;
     if (!user) {
       showToast("Please login to react to stories!", "info");
       return;
     }
+    if (story.id.startsWith("seed_")) {
+      // Optimistic update for seed stories
+      const updatedStories = stories.map((s) => {
+        if (s.id === story.id) {
+          const newReactions = { ...s.reactions };
+          newReactions[emoji as keyof typeof newReactions] = (newReactions[emoji as keyof typeof newReactions] || 0) + 1;
+          const updatedStory = { ...s, reactions: newReactions };
+          if (selectedStory?.id === story.id) {
+            setSelectedStory(updatedStory);
+          }
+          return updatedStory;
+        }
+        return s;
+      });
+      setStories(updatedStories);
+      showToast("✨ Reaction added to archived community story!", "success");
+      return;
+    }
+    if (!db) return;
 
     const userReactionKey = `${user.uid}_${emoji}`;
     const hasReactedToThis = story.reactedUsers?.includes(userReactionKey);
@@ -515,6 +685,14 @@ export function CommunityStories() {
   };
 
   const handleReport = async (storyId: string) => {
+    if (!user) {
+      showToast("Please login to report stories.", "error");
+      return;
+    }
+    if (storyId.startsWith("seed_")) {
+      showToast("This story has already been moderated and archived.", "info");
+      return;
+    }
     if (!db) return;
 
     if (reportingPostId !== storyId) {
@@ -542,6 +720,10 @@ export function CommunityStories() {
 
   // --- ADMIN FUNCTIONS ---
   const handleClearReports = async (storyId: string) => {
+    if (storyId.startsWith("seed_")) {
+      showToast("Cannot modify archived community stories.", "error");
+      return;
+    }
     if (!db) return;
     try {
       await updateDoc(doc(db, "community_stories", storyId), {
@@ -555,6 +737,10 @@ export function CommunityStories() {
   };
 
   const handleDeletePost = async (storyId: string) => {
+    if (storyId.startsWith("seed_")) {
+      showToast("Cannot delete archived community stories.", "error");
+      return;
+    }
     if (!db) return;
 
     if (deletingPostId !== storyId) {
@@ -579,6 +765,10 @@ export function CommunityStories() {
   };
 
   const handleBlockUser = async (authorId: string) => {
+    if (authorId.startsWith("seed_")) {
+      showToast("Cannot block an archived user.", "error");
+      return;
+    }
     if (!db) return;
     if (authorId === "anonymous") {
       showToast(
@@ -623,6 +813,11 @@ export function CommunityStories() {
     e.preventDefault();
     if (!user) {
       showToast("Please login to comment!", "error");
+      return;
+    }
+    if (storyId.startsWith("seed_")) {
+      showToast("🔒 Comments are locked for archived stories.", "error");
+      setNewComment("");
       return;
     }
     if (!newComment.trim() || !db) return;
@@ -708,14 +903,25 @@ export function CommunityStories() {
           <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white text-adaptive-readable flex items-center gap-2">
             Community <MessageCircle className="w-6 h-6 text-pink-500" />
           </h1>
-          {isAdmin && (
-            <button
-              onClick={() => setShowReportedOnly(!showReportedOnly)}
-              className={`p-2 rounded-full transition-colors ${showReportedOnly ? "bg-red-500/20 text-red-500" : "bg-white/60 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-white"}`}
-            >
-              <Flag className="w-5 h-5" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {import.meta.env.DEV && (
+              <button
+                onClick={handleSeedDatabase}
+                className="p-2 rounded-full transition-colors bg-indigo-500/20 text-indigo-500 hover:bg-indigo-500/30"
+                title="Seed Database (Dev Only)"
+              >
+                <Database className="w-5 h-5" />
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => setShowReportedOnly(!showReportedOnly)}
+                className={`p-2 rounded-full transition-colors ${showReportedOnly ? "bg-red-500/20 text-red-500" : "bg-white/60 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-white"}`}
+              >
+                <Flag className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Category Pills */}
@@ -1209,6 +1415,10 @@ export function CommunityStories() {
                               showToast("Please login to vote!", "info");
                               return;
                             }
+                            if (selectedStory.id.startsWith("seed_")) {
+                              showToast("Voting is closed for archived stories.", "info");
+                              return;
+                            }
                             if (hasVoted) return;
 
                             // Optimistic update
@@ -1218,6 +1428,7 @@ export function CommunityStories() {
                             setSelectedStory(updatedStory);
 
                             // Firebase update
+                            if (!db) return;
                             try {
                               const storyRef = doc(
                                 db,

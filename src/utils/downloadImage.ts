@@ -64,10 +64,18 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
   }
 };
 
+let isSharing = false;
+
 export const shareAsImage = async (elementId: string, title: string, text: string) => {
+  if (isSharing) {
+    console.warn('A share operation is already in progress.');
+    return;
+  }
+  
   const element = document.getElementById(elementId);
   if (!element) return;
 
+  isSharing = true;
   const watermark = addWatermark(element);
 
   try {
@@ -77,7 +85,7 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
     const blob = await res.blob();
     const file = new File([blob], 'heartspark-result.png', { type: 'image/png' });
 
-    const shareText = text + "\\n\\nCheck it out at: " + window.location.href;
+    const shareText = text + "\n\nCheck it out at: " + window.location.href;
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
@@ -95,10 +103,13 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
       navigator.clipboard.writeText(shareText);
       alert('Result copied to clipboard!');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sharing image:', error);
-    alert('Failed to share image. Please try again.');
+    if (error.name !== 'AbortError') {
+      alert('Failed to share image. Please try again.');
+    }
   } finally {
+    isSharing = false;
     if (element.contains(watermark)) {
       element.removeChild(watermark);
     }
@@ -151,14 +162,21 @@ export const downloadAsPdf = async (elementId: string, filename: string) => {
 };
 
 export const shareAsPdf = async (elementId: string, title: string, text: string) => {
+  if (isSharing) {
+    console.warn('A share operation is already in progress.');
+    return;
+  }
+  
+  isSharing = true;
   const blob = await generatePdfBlob(elementId);
   if (!blob) {
+    isSharing = false;
     alert('Failed to generate PDF. Please try again.');
     return;
   }
 
   const file = new File([blob], 'heartspark-result.pdf', { type: 'application/pdf' });
-  const shareText = text + "\\n\\nCheck it out at: " + window.location.href;
+  const shareText = text + "\n\nCheck it out at: " + window.location.href;
 
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -177,8 +195,12 @@ export const shareAsPdf = async (elementId: string, title: string, text: string)
       navigator.clipboard.writeText(shareText);
       alert('Result copied to clipboard!');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sharing PDF:', error);
-    alert('Failed to share PDF. Please try again.');
+    if (error.name !== 'AbortError') {
+      alert('Failed to share PDF. Please try again.');
+    }
+  } finally {
+    isSharing = false;
   }
 };

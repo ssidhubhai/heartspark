@@ -1,0 +1,871 @@
+[
+  {
+    "author": "anxious_coder",
+    "category": "Career",
+    "content": "linkedin kholte hi depression start ho jata h. everyone is getting internships, winning hackathons, aur m yaha abhi tak bug fix kr rha hu. feeling so left behind rn. 📉",
+    "likes": 88,
+    "commentCount": 3,
+    "comments": [
+      { "user": "dev_bro", "text": "linkedin is fake bro, sab show off h" },
+      { "user": "keep_grinding", "text": "ur path is different. don't compare." },
+      { "user": "debug_king", "text": "bug fix ho gya kya?" }
+    ]
+  },
+  {
+    "author": "school_nostalgia",
+    "category": "Friendship",
+    "content": "we promised to stay in touch after school ended. ab unki stories dekhta hu toh lagta h i don't even know these people anymore. growing up is just losing friends slowly.",
+    "likes": 74,
+    "commentCount": 2,
+    "comments": [
+      { "user": "sad_vibes", "text": "this is the hardest truth of life" },
+      { "user": "user_221", "text": "text them! maybe they miss u too." }
+    ]
+  },
+  {
+    "author": "black_shirt_guy",
+    "category": "Crush",
+    "content": "he wore a black shirt today. i repeat, HE WORE BLACK. my brain stopped working for a solid 5 mins. how can someone look that good just standing there??",
+    "likes": 92,
+    "commentCount": 1,
+    "comments": [
+      { "user": "fangirl_01", "text": "black shirt hits different 😭" }
+    ]
+  },
+  {
+    "author": "sleepy_head",
+    "category": "Funny",
+    "content": "set an alarm for 5 AM to study. woke up at 5 AM, turned it off, told myself '5 mins more'. it is now 11 AM. my future is officially in danger. 🤡",
+    "likes": 96,
+    "commentCount": 4,
+    "comments": [
+      { "user": "topper_toxic", "text": "bhai tera syllabus kese hoga?" },
+      { "user": "us_moment", "text": "literally me everyday lol" },
+      { "user": "lazy_panda", "text": "sleep is important for mental health ✨" },
+      { "user": "exam_fear", "text": "kal se pakka padhunga bhai" }
+    ]
+  },
+  {
+    "author": "introvert_life",
+    "category": "Life",
+    "content": "party me jane se pehle itna overthink krta hu ki waha baat kisse karunga. waha jake phone scroll krta hu akele. ghr aake sochta hu ki gaya hi kyu tha.",
+    "likes": 55,
+    "commentCount": 2,
+    "comments": [
+      { "user": "homebody", "text": "bed + netflix > any party" },
+      { "user": "same_bro", "text": "social battery dies in 10 mins" }
+    ]
+  },
+  {
+    "author": "gym_rat_99",
+    "category": "Improvement",
+    "content": "started going to the gym to get over a breakup. now i just love the weights more than i ever loved her. self love is the best love ngl. 💪",
+    "likes": 81,
+    "commentCount": 2,
+    "comments": [
+      { "user": "alpha_vibe", "text": "W mindset king 👑" },
+      { "user": "iron_lifter", "text": "we go jim" }
+    ]
+  },
+  {
+    "author": "overthinker_pro",
+    "category": "Deep",
+    "content": "kya wo mere baare me kabhi sochta hoga? ya m bas uske liye ek random character hu uski story me? sometimes i wish i could read minds just for one minute.",
+    "likes": 47,
+    "commentCount": 1,
+    "comments": [
+      { "user": "midnight_tears", "text": "if u read his mind, u might get more hurt." }
+    ]
+  },
+  {
+    "author": "chai_is_love",
+    "category": "Relatable",
+    "content": "if making chai was a skill on my resume, i would be a billionaire. kisi ko chai chahiye toh batao, i need validation. ☕",
+    "likes": 63,
+    "commentCount": 3,
+    "comments": [
+      { "user": "tapri_wala", "text": "ek adrak wali bhej do bhai" },
+      { "user": "coffee_hater", "text": "chai >>>> any aesthetic starbucks drink" },
+      { "user": "puneet_v", "text": "aaja tapri pe milte h" }
+    ]
+  },
+  {
+    "author": "lost_student",
+    "category": "Career",
+    "content": "papa ne pucha aage ka kya plan h. maine keh diya sab sorted h. real scene ye h ki mujhe kal subah uth ke kya khana h wo bhi nhi pata. the pressure is insane.",
+    "likes": 89,
+    "commentCount": 2,
+    "comments": [
+      { "user": "future_ceo", "text": "fake it till u make it bhai" },
+      { "user": "stress_max", "text": "parents ko sach batane me darr lagta h" }
+    ]
+  },
+  {
+    "author": "hopeless_romantic",
+    "category": "Crush",
+    "content": "our eyes met for exactly 2.5 seconds in the corridor. we both looked away immediately. i have now planned our wedding venue and named our two dogs. 🐶💍",
+    "likes": 98,
+    "commentCount": 2,
+    "comments": [
+      { "user": "delulu_is_solulu", "text": "stay delulu bestie" },
+      { "user": "reality_check", "text": "uski pehle se setting h 😂" }
+    ]
+  },
+  {
+    "author": "metro_diaries",
+    "category": "Life",
+    "content": "every face on this train looks so exhausted. we are all just rushing somewhere to make enough money to survive so we can rush back home again. capitalism is scary.",
+    "likes": 66,
+    "commentCount": 1,
+    "comments": [
+      { "user": "deep_thinker", "text": "matrix glitch fr" }
+    ]
+  },
+  {
+    "author": "sunflower_girl",
+    "category": "Confession",
+    "content": "I deleted all my dating apps today. i’m so tired of forced conversations and 'hey what's up'. i just want to meet someone organically in a bookstore or a cafe. is romance dead?",
+    "likes": 79,
+    "commentCount": 3,
+    "comments": [
+      { "user": "book_lover", "text": "not dead! just rare." },
+      { "user": "swipe_fatigue", "text": "dating apps are literally soul draining" },
+      { "user": "jake_99", "text": "which bookstore do u go to? asking for a friend 👀" }
+    ]
+  },
+  {
+    "author": "backbench_vibe",
+    "category": "Funny",
+    "content": "teacher ne randomly khada kr diya question puchne. maine confidently galat answer diya, aur usne mujhe baithne bol diya. confidence is the key guys. 🔑",
+    "likes": 82,
+    "commentCount": 2,
+    "comments": [
+      { "user": "backbencher_pro", "text": "teacher was too stunned to speak" },
+      { "user": "topper_01", "text": "bhai marks kase aate h tere?" }
+    ]
+  },
+  {
+    "author": "rainy_nights",
+    "category": "Nostalgia",
+    "content": "baarish ki aawaz aur purane gaane. nothing makes you miss a person more than this combo. i hope you're doing well wherever you are.",
+    "likes": 53,
+    "commentCount": 0,
+    "comments": []
+  },
+  {
+    "author": "hustle_culture",
+    "category": "Improvement",
+    "content": "deleted instagram today. screen time was 6 hours. i realized i'm watching other people live their dreams instead of working on mine. day 1 of monk mode.",
+    "likes": 91,
+    "commentCount": 3,
+    "comments": [
+      { "user": "focus_vibe", "text": "see u back here in 2 days lol" },
+      { "user": "grind_set", "text": "let's go bro! you got this." },
+      { "user": "monk_mode", "text": "best decision ever, trust me" }
+    ]
+  },
+  {
+    "author": "secret_keeper",
+    "category": "Confession",
+    "content": "my best friend is dating the guy i've loved for 3 years. i have to smile and say 'you guys look cute together' while my heart literally breaks into pieces.",
+    "likes": 84,
+    "commentCount": 2,
+    "comments": [
+      { "user": "sad_hours", "text": "omg that is torture. i'm so sorry." },
+      { "user": "real_advice", "text": "u need to distance urself from them for ur own sanity" }
+    ]
+  },
+  {
+    "author": "foodie_forever",
+    "category": "Relatable",
+    "content": "mummy subah uth ke bolti h 'kya banau?'. mai bolta hu 'kuch bhi bana do'. phir wo tinde bana deti h. the betrayal is immeasurable and my day is ruined.",
+    "likes": 77,
+    "commentCount": 4,
+    "comments": [
+      { "user": "tinde_hater", "text": "TINDE IS A CRIME" },
+      { "user": "mummy_s_boy", "text": "kuch bhi means paneer bro, basic logic" },
+      { "user": "desi_problems", "text": "bhookh maar di puri" },
+      { "user": "maggi_lover", "text": "maggi bana le chup chap" }
+    ]
+  },
+  {
+    "author": "stars_and_scars",
+    "category": "Deep",
+    "content": "we are a generation that knows exactly how to heal, we have all the therapy terms, we know what boundaries are, but we are still so incredibly sad.",
+    "likes": 95,
+    "commentCount": 1,
+    "comments": [
+      { "user": "psych_major", "text": "knowing the theory and applying it are two different things." }
+    ]
+  },
+  {
+    "author": "broken_guitar",
+    "category": "Life",
+    "content": "used to play guitar everyday. now it just gathers dust in the corner of my room. adulting really steals your hobbies one by one.",
+    "likes": 48,
+    "commentCount": 2,
+    "comments": [
+      { "user": "music_soul", "text": "pick it up today. just for 5 mins. do it." },
+      { "user": "corporate_slave", "text": "i feel u. my paints are all dried up." }
+    ]
+  },
+  {
+    "author": "awkward_turtle",
+    "category": "Funny",
+    "content": "someone waved at me, i waved back enthusiastically. they were waving to the person behind me. i immediately pretended to be stretching my arm. smooth af. 🐢",
+    "likes": 88,
+    "commentCount": 2,
+    "comments": [
+      { "user": "cringe_max", "text": "i would simply evaporate" },
+      { "user": "smooth_operator", "text": "stretching is important for health tbh" }
+    ]
+  },
+  {
+    "author": "moon_child",
+    "category": "Confession",
+    "content": "i act like i don't care about anything, but i actually care too much. i overanalyze every text, every look, every silence. my 'chill' vibe is just a defense mechanism.",
+    "likes": 73,
+    "commentCount": 1,
+    "comments": [
+      { "user": "us_moment", "text": "why did u expose me like this?" }
+    ]
+  },
+  {
+    "author": "desperate_student",
+    "category": "Career",
+    "content": "resume me itne fake skills likh diye h ki ab darr lagta h company aake verify na krle. 'advanced excel' likha h but mujhe sirf sum krna aata h. 💀",
+    "likes": 94,
+    "commentCount": 3,
+    "comments": [
+      { "user": "hr_manager", "text": "ur hired 😂" },
+      { "user": "excel_pro", "text": "vlookup sikh le bhai, izzat bach jayegi" },
+      { "user": "fake_it", "text": "sab yahi krte h chill kr" }
+    ]
+  },
+  {
+    "author": "blue_skies",
+    "category": "Romance",
+    "content": "I don't want a perfect relationship. I just want someone who will sit with me in silence when things get too loud inside my head.",
+    "likes": 86,
+    "commentCount": 0,
+    "comments": []
+  },
+  {
+    "author": "sarcasm_king",
+    "category": "Funny",
+    "content": "my bank account balance is looking like a temperature right now. aur wo bhi celsius me, fahrenheit me nhi. 😭💸",
+    "likes": 71,
+    "commentCount": 2,
+    "comments": [
+      { "user": "broke_student", "text": "mera toh minus me ja rha h" },
+      { "user": "rich_kid", "text": "bhai upi bhej du?" }
+    ]
+  },
+  {
+    "author": "late_replier",
+    "category": "Relatable",
+    "content": "i saw ur message, i replied to it in my head, and then i completely forgot to type it out. i'm not ignoring u, i'm just mentally exhausted.",
+    "likes": 64,
+    "commentCount": 1,
+    "comments": [
+      { "user": "angry_bff", "text": "this is ur excuse every single time 😡" }
+    ]
+  },
+  {
+    "author": "healing_heart",
+    "category": "Improvement",
+    "content": "stopped stalking their profile today. it took everything in me to not search that name. small wins, right?",
+    "likes": 82,
+    "commentCount": 3,
+    "comments": [
+      { "user": "proud_of_u", "text": "so proud of u! keep going!" },
+      { "user": "heartbreak_kid", "text": "day 1 is the hardest. stay strong." },
+      { "user": "move_on_vibe", "text": "block krde, best tarika h" }
+    ]
+  },
+  {
+    "author": "library_crush",
+    "category": "Crush",
+    "content": "we always make eye contact at exactly 4 PM in the reading room. today u didn't show up. the whole room feels empty tbh.",
+    "likes": 58,
+    "commentCount": 1,
+    "comments": [
+      { "user": "romantic_fool", "text": "maybe they are sick? look out tmrw!" }
+    ]
+  },
+  {
+    "author": "burnt_out_kid",
+    "category": "Deep",
+    "content": "i'm tired of being the 'mature' one. sometimes i just want to break down and have someone else fix everything for me. independence is exhausting.",
+    "likes": 90,
+    "commentCount": 2,
+    "comments": [
+      { "user": "eldest_daughter", "text": "eldest sibling syndrome hits hard" },
+      { "user": "user_11", "text": "u can rest. the world won't end." }
+    ]
+  },
+  {
+    "author": "pizza_lover",
+    "category": "Funny",
+    "content": "my toxic trait is thinking i can finish a medium pizza alone, and then actually finishing it and feeling like a regretful potato.",
+    "likes": 68,
+    "commentCount": 2,
+    "comments": [
+      { "user": "foodie_99", "text": "medium is a personal pizza if u believe in urself" },
+      { "user": "diet_starts_tmrw", "text": "regretful potato is my daily mood" }
+    ]
+  },
+  {
+    "author": "friendzone_ceo",
+    "category": "Regret",
+    "content": "she said 'u are like a brother to me'. the pain i felt in my chest could power a small city. it's over guys. packing my bags.",
+    "likes": 95,
+    "commentCount": 4,
+    "comments": [
+      { "user": "f_in_chat", "text": "F" },
+      { "user": "bro_zoned", "text": "rakhi aane wali h bhai, bachke rehna" },
+      { "user": "gym_time", "text": "time to hit the gym bro" },
+      { "user": "sad_boy", "text": "koi na bhai, dusri mil jayegi" }
+    ]
+  },
+  {
+    "author": "night_drive",
+    "category": "Life",
+    "content": "empty roads, cold wind, and old songs. sometimes a late night drive is the only therapy u can afford.",
+    "likes": 44,
+    "commentCount": 1,
+    "comments": [
+      { "user": "car_guy", "text": "the best kind of therapy." }
+    ]
+  },
+  {
+    "author": "exam_warrior",
+    "category": "Relatable",
+    "content": "exam hall me jab invigilator mere paper ke paas aake rukta h aur deeply dekhta h... bhai aatma nikal jati h ki kya galat likh diya mene. 😰",
+    "likes": 87,
+    "commentCount": 2,
+    "comments": [
+      { "user": "cheater_pro", "text": "mujhe lagta h pakda gaya" },
+      { "user": "anxious_mess", "text": "fr my heartbeat goes to 200" }
+    ]
+  },
+  {
+    "author": "ghosted_again",
+    "category": "Confession",
+    "content": "we talked day and night for 2 months. shared secrets. made plans. and then one day, just silence. how do people detach so easily?",
+    "likes": 91,
+    "commentCount": 2,
+    "comments": [
+      { "user": "truth_hurts", "text": "they found someone else. sorry." },
+      { "user": "heal_urself", "text": "their loss. u deserve better." }
+    ]
+  },
+  {
+    "author": "weekend_vibes",
+    "category": "Funny",
+    "content": "friday night me plans banane ka enthusiasm aur saturday morning me wo plans cancel krne ki khushi. perfectly balanced.",
+    "likes": 61,
+    "commentCount": 0,
+    "comments": []
+  },
+  {
+    "author": "dream_chaser",
+    "category": "Career",
+    "content": "relatives asking 'aur kya chal rha h' is the biggest horror movie plot. uncle please, mujhe khud nahi pata kya chal rha h.",
+    "likes": 83,
+    "commentCount": 3,
+    "comments": [
+      { "user": "taane_expert", "text": "bol do sharma ji ke bete se better chal rha h" },
+      { "user": "desi_struggles", "text": "every festival ever." },
+      { "user": "unemployed_friend", "text": "i just hide in my room" }
+    ]
+  },
+  {
+    "author": "sunsets_and_u",
+    "category": "Crush",
+    "content": "you sent me a picture of the sunset today. it's such a small thing, but u saw something beautiful and ur first thought was to show me. i'm keeping this feeling forever.",
+    "likes": 78,
+    "commentCount": 1,
+    "comments": [
+      { "user": "hopeless_romantic", "text": "this is top tier romance right here." }
+    ]
+  },
+  {
+    "author": "anxious_introvert",
+    "category": "Life",
+    "content": "practicing my order 5 times in my head before reaching the counter, aur phir counter pe jake voice crack ho jana. just end me.",
+    "likes": 59,
+    "commentCount": 2,
+    "comments": [
+      { "user": "social_anxiety", "text": "me ordering at mcdonalds 😭" },
+      { "user": "user_zero", "text": "i literally point at the menu to avoid talking" }
+    ]
+  },
+  {
+    "author": "moving_on",
+    "category": "Improvement",
+    "content": "deleted the playlist i made for u. it felt like deleting a part of my history, but i need space for new songs now. goodbye.",
+    "likes": 85,
+    "commentCount": 1,
+    "comments": [
+      { "user": "new_beginnings", "text": "beautifully said. make a new playlist for urself!" }
+    ]
+  },
+  {
+    "author": "moms_food",
+    "category": "Nostalgia",
+    "content": "hostel ka khana kha kha ke thak gya hu. aj mummy ke hath ki dal chawal bohot yaad aa rhi h. we take home for granted until we leave it.",
+    "likes": 96,
+    "commentCount": 3,
+    "comments": [
+      { "user": "hostel_survivor", "text": "mess ka khana is poison bhai" },
+      { "user": "miss_u_mom", "text": "call her! she will be so happy." },
+      { "user": "pg_life", "text": "zomato is my new parent now" }
+    ]
+  },
+  {
+    "author": "over_it",
+    "category": "Funny",
+    "content": "just saw my ex looking happy. completely ruined my day. 😒",
+    "likes": 41,
+    "commentCount": 2,
+    "comments": [
+      { "user": "petty_king", "text": "drop a dislike on their life" },
+      { "user": "lol_master", "text": "the honesty is refreshing lmao" }
+    ]
+  },
+  {
+    "author": "deadline_fighter",
+    "category": "Relatable",
+    "content": "submitting the assignment at 11:59 PM gives a different kind of adrenaline rush. i am basically an extreme sports athlete now. 🏃‍♂️💨",
+    "likes": 88,
+    "commentCount": 3,
+    "comments": [
+      { "user": "procrastinator_pro", "text": "the panic at 11:58 is unmatched" },
+      { "user": "topper_boy", "text": "bhai mera toh 2 din pehle ho gya tha" },
+      { "user": "last_minute_legend", "text": "welcome to the club bro" }
+    ]
+  },
+  {
+    "author": "quarter_life_crisis",
+    "category": "Life",
+    "content": "half my friends are getting married and buying houses, and the other half are sharing memes at 3 AM. i don't even know what stage of life i am supposed to be in.",
+    "likes": 95,
+    "commentCount": 2,
+    "comments": [
+      { "user": "confused_adult", "text": "i am the meme sharing half 😭" },
+      { "user": "user_88", "text": "we are all just pretending to be adults tbh" }
+    ]
+  },
+  {
+    "author": "metro_crush_007",
+    "category": "Crush",
+    "content": "blue line metro. 8:30 AM. u were reading a murakami book and wearing a yellow sweater. i wanted to ask about the book but my station arrived. if u see this, u have a great vibe. 🌻",
+    "likes": 76,
+    "commentCount": 1,
+    "comments": [
+      { "user": "book_nerd", "text": "murakami readers are always elite" }
+    ]
+  },
+  {
+    "author": "corporate_mazdoor",
+    "category": "Career",
+    "content": "manager ne 'quick sync' bol ke 1 ghante ka gyan de diya. meri chai thandi ho gyi aur soul bhi mar gyi. weekend kab aayega?",
+    "likes": 82,
+    "commentCount": 4,
+    "comments": [
+      { "user": "hr_wala", "text": "we are a family here 😊" },
+      { "user": "tired_employee", "text": "toxic positivity at its peak" },
+      { "user": "chai_lover", "text": "thandi chai is the real tragedy here" },
+      { "user": "tech_bro", "text": "resign maar de bhai" }
+    ]
+  },
+  {
+    "author": "healing_journey",
+    "category": "Improvement",
+    "content": "took a mental health day from work today. spent the whole day feeling guilty for not being productive. why is it so hard to just rest without feeling like a failure?",
+    "likes": 91,
+    "commentCount": 2,
+    "comments": [
+      { "user": "therapist_vibe", "text": "rest is productive. u need it to function." },
+      { "user": "burnout_kid", "text": "i feel this so much. the guilt eats u alive." }
+    ]
+  },
+  {
+    "author": "mummy_da_dhaba",
+    "category": "Funny",
+    "content": "mummy asking 'khana kaisa bana hai?' is a trap. there is only one correct answer, and if u hesitate for even a second, emotional blackmail starts. 😂",
+    "likes": 64,
+    "commentCount": 2,
+    "comments": [
+      { "user": "desi_kid", "text": "it's a high stakes game bro" },
+      { "user": "foodie_01", "text": "always say 'bohot badhiya' before taking the first bite" }
+    ]
+  },
+  {
+    "author": "silent_goodbyes",
+    "category": "Regret",
+    "content": "the worst part about drifting apart is that there is no big fight to blame it on. life just happened, we got busy, and now we are strangers who know all of each other's secrets.",
+    "likes": 89,
+    "commentCount": 1,
+    "comments": [
+      { "user": "nostalgia_hits", "text": "this is the most painful type of heartbreak." }
+    ]
+  },
+  {
+    "author": "gym_therapy",
+    "category": "Confession",
+    "content": "headphones in, volume at 100%, heavy weights. it's the only 2 hours of my day where the voices in my head finally shut up. gym isn't for my body, it's for my mind.",
+    "likes": 73,
+    "commentCount": 3,
+    "comments": [
+      { "user": "iron_brother", "text": "amen to that." },
+      { "user": "fitness_freak", "text": "the iron never lies to u." },
+      { "user": "gym_sis", "text": "therapy is expensive, pre-workout is cheap" }
+    ]
+  },
+  {
+    "author": "hostel_diaries",
+    "category": "Relatable",
+    "content": "hostel me maggi banane jao toh achanak se 5 'best friends' paida ho jate h kamre me. mere hisse me hamesha sirf soup aata h. 🍜",
+    "likes": 58,
+    "commentCount": 2,
+    "comments": [
+      { "user": "maggi_thief", "text": "sharing is caring bhai" },
+      { "user": "pg_survivor", "text": "hide the maggi packets in your shoes. pro tip." }
+    ]
+  },
+  {
+    "author": "hopeful_romantic",
+    "category": "Crush",
+    "content": "he replied to my instagram story. it was just a laughing emoji, but i have already analyzed it 50 different ways. i am officially delusional.",
+    "likes": 67,
+    "commentCount": 1,
+    "comments": [
+      { "user": "delulu_gang", "text": "he's basically in love with u bestie" }
+    ]
+  },
+  {
+    "author": "introvert_problems",
+    "category": "Funny",
+    "content": "kisi ne door bell bajayi aur m apne hi ghar me ninja ki tarah chhup gaya so that they think no one is home. adulting is going great.",
+    "likes": 85,
+    "commentCount": 3,
+    "comments": [
+      { "user": "stealth_mode", "text": "turning off the TV volume to 0" },
+      { "user": "relatable_af", "text": "i literally crawl on the floor" },
+      { "user": "extrovert_spy", "text": "u guys need help 😭" }
+    ]
+  },
+  {
+    "author": "midnight_tears",
+    "category": "Deep",
+    "content": "i miss the version of me that believed everything would work out magically. now i just expect the worst so i don't get disappointed. growing up stole my optimism.",
+    "likes": 92,
+    "commentCount": 2,
+    "comments": [
+      { "user": "reality_check", "text": "defensive pessimism. it's a real thing." },
+      { "user": "hug_sender", "text": "it will work out. maybe not magically, but it will." }
+    ]
+  },
+  {
+    "author": "wifi_stealer",
+    "category": "Funny",
+    "content": "padosi ne wifi ka password change kar diya. ab life me koi direction nahi bachi h. feeling disconnected literally and spiritually. 📶",
+    "likes": 44,
+    "commentCount": 1,
+    "comments": [
+      { "user": "jio_zindabad", "text": "data pack daal le gareeb" }
+    ]
+  },
+  {
+    "author": "old_school_love",
+    "category": "Romance",
+    "content": "i don't want a snapchat streak. write me a handwritten letter. buy me flowers from the local market. let's just walk and talk without looking at our phones.",
+    "likes": 78,
+    "commentCount": 2,
+    "comments": [
+      { "user": "vintage_soul", "text": "this is the dream." },
+      { "user": "modern_kid", "text": "handwritten letters are too much effort tbh" }
+    ]
+  },
+  {
+    "author": "salary_day",
+    "category": "Relatable",
+    "content": "salary aate hi saare paise EMI, rent aur bills me chale jate h. mere account me paise bas transit krte h, stay nahi krte. 💸",
+    "likes": 81,
+    "commentCount": 3,
+    "comments": [
+      { "user": "broke_employee", "text": "bank account acts like a railway station" },
+      { "user": "middle_class_boy", "text": "tax katne ke baad toh aur rona aata h" },
+      { "user": "user_zero", "text": "us bhai us" }
+    ]
+  },
+  {
+    "author": "unsaid_words",
+    "category": "Regret",
+    "content": "i typed out a whole paragraph explaining how much u hurt me. read it twice. deleted it. and just replied 'okay'. some people aren't worth the explanation.",
+    "likes": 94,
+    "commentCount": 2,
+    "comments": [
+      { "user": "mature_move", "text": "peace over proving a point." },
+      { "user": "spill_the_tea", "text": "u should have sent it!" }
+    ]
+  },
+  {
+    "author": "backbencher_philosophy",
+    "category": "Funny",
+    "content": "class me sabse aage baithne wale bacche life me aage badhte h. hum piche baithne wale bas dusro ko aage badhte hue dekhte h. 🚶‍♂️",
+    "likes": 52,
+    "commentCount": 1,
+    "comments": [
+      { "user": "front_row_nerd", "text": "padhai pe dhyan do philosophy pe nahi" }
+    ]
+  },
+  {
+    "author": "caffeine_dependent",
+    "category": "Life",
+    "content": "my blood type is officially iced coffee. if i don't have my coffee by 10 AM, i become a threat to society. ☕🧊",
+    "likes": 38,
+    "commentCount": 0,
+    "comments": []
+  },
+  {
+    "author": "fake_scenario_expert",
+    "category": "Confession",
+    "content": "created a whole fake scenario in my head where me and my crush save the school from terrorists. now i'm blushing in the middle of a math lecture.",
+    "likes": 87,
+    "commentCount": 3,
+    "comments": [
+      { "user": "action_hero", "text": "every guy has this exact fantasy lmao" },
+      { "user": "math_sir", "text": "board pe dhyan de beta" },
+      { "user": "delulu_max", "text": "and then everyone claps for u right?" }
+    ]
+  },
+  {
+    "author": "lost_friend",
+    "category": "Deep",
+    "content": "saw my ex best friend today. we just smiled at each other and walked past. crazy how u can know every single detail about a person and then just become strangers with memories.",
+    "likes": 96,
+    "commentCount": 1,
+    "comments": [
+      { "user": "heartbreak_kid", "text": "friendship breakups hurt more than romantic ones." }
+    ]
+  },
+  {
+    "author": "desperate_engineer",
+    "category": "Career",
+    "content": "resume me 'works well under pressure' likha h, pr yahan cooker ki seeti bajne se mujhe anxiety ho jati h. corporate world is a scam. 👨‍💻",
+    "likes": 69,
+    "commentCount": 2,
+    "comments": [
+      { "user": "hr_spy", "text": "noted." },
+      { "user": "btech_babu", "text": "engineering life in one sentence" }
+    ]
+  },
+  {
+    "author": "star_gazer",
+    "category": "Life",
+    "content": "went to the terrace to look at the stars, but the city lights are too bright. we traded the universe for streetlights and neon signs. kinda sad tbh.",
+    "likes": 45,
+    "commentCount": 1,
+    "comments": [
+      { "user": "nature_lover", "text": "need to go to the mountains ASAP" }
+    ]
+  },
+  {
+    "author": "overthinking_champion",
+    "category": "Funny",
+    "content": "kisi ne mujhe text kiya 'we need to talk'. meri aatma sharir chhod chuki h. mene saare paap yaad kr liye apne pichle 5 saal ke. 😨",
+    "likes": 84,
+    "commentCount": 2,
+    "comments": [
+      { "user": "anxiety_gang", "text": "the 4 most terrifying words in english" },
+      { "user": "chill_bro", "text": "plot twist: they just wanted a netflix password" }
+    ]
+  },
+  {
+    "author": "chai_par_charcha",
+    "category": "Romance",
+    "content": "date at a fancy aesthetic cafe is cool, but sitting at a tapri cutting chai peete hue deep conversations krna is the ultimate love language.",
+    "likes": 71,
+    "commentCount": 1,
+    "comments": [
+      { "user": "desi_romance", "text": "plus it's cheaper. win-win." }
+    ]
+  },
+  {
+    "author": "late_night_hustler",
+    "category": "Improvement",
+    "content": "working while everyone else is sleeping. it's lonely, it's exhausting, but i know it's going to pay off. i refuse to be average.",
+    "likes": 93,
+    "commentCount": 3,
+    "comments": [
+      { "user": "grindset_101", "text": "respect the hustle 🔥" },
+      { "user": "sleep_deprived", "text": "don't burn out bro, health first" },
+      { "user": "future_millionaire", "text": "see u at the top" }
+    ]
+  },
+  {
+    "author": "clumsy_me",
+    "category": "Funny",
+    "content": "tripped on the stairs today in front of my crush. i didn't even fall, i just did a weird skip-hop dance to save myself. now i have to change my identity and move to nepal. 🇳🇵",
+    "likes": 56,
+    "commentCount": 2,
+    "comments": [
+      { "user": "smooth_criminal", "text": "say u were practicing a tiktok dance" },
+      { "user": "rip_dignity", "text": "nepal is nice this time of year" }
+    ]
+  },
+  {
+    "author": "moms_favorite",
+    "category": "Relatable",
+    "content": "mummy ne room saaf krne bola. mene bed banaya aur saara kachra bed ke niche daal diya. modern problems require modern solutions. 🧹",
+    "likes": 49,
+    "commentCount": 1,
+    "comments": [
+      { "user": "mummy_s_radar", "text": "wait till she brings the jhadu" }
+    ]
+  },
+  {
+    "author": "shattered_trust",
+    "category": "Deep",
+    "content": "the worst thing about betrayal is that it never comes from your enemies. learning to trust people again is the hardest project i've ever had to work on.",
+    "likes": 88,
+    "commentCount": 2,
+    "comments": [
+      { "user": "healing_soul", "text": "take ur time. don't rush the healing." },
+      { "user": "dark_truth", "text": "always the ones u least expect." }
+    ]
+  },
+  {
+    "author": "song_stealer",
+    "category": "Confession",
+    "content": "i still listen to the songs u recommended to me. i hate that i love them. u ruined my spotify wrapped and my heart.",
+    "likes": 77,
+    "commentCount": 1,
+    "comments": [
+      { "user": "music_nerd", "text": "never share ur favorite songs with temporary people." }
+    ]
+  },
+  {
+    "author": "desperation_101",
+    "category": "Funny",
+    "content": "google pe 'how to become rich overnight without hard work or luck' search kiya. google ne mujhe job portal ka link de diya. very insulting. 💼",
+    "likes": 81,
+    "commentCount": 3,
+    "comments": [
+      { "user": "lazy_lad", "text": "google has no chill" },
+      { "user": "tech_guy", "text": "AI is getting too smart for us" },
+      { "user": "hustle_bro", "text": "get to work buddy" }
+    ]
+  },
+  {
+    "author": "winter_sunshine",
+    "category": "Life",
+    "content": "sitting in the winter sun, eating oranges, and doing absolutely nothing. childhood winters were so peaceful. ab toh bas tension aur back pain h.",
+    "likes": 65,
+    "commentCount": 1,
+    "comments": [
+      { "user": "nostalgic_vibes", "text": "back pain at 20 is a lifestyle now" }
+    ]
+  },
+  {
+    "author": "eye_contact_king",
+    "category": "Crush",
+    "content": "we made eye contact. i looked away. she looked away. then we both looked back at the same time and caught each other. best 3 seconds of my life. 😍",
+    "likes": 98,
+    "commentCount": 2,
+    "comments": [
+      { "user": "romantic_fool", "text": "bro won at life" },
+      { "user": "jealous_single", "text": "kya karu is information ka m?" }
+    ]
+  },
+  {
+    "author": "introvert_win",
+    "category": "Relatable",
+    "content": "dost ne khud aake plan cancel kar diya. the level of peace i felt cannot be described in words. pajama time > party time.",
+    "likes": 53,
+    "commentCount": 1,
+    "comments": [
+      { "user": "couch_potato", "text": "true inner peace achieved 🧘‍♂️" }
+    ]
+  },
+  {
+    "author": "late_apologies",
+    "category": "Regret",
+    "content": "i realized too late that i was the toxic one in the friendship. my insecurities ruined a perfectly good bond. i'm sorry, even if u never see this.",
+    "likes": 79,
+    "commentCount": 2,
+    "comments": [
+      { "user": "growth_mindset", "text": "accepting it is the first step to growing." },
+      { "user": "user_zero", "text": "maybe reach out and say this to them?" }
+    ]
+  },
+  {
+    "author": "broke_aesthetic",
+    "category": "Funny",
+    "content": "zara me gaya tha shopping krne. price tag dekha. chup chap mirror selfie li aur bahar aa gya. fake it till u make it. 📸",
+    "likes": 86,
+    "commentCount": 3,
+    "comments": [
+      { "user": "middle_class_op", "text": "this is the universal middle class experience" },
+      { "user": "fashion_icon", "text": "sarojini nagar is the real MVP" },
+      { "user": "lol_master", "text": "at least u got the aesthetic pic" }
+    ]
+  },
+  {
+    "author": "overwhelmed_soul",
+    "category": "Deep",
+    "content": "i'm constantly torn between 'i need to work harder to build my future' and 'i need to rest because my mental health is hanging by a thread'.",
+    "likes": 94,
+    "commentCount": 1,
+    "comments": [
+      { "user": "therapist_vibe", "text": "u can't build a future if u break urself in the present." }
+    ]
+  },
+  {
+    "author": "the_good_guy",
+    "category": "Confession",
+    "content": "i always try to be the 'nice guy' and help everyone out. but end me sab mujhe use krke aage badh jate h. starting to think being nice is just a weakness.",
+    "likes": 75,
+    "commentCount": 2,
+    "comments": [
+      { "user": "villain_arc", "text": "time to start ur villain arc bro" },
+      { "user": "kind_heart", "text": "don't let bad people change your good heart." }
+    ]
+  },
+  {
+    "author": "gym_fail",
+    "category": "Funny",
+    "content": "gym me heavy weight uthane ki koshish ki taaki crush impress ho. kamar me aisi awaaz aayi ki ab 3 din se bed rest pe hu. stay humble guys. 🛌",
+    "likes": 89,
+    "commentCount": 3,
+    "comments": [
+      { "user": "ego_lifter", "text": "ego lifting ka nateeja 😂" },
+      { "user": "gym_bro", "text": "form check karwa lo pehle bhai" },
+      { "user": "rip_back", "text": "crush impress hui ya nhi ye batao?" }
+    ]
+  },
+  {
+    "author": "silent_cheers",
+    "category": "Life",
+    "content": "finally cleared that exam i was crying about for 6 months. didn't post it anywhere. just bought myself an ice cream and sat on the terrace. sometimes quiet victories are the best.",
+    "likes": 97,
+    "commentCount": 2,
+    "comments": [
+      { "user": "proud_stranger", "text": "congratulations! u deserve that ice cream." },
+      { "user": "peaceful_mind", "text": "moving in silence is powerful." }
+    ]
+  },
+  {
+    "author": "dog_lover",
+    "category": "Relatable",
+    "content": "street dog ne aaj wagging tail ke sath greet kiya. suddenly saari life ki tension khatam ho gyi. dogs are angels we don't deserve. 🐕❤️",
+    "likes": 83,
+    "commentCount": 1,
+    "comments": [
+      { "user": "animal_friend", "text": "give him some biscuits tmrw!" }
+    ]
+  }
+]

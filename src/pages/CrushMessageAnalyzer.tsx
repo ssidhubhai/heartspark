@@ -6,6 +6,7 @@ import { MessageSquare, Sparkles, Brain, Loader2, Image as ImageIcon, Trash2, Sh
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 import { downloadAsPdf, shareAsPdf } from '../utils/downloadImage';
+import { motion } from 'framer-motion';
 
 export function CrushMessageAnalyzer() {
   const [message, setMessage] = useState('');
@@ -229,73 +230,80 @@ export function CrushMessageAnalyzer() {
       </Card>
 
       {analysis && (
-        <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden p-6 md:p-8">
-          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800/50">
-            <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-pink-500" />
+        <>
+          <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800/50">
+              <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-pink-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">AI Analysis</h3>
             </div>
-            <h3 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">AI Analysis</h3>
-          </div>
-          <div className="prose dark:prose-invert max-w-none">
-            <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
-              <Markdown>{analysis}</Markdown>
+            <div className="prose dark:prose-invert max-w-none">
+              <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
+                <Markdown>{analysis}</Markdown>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
-            <Button onClick={handleShare} className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none rounded-xl shadow-sm">
-              <Share2 className="w-4 h-4 mr-2" /> Share Analysis
-            </Button>
-            <Button variant="outline" onClick={handleDownload} className="border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl">
-              <Download className="w-4 h-4 mr-2" /> Download
-            </Button>
-          </div>
-          
-          <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
-            <form onSubmit={handleFollowUp} className="relative flex items-end gap-2 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 p-2 pl-4 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500/50 transition-all shadow-sm">
-              <textarea
-                value={followUp}
-                onChange={(e) => {
-                  setFollowUp(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (followUp.trim()) handleFollowUp(e);
-                  }
-                }}
-                placeholder="Ask a follow-up question..."
-                className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3.5 max-h-[150px] min-h-[48px] placeholder:text-zinc-400 text-base"
-                rows={1}
-              />
-              <button 
-                type="submit" 
-                disabled={followUpLoading || !followUp.trim()} 
-                className="p-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 text-white dark:text-zinc-900 rounded-full transition-all shadow-sm mb-0.5 mr-0.5 border-none"
-              >
-                {followUpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              </button>
-            </form>
-          </div>
+            <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
+              <Button onClick={handleShare} className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none rounded-xl shadow-sm">
+                <Share2 className="w-4 h-4 mr-2" /> Share Analysis
+              </Button>
+              <Button variant="outline" onClick={handleDownload} className="border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl">
+                <Download className="w-4 h-4 mr-2" /> Download
+              </Button>
+            </div>
+            
+            <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
+              <form onSubmit={handleFollowUp} className="relative flex items-end gap-2 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 p-2 pl-4 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500/50 transition-all shadow-sm">
+                <textarea
+                  value={followUp}
+                  onChange={(e) => {
+                    setFollowUp(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (followUp.trim()) handleFollowUp(e);
+                    }
+                  }}
+                  placeholder="Ask a follow-up question..."
+                  className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 resize-none py-3.5 max-h-[150px] min-h-[48px] placeholder:text-zinc-400 text-base"
+                  rows={1}
+                />
+                <button 
+                  type="submit" 
+                  disabled={followUpLoading || !followUp.trim()} 
+                  className="p-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 text-white dark:text-zinc-900 rounded-full transition-all shadow-sm mb-0.5 mr-0.5 border-none"
+                >
+                  {followUpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                </button>
+              </form>
+            </div>
+          </Card>
 
-          {/* Cross-Promotion for Astro Vibe Check */}
-          <div className="mt-8 pt-6 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-            <div className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-2xl p-6 border border-pink-200/50 dark:border-pink-800/30 text-center">
-              <h3 className="text-lg font-bold text-zinc-800 dark:text-white mb-2 flex items-center justify-center gap-2">
-                Want a deeper connection analysis? <Sparkles className="w-5 h-5 text-purple-500" />
+          {/* Cross-Promotion for Astro Vibe */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8"
+          >
+            <Card className="bg-indigo-950/20 backdrop-blur-md border border-indigo-800/30 p-8 rounded-[2rem] text-center shadow-lg">
+              <h3 className="text-xl font-bold text-indigo-100 mb-2 flex items-center justify-center gap-2">
+                Is this written in the stars? ✨
               </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                Don't leave it to chance! Discover your true cosmic destiny and uncover hidden relationship dynamics with <span className="font-semibold text-purple-600 dark:text-purple-400">Astro Vibe</span>.
+              <p className="text-sm text-indigo-300/80 mb-6">
+                Discover your true cosmic destiny with <span className="font-bold text-purple-400">Astro Vibe.</span>
               </p>
               <Link to="/astrology">
-                <Button variant="custom" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-none shadow-lg shadow-purple-500/30">
+                <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full sm:w-auto rounded-2xl h-12 font-bold shadow-lg shadow-purple-500/30 px-8">
                   Consult the Stars
                 </Button>
               </Link>
-            </div>
-          </div>
-        </Card>
+            </Card>
+          </motion.div>
+        </>
       )}
       </div>
     </div>

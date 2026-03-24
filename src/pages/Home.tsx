@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Flame, MessageCircle, Brain, Mail, Users, Bot, Share2, RefreshCw, Download, BookOpen, ArrowRight, BookHeart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -23,7 +23,6 @@ export function Home() {
     setIsCalculating(true);
     setResult(null);
 
-    // Simulate a short calculation delay for effect
     setTimeout(async () => {
       const n1 = name1.trim().toLowerCase();
       const n2 = name2.trim().toLowerCase();
@@ -35,7 +34,6 @@ export function Home() {
         score = 100;
         message = "Self-love is the foundation of all love. You are complete.";
       } else {
-        // Classic "TRUE LOVE" paper-and-pencil algorithm (order independent)
         const [sortedN1, sortedN2] = [n1, n2].sort();
         const combined = (sortedN1 + "truelove" + sortedN2).replace(/[^a-z]/g, '');
         
@@ -73,12 +71,10 @@ export function Home() {
         if (isNaN(score)) score = 50;
         if (score > 100) score = 100;
 
-        // Fun easter eggs for specific names
         if ((n1 === 'romeo' && n2 === 'juliet') || (n1 === 'juliet' && n2 === 'romeo')) {
           score = 99;
         }
 
-        // Custom logic for Riya
         const isRiya = (name: string) => name === 'riya' || name === 'riya rai';
         const isSagar = (name: string) => name === 'sagar' || name === 'sagar gupta';
         const isSiddharth = (name: string) => name === 'siddharth' || name === 'siddharth gupta';
@@ -89,11 +85,12 @@ export function Home() {
           score = 93;
         }
 
-        if (score > 90) message = "Exceptional compatibility. A profound connection is indicated.";
-        else if (score > 80) message = "High compatibility. Strong potential for a lasting bond.";
-        else if (score > 70) message = "Good compatibility. A solid foundation exists.";
-        else if (score > 50) message = "Moderate compatibility. Requires mutual understanding and effort.";
-        else message = "Low initial compatibility. Growth requires significant communication.";
+        // ✨ GEN-Z VIBE MESSAGES
+        if (score > 90) message = "Basically Soulmates. When is the wedding? 💍 (Send this to them as a hint)";
+        else if (score > 80) message = "The chemistry is giving main character energy. Shoot your shot! 🚀";
+        else if (score > 70) message = "Definitely a vibe. Try sending them a meme and see what happens. 👀";
+        else if (score > 50) message = "It's giving 'just friends' right now, but there's room for character development. 📈";
+        else message = "The math ain't mathing. Focus on your career and JEE prep instead bro 💀📚";
       }
 
       setResult({ score, message });
@@ -104,11 +101,10 @@ export function Home() {
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#ec4899', '#d946ef', '#fbcfe8'] // Pink/Purple palette
+          colors: ['#ec4899', '#d946ef', '#fbcfe8']
         });
       }
 
-      // Save to Firebase if one of the names is Riya
       const isRiya = (name: string) => name === 'riya' || name === 'riya rai';
       if (db && (isRiya(n1) || isRiya(n2))) {
         try {
@@ -137,36 +133,30 @@ export function Home() {
 
   const features = [
     {
-      title: "Community Stories",
-      description: "Read, share, and get inspired by real love stories from our community.",
-      icon: <BookHeart className="w-6 h-6 text-pink-500" />,
-      path: "/stories",
-    },
-    {
-      title: "Astro Vibe",
-      description: "Your personal AI relationship astrologer. Get deep compatibility readings!",
-      icon: <Bot className="w-6 h-6 text-pink-500" />,
-      path: "/astrology",
-      badge: "Popular"
-    },
-    {
       title: "Message Analyzer",
-      description: "Decode their texts, get flirting scores, and perfect replies.",
+      description: "Paste your 'Hmm' or 'Ok' texts. Let AI decode the real vibe.",
       icon: <MessageCircleHeart className="w-6 h-6 text-purple-500" />,
       path: "/analyzer",
-      badge: "Viral"
+      badge: "HOT"
     },
     {
-      title: "Games & Quizzes",
-      description: "Test your bond with quizzes, memory games, and truth or dare.",
-      icon: <Gamepad2 className="w-6 h-6 text-rose-500" />,
-      path: "/games",
+      title: "Astro Compatibility",
+      description: "Are your zodiacs actually compatible or just a 'canon event'?",
+      icon: <Bot className="w-6 h-6 text-pink-500" />,
+      path: "/astrology",
+      badge: "NEW"
+    },
+    {
+      title: "Viral Stories",
+      description: "Anonymous tea from the community. Read or leak yours.",
+      icon: <BookHeart className="w-6 h-6 text-rose-500" />,
+      path: "/stories",
     }
   ];
 
   return (
     <div className="space-y-24 py-12">
-      {/* Hero Section */}
+      {/* HERO SECTION */}
       <section className="text-center space-y-4 max-w-4xl mx-auto relative px-4 mt-8">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-100 via-transparent to-transparent dark:from-pink-900/30 blur-3xl rounded-full"></div>
         
@@ -201,14 +191,14 @@ export function Home() {
         </motion.p>
       </section>
 
-      {/* Compatibility Analysis Section */}
+      {/* LOVE CALCULATOR */}
       <section className="max-w-3xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <Card className="border-pink-100 dark:border-pink-900/30 shadow-2xl shadow-pink-500/5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+          <Card className="border-pink-100 dark:border-pink-900/30 shadow-2xl shadow-pink-500/5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-5 sm:p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-black text-slate-900 dark:text-white flex items-center justify-center gap-3">
                 <Heart className="w-8 h-8 text-pink-500 fill-pink-500" />
@@ -266,107 +256,144 @@ export function Home() {
           </Card>
         </motion.div>
 
-        <AnimatePresence>
+       <AnimatePresence>
           {result && !isCalculating && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-6 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mt-8 flex flex-col items-center space-y-6 px-4 pb-20"
             >
-              <Card id="calculator-result" className="text-center space-y-8 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-rose-500"></div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
-                    {name1} & {name2}
-                  </h2>
-                  <p className="text-sm text-zinc-500 uppercase tracking-wider font-semibold">Analysis Complete</p>
-                </div>
+              {/* ✨ THE CARD (Optimized for Capture) */}
+              <div 
+                id="calculator-result" 
+                className="relative overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/5 shadow-2xl w-full max-w-[380px] aspect-[4/5] flex flex-col"
+              >
+                {/* 🌈 Capture-Safe Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#121212] via-[#0a0a0a] to-[#121212]" />
+                <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-pink-500/10 blur-[80px]" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-600/10 blur-[80px]" />
                 
-                <div className="relative w-40 h-40 mx-auto flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="45"
-                      fill="transparent"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      className="text-pink-100 dark:text-pink-900/30"
-                    />
-                    <motion.circle
-                      cx="50"
-                      cy="50"
-                      r="45"
-                      fill="transparent"
-                      stroke="url(#gradient)"
-                      strokeWidth="6"
-                      strokeLinecap="round"
-                      strokeDasharray="282.7"
-                      initial={{ strokeDashoffset: 282.7 }}
-                      animate={{ strokeDashoffset: 282.7 - (282.7 * result.score) / 100 }}
-                      transition={{ duration: 1.5, ease: "easeOut" }}
-                    />
-                    <defs>
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#ec4899" />
-                        <stop offset="100%" stopColor="#a855f7" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <motion.span 
-                      className="text-4xl font-bold text-zinc-900 dark:text-white"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                    >
+                <div className="relative z-10 p-8 h-full flex flex-col items-center justify-between text-center">
+                  {/* Top Header */}
+                  <div className="space-y-6 w-full flex flex-col items-center">
+                    <div className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] uppercase font-black tracking-[0.2em] text-pink-400">
+                      HeartSpark Analysis
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <h2 className="text-4xl font-black text-white tracking-tighter italic leading-tight break-words px-2 uppercase">
+                        {name1} <span className="text-pink-500 font-serif not-italic">&</span> {name2}
+                      </h2>
+                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Global Vibe Check 2.0</p>
+                    </div>
+                  </div>
+
+                  {/* Hero Score */}
+                  <div className="relative flex flex-col items-center">
+                    <span className="text-[100px] font-black tracking-tighter leading-none text-white drop-shadow-[0_0_30px_rgba(236,72,153,0.3)]">
                       {result.score}%
-                    </motion.span>
+                    </span>
+                    <div className="h-1.5 w-24 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full -mt-2 opacity-60" />
+                  </div>
+
+                  {/* Message Box */}
+                  <div className="w-full space-y-8">
+                    <div className="bg-white/5 border border-white/10 p-6 rounded-[1.5rem] shadow-inner">
+                      <p className="text-lg font-bold text-pink-100 leading-tight italic">
+                        "{result.message}"
+                      </p>
+                    </div>
+                    <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.5em] pb-2">
+                      heartspark.app
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                <motion.p 
-                  className="text-lg text-zinc-700 dark:text-zinc-300 max-w-md mx-auto"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  {result.message}
-                </motion.p>
-
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-800/30 mt-8 mb-4">
-                  <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center justify-center gap-2">
-                    Is this written in the stars? ✨
-                  </h3>
-                  <p className="text-sm text-indigo-700/80 dark:text-indigo-300/80 mb-4">
-                    Don't leave it to chance! Discover your true cosmic destiny and uncover hidden relationship dynamics with <span className="font-semibold text-purple-600 dark:text-purple-400">Astro Vibe</span>.
-                  </p>
-                  <Link to="/astrology">
-                    <Button variant="custom" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-none shadow-lg shadow-purple-500/30 w-full sm:w-auto">
-                      Consult the Stars
-                    </Button>
-                  </Link>
-                </div>
-
-                <div className="flex flex-wrap justify-center gap-3 pt-4 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-                  <Button variant="outline" size="sm" onClick={() => setResult(null)} className="border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20 text-pink-600 dark:text-pink-400">
-                    <RefreshCw className="w-4 h-4 mr-2" /> Recalculate
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleShare} className="border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20 text-pink-600 dark:text-pink-400">
+             {/* 🕹️ HIGH-CONTRAST ACTION DOCK */}
+              <div className="flex items-center justify-center gap-3 w-full max-w-[380px] px-2">
+                 
+                 {/* SHARE BUTTON: Primary Pink */}
+                 <Button 
+                   onClick={handleShare} 
+                   className="flex-[2] rounded-full bg-pink-600 hover:bg-pink-500 text-white font-bold h-12 shadow-lg shadow-pink-500/20 transition-all active:scale-95 flex items-center justify-center border-none"
+                 >
                     <Share2 className="w-4 h-4 mr-2" /> Share
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownload} className="border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20 text-pink-600 dark:text-pink-400">
-                    <Download className="w-4 h-4 mr-2" /> Save
-                  </Button>
+                 </Button>
+                 
+                 {/* SAVE BUTTON: Midnight Glass (Won't turn white) */}
+                 <Button 
+                   onClick={handleDownload} 
+                   className="flex-[2] rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white font-bold h-12 backdrop-blur-xl border border-pink-500/40 shadow-xl transition-all active:scale-95 flex items-center justify-center group"
+                 >
+                    <Download className="w-4 h-4 mr-2 text-pink-500 group-hover:animate-bounce" /> 
+                    <span>Save</span>
+                 </Button>
+
+                 {/* RECALCULATE BUTTON: Visible Ghost Circle */}
+                 <button 
+                   onClick={() => setResult(null)} 
+                   className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-700 hover:border-pink-500/50 hover:bg-zinc-800 text-zinc-300 hover:text-pink-400 flex items-center justify-center transition-all active:scale-90 group shadow-2xl"
+                   title="Recalculate"
+                 >
+                    <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                 </button>
+              </div>
+
+              {/* 🌟 NEXT STEPS UPSELL */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="w-full max-w-[380px] space-y-4"
+              >
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Try This Next</span>
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
                 </div>
-              </Card>
+
+                <Link to="/astrology" className="block group">
+                  <Card className="bg-white/80 dark:bg-indigo-950/20 backdrop-blur-md border border-indigo-100 dark:border-indigo-800/30 p-5 rounded-[1.5rem] flex items-center gap-4 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 transition-all shadow-lg">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Bot className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                        Astro Vibe <span className="px-1.5 py-0.5 rounded text-[8px] bg-indigo-100 dark:bg-indigo-500/30 text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">New</span>
+                      </h3>
+                      <p className="text-xs text-indigo-700/80 dark:text-indigo-300/80 mt-0.5 leading-snug">
+                        Are your zodiacs actually compatible?
+                      </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-indigo-400 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </Card>
+                </Link>
+
+                <Link to="/analyzer" className="block group">
+                  <Card className="bg-white/80 dark:bg-purple-950/20 backdrop-blur-md border border-purple-100 dark:border-purple-800/30 p-5 rounded-[1.5rem] flex items-center gap-4 hover:bg-purple-50/80 dark:hover:bg-purple-900/30 transition-all shadow-lg">
+                    <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <MessageCircleHeart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <h3 className="text-sm font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                        Message Analyzer <span className="px-1.5 py-0.5 rounded text-[8px] bg-purple-100 dark:bg-purple-500/30 text-purple-700 dark:text-purple-300 uppercase tracking-wider">Hot</span>
+                      </h3>
+                      <p className="text-xs text-purple-700/80 dark:text-purple-300/80 mt-0.5 leading-snug">
+                        Decode their texts and get the real vibe.
+                      </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-purple-400 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </Card>
+                </Link>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </section>
 
-      {/* Features Grid */}
+      {/* VIRAL FEATURES GRID */}
       <section className="px-4 max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">Viral Features</h2>
@@ -380,24 +407,33 @@ export function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index, duration: 0.4 }}
+              className="h-full relative group"
             >
-              <Link to={feature.path} className="block h-full group">
-                <Card className="h-full flex flex-col p-8 border-pink-100/50 dark:border-pink-900/20 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl hover:bg-white dark:hover:bg-zinc-900 hover:border-pink-300 dark:hover:border-pink-700/50 hover:shadow-xl hover:shadow-pink-500/10 hover:-translate-y-2 transition-all duration-300 relative rounded-[2rem] overflow-hidden">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-[2.5rem] opacity-0 group-hover:opacity-30 blur-lg transition duration-500" />
+              
+              <Link to={feature.path} className="block h-full relative z-10">
+                <Card className="h-full flex flex-col p-8 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-3xl border border-pink-100/80 dark:border-white/5 rounded-[2rem] overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-lg shadow-pink-500/5">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-pink-400/10 dark:bg-pink-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 group-hover:scale-150 transition-all duration-700 pointer-events-none" />
+
                   {feature.badge && (
-                    <div className="absolute top-6 right-6 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40 text-pink-600 dark:text-pink-300 text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-sm">
+                    <div className="absolute top-6 right-6 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-md z-10">
                       {feature.badge}
                     </div>
                   )}
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border border-pink-100 dark:border-pink-800/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
+                  
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-pink-50 dark:from-zinc-800 dark:to-zinc-800 border border-pink-100 dark:border-zinc-700 flex items-center justify-center mb-6 shadow-sm group-hover:shadow-pink-500/25 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300 relative z-10">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-pink-500 group-hover:to-purple-500 transition-all">
+                  
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-pink-500 group-hover:to-purple-500 transition-all relative z-10">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed flex-grow font-medium">
+                  
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed flex-grow font-medium relative z-10">
                     {feature.description}
                   </p>
-                  <div className="mt-6 flex items-center text-pink-500 font-bold text-sm">
+                  
+                  <div className="mt-6 flex items-center text-pink-500 font-bold text-sm group-hover:text-purple-500 transition-colors relative z-10">
                     Try it now <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </Card>
@@ -407,7 +443,7 @@ export function Home() {
         </div>
       </section>
 
-      {/* Daily Fortune Teaser */}
+      {/* DAILY FORTUNE TEASER */}
       <section className="px-4 max-w-7xl mx-auto pb-12">
         <Card className="bg-gradient-to-r from-pink-500 via-purple-500 to-rose-500 text-white border-none overflow-hidden relative rounded-3xl shadow-2xl">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
