@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { Button } from './Button';
 import { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword } from '../lib/firebase';
+import firebaseConfig from '../../firebase-applet-config.json';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -50,6 +51,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     } catch (err: any) {
       if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection or disable ad blockers.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/Password login is not enabled for this Firebase project. Please ensure it is enabled in the Firebase Console for project: ' + firebaseConfig.projectId);
       } else {
         setError(err.message || 'An error occurred during authentication.');
       }
@@ -102,37 +105,60 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   : (isLogin ? 'Login to access your profile and stories.' : 'Sign up to join the community.')}
               </p>
 
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2 text-red-600 dark:text-red-400 text-sm">
-                  <AlertCircle className="w-5 h-5 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    key="error"
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2 text-red-600 dark:text-red-400 text-sm overflow-hidden"
+                  >
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
 
-              {successMsg && (
-                <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
-                  <AlertCircle className="w-5 h-5 shrink-0" />
-                  <span>{successMsg}</span>
-                </div>
-              )}
+                {successMsg && (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start gap-2 text-emerald-600 dark:text-emerald-400 text-sm overflow-hidden"
+                  >
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    <span>{successMsg}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {!isLogin && !isForgotPassword && (
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 outline-none text-zinc-900 dark:text-white placeholder-zinc-400"
-                        placeholder="John Doe"
-                        required={!isLogin}
-                      />
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence mode="popLayout">
+                  {!isLogin && !isForgotPassword && (
+                    <motion.div
+                      key="name-field"
+                      initial={{ opacity: 0, height: 0, y: -10 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Name</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 outline-none text-zinc-900 dark:text-white placeholder-zinc-400 transition-colors"
+                          placeholder="John Doe"
+                          required={!isLogin}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Email</label>
@@ -142,45 +168,54 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 outline-none text-zinc-900 dark:text-white placeholder-zinc-400"
+                      className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 outline-none text-zinc-900 dark:text-white placeholder-zinc-400 transition-colors"
                       placeholder="you@example.com"
                       required
                     />
                   </div>
                 </div>
 
-                {!isForgotPassword && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
-                      {isLogin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsForgotPassword(true);
-                            setError('');
-                            setSuccessMsg('');
-                          }}
-                          className="text-xs text-pink-600 dark:text-pink-400 font-medium hover:underline"
-                        >
-                          Forgot Password?
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 outline-none text-zinc-900 dark:text-white placeholder-zinc-400"
-                        placeholder="••••••••"
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence mode="popLayout">
+                  {!isForgotPassword && (
+                    <motion.div
+                      key="password-field"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
+                        {isLogin && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsForgotPassword(true);
+                              setError('');
+                              setSuccessMsg('');
+                            }}
+                            className="text-xs text-pink-600 dark:text-pink-400 font-medium hover:underline transition-colors"
+                          >
+                            Forgot Password?
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-pink-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 focus:border-pink-500 outline-none text-zinc-900 dark:text-white placeholder-zinc-400 transition-colors"
+                          placeholder="••••••••"
+                          required
+                          minLength={6}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <Button variant="custom" type="submit" className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-0" disabled={loading}>
                   {loading ? 'Please wait...' : (isForgotPassword ? 'Send Reset Link' : (isLogin ? 'Login' : 'Sign Up'))}

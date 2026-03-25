@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart, PanelLeftClose, Edit2 } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import { calculatePlacements, AstrologicalPlacements } from '../utils/astrology';
+import { Logo } from '../components/Logo';
 import Markdown from 'react-markdown';
 
 interface Message {
@@ -384,7 +385,7 @@ export function AstrologyAI() {
       {/* Sidebar */}
       <div className={`
         absolute md:relative z-50 md:z-10
-        w-72 h-full bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl rounded-2xl shadow-2xl md:shadow-sm border border-zinc-200/50 dark:border-zinc-800/50
+        w-72 h-full backdrop-blur-xl rounded-2xl shadow-2xl md:shadow-sm border border-zinc-200/50 dark:border-zinc-800/50
         flex flex-col transition-all duration-300 ease-in-out
         ${showSidebar ? 'translate-x-0 md:w-72 md:opacity-100' : '-translate-x-[120%] md:w-0 md:opacity-0 md:overflow-hidden md:border-none'}
       `}>
@@ -442,21 +443,20 @@ export function AstrologyAI() {
               </button>
             )}
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                Astro Vibe <span className="text-xs font-bold px-2 py-0.5 bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 rounded-full shadow-sm">PREMIUM</span>
+              <h1 className="text-lg font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 flex items-center gap-2">
+                Astro Vibe <span className="text-[10px] font-black px-2 py-0.5 bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 rounded-full shadow-sm tracking-widest">PREMIUM</span>
               </h1>
             </div>
           </div>
-          <Link to="/love-gpt" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all text-sm font-medium border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
-            <Heart className="w-4 h-4 text-pink-500" />
-            <span className="hidden sm:inline">Heart Spark</span>
+          <Link to="/" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all text-sm font-medium border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
+            <Logo size="sm" />
           </Link>
         </div>
 
         {!activeThread ? (
           <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center py-8">
             <div className="max-w-2xl w-full space-y-8">
-              <Card className="w-full p-8 border-pink-100 dark:border-pink-900/30 shadow-sm bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
+              <Card className="w-full p-8 border-pink-100 dark:border-pink-900/30 shadow-sm backdrop-blur-xl">
                 <div className="text-center mb-8">
                   <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Star className="w-6 h-6 text-pink-600 dark:text-pink-400 animate-pulse" />
@@ -572,7 +572,7 @@ export function AstrologyAI() {
               </Card>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="p-6 bg-pink-50/50 dark:bg-pink-900/10 border-pink-100 dark:border-pink-900/20">
+                <Card className="p-6 bg-pink-50/50 dark:bg-pink-900/10 border-pink-100 dark:border-pink-900/20 shadow-none">
                   <h3 className="font-semibold text-pink-600 dark:text-pink-400 mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4" /> What you'll discover
                   </h3>
@@ -583,7 +583,7 @@ export function AstrologyAI() {
                     <li>• Future potential of your connection</li>
                   </ul>
                 </Card>
-                <Card className="p-6 bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20">
+                <Card className="p-6 bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20 shadow-none">
                   <h3 className="font-semibold text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" /> Ask anything
                   </h3>

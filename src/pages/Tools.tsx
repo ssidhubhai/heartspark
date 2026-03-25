@@ -1,3 +1,4 @@
+import { Logo } from '../components/Logo';
 import { motion } from 'motion/react';
 import { Card } from '../components/Card';
 import { Link } from 'react-router-dom';
@@ -6,34 +7,12 @@ import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Bot, Sparkles 
 export function Tools() {
   const tools = [
     {
-      title: "Astro Vibe",
-      description: "Talk to your personal AI relationship astrologer. Get deep compatibility readings.",
-      icon: <Bot className="w-6 h-6 text-pink-500" />,
-      path: "/astrology",
-      color: "bg-pink-100 dark:bg-pink-900/30",
-      badge: "Popular"
-    },
-    {
-      title: "Crush Message Analyzer",
-      description: "Confused by their text? Let Heart Spark decode the hidden meaning and generate the perfect reply.",
-      icon: <Brain className="w-6 h-6 text-purple-500" />,
-      path: "/analyzer",
-      color: "bg-purple-100 dark:bg-purple-900/30",
-      badge: "New"
-    },
-    {
-      title: "Astrology AI",
-      description: "Get personalized astrological readings and relationship compatibility insights.",
-      icon: <Star className="w-6 h-6 text-indigo-500" />,
-      path: "/astrology",
-      color: "bg-indigo-100 dark:bg-indigo-900/30",
-    },
-    {
       title: "Couple Story Generator",
       description: "Let Heart Spark write a short, fun romantic story starring you and your crush.",
       icon: <BookOpen className="w-6 h-6 text-pink-500" />,
       path: "/tools/story",
       color: "bg-pink-100 dark:bg-pink-900/30",
+      badge: "New"
     },
     {
       title: "Crush Prediction",
@@ -41,6 +20,7 @@ export function Tools() {
       icon: <Sparkles className="w-6 h-6 text-rose-500" />,
       path: "/tools/prediction",
       color: "bg-rose-100 dark:bg-rose-900/30",
+      badge: undefined
     },
     {
       title: "Funny Love Titles",
@@ -48,6 +28,7 @@ export function Tools() {
       icon: <Wand2 className="w-6 h-6 text-fuchsia-500" />,
       path: "/tools/titles",
       color: "bg-fuchsia-100 dark:bg-fuchsia-900/30",
+      badge: undefined
     },
     {
       title: "Daily Love Fortune",
@@ -55,6 +36,7 @@ export function Tools() {
       icon: <Flame className="w-6 h-6 text-purple-500" />,
       path: "/tools/fortune",
       color: "bg-purple-100 dark:bg-purple-900/30",
+      badge: undefined
     },
     {
       title: "Quick AI Advice",
@@ -62,18 +44,22 @@ export function Tools() {
       icon: <MessageSquareHeart className="w-6 h-6 text-rose-500" />,
       path: "/tools/ai-advice",
       color: "bg-rose-100 dark:bg-rose-900/30",
+      badge: undefined
     },
   ];
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400">
-          Heart Spark Tools
-        </h1>
-        <p className="text-lg text-zinc-600 dark:text-zinc-400">
-          Explore our collection of fun, AI-powered relationship tools.
-        </p>
+      <div className="text-center space-y-6 flex flex-col items-center">
+        <Logo size="lg" />
+        <div className="space-y-2">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+            Relationship <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">Toolkit</span>
+          </h1>
+          <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium max-w-2xl mx-auto">
+            Explore our collection of fun, AI-powered relationship tools designed to decode your heart's deepest mysteries.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

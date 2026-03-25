@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "The user's display name" },
+        "bio": { "type": "string", "description": "The user's bio" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the profile was last updated" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user's role" }
+      },
+      "required": ["displayName"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A story created by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the creator" },
+        "content": { "type": "string", "description": "The story text" },
+        "title": { "type": "string", "description": "The story title" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "likes": { "type": "integer", "description": "Number of likes" },
+        "likedBy": { "type": "array", "items": { "type": "string" }, "description": "List of user UIDs who liked the story" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "CommunityStory": {
+      "title": "Community Story",
+      "description": "A story shared with the community",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the creator" },
+        "authorName": { "type": "string", "description": "The name of the author" },
+        "content": { "type": "string", "description": "The story text" },
+        "title": { "type": "string", "description": "The story title" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "likes": { "type": "integer", "description": "Number of likes" },
+        "likedBy": { "type": "array", "items": { "type": "string" }, "description": "List of user UIDs who liked the story" },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Tags for the story" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a community story",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the commenter" },
+        "authorName": { "type": "string", "description": "The name of the commenter" },
+        "content": { "type": "string", "description": "The comment text" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the recipient" },
+        "type": { "type": "string", "description": "The type of notification" },
+        "message": { "type": "string", "description": "The notification message" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "read": { "type": "boolean", "description": "Whether the notification has been read" }
+      },
+      "required": ["userId", "type", "message", "createdAt"]
+    },
+    "RiyaSearch": {
+      "title": "Riya Search",
+      "description": "A search query performed by Riya AI",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who performed the search" },
+        "query": { "type": "string", "description": "The search query" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["userId", "query", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Individual user stories"
+    },
+    "/community_stories/{storyId}": {
+      "schema": "CommunityStory",
+      "description": "Stories shared with the community"
+    },
+    "/community_stories/{storyId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments on community stories"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications"
+    },
+    "/riya_searches/{searchId}": {
+      "schema": "RiyaSearch",
+      "description": "Riya AI search history"
+    }
+  }
+}

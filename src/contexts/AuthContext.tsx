@@ -32,7 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      if (currentUser && !currentUser.emailVerified && currentUser.providerData.some(p => p.providerId === 'password')) {
+        // User is not verified and uses email/password, don't set them in state
+        setUser(null);
+      } else {
+        setUser(currentUser);
+      }
       setLoading(false);
     });
 

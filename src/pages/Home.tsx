@@ -3,6 +3,7 @@ import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, Refre
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
+import { Logo } from '../components/Logo';
 import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
@@ -140,7 +141,7 @@ export function Home() {
       badge: "HOT"
     },
     {
-      title: "Astro Compatibility",
+      title: "Astro Vibe",
       description: "Are your zodiacs actually compatible or just a 'canon event'?",
       icon: <Bot className="w-6 h-6 text-pink-500" />,
       path: "/astrology",
@@ -157,38 +158,104 @@ export function Home() {
   return (
     <div className="space-y-24 py-12">
       {/* HERO SECTION */}
-      <section className="text-center space-y-4 max-w-4xl mx-auto relative px-4 mt-8">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-100 via-transparent to-transparent dark:from-pink-900/30 blur-3xl rounded-full"></div>
-        
+      <section className="text-center space-y-6 max-w-4xl mx-auto relative px-4 mt-12 mb-20">
+        {/* Floating Heart with Glow */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", duration: 0.8 }}
-          className="inline-flex items-center justify-center p-4 rounded-full bg-pink-100 dark:bg-pink-500/20 mb-4 shadow-[0_0_30px_rgba(236,72,153,0.3)]"
+          transition={{ 
+            type: "spring", 
+            stiffness: 260, 
+            damping: 20,
+            delay: 0.1 
+          }}
+          className="relative flex justify-center mb-12"
         >
-          <Heart className="w-10 h-10 text-pink-500 fill-pink-500 animate-pulse" />
+          <div className="absolute inset-0 bg-pink-400/20 blur-3xl rounded-full scale-150 animate-pulse-slow" />
+          <div className="relative w-24 h-24 rounded-full bg-white shadow-2xl shadow-pink-500/20 flex items-center justify-center group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 to-white opacity-50" />
+            <Heart className="w-12 h-12 relative z-10 animate-heart-sparkle animate-color-glow text-pink-500 fill-current" />
+            
+            {/* Extra Sparkles */}
+            <motion.div
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.5, 1, 0.5],
+                rotate: [0, 45, 0]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute top-2 right-4 z-20"
+            >
+              <Sparkles className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            </motion.div>
+            <motion.div
+              animate={{ 
+                scale: [1, 1.5, 1],
+                opacity: [0.3, 0.8, 0.3],
+                rotate: [0, -45, 0]
+              }}
+              transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+              className="absolute bottom-4 left-4 z-20"
+            >
+              <Sparkles className="w-3 h-3 text-pink-300 fill-pink-300" />
+            </motion.div>
+          </div>
         </motion.div>
         
-        <motion.h1 
-          className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 dark:text-white leading-none"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          Discover Your <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
-            True Love Destiny
-          </span>
-        </motion.h1>
-        
-        <motion.p 
-          className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium mt-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          Explore viral crush games, test your compatibility, and find out if they're the one. ✨
-        </motion.p>
+        <div className="space-y-2">
+          <motion.h1 
+            className="text-[56px] md:text-[84px] font-black tracking-tighter text-[#1A1F2C] dark:text-white leading-[1.1] md:leading-[1]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            Discover Your <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF4D97] via-[#D946EF] to-[#A855F7] drop-shadow-sm">
+              True Love Destiny
+            </span>
+          </motion.h1>
+          
+          <motion.p 
+            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium pt-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Explore viral crush games, test your compatibility, and find out if they're the one. ✨
+          </motion.p>
+        </div>
+
+        {/* Subtle Floating Hearts Background */}
+        <div className="absolute inset-0 -z-10 overflow-visible pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-pink-200/40"
+              initial={{ 
+                x: Math.random() * 800 - 400, 
+                y: Math.random() * 400 - 200,
+                scale: Math.random() * 0.5 + 0.5,
+                opacity: 0 
+              }}
+              animate={{ 
+                y: [0, -40, 0],
+                opacity: [0, 0.6, 0],
+                rotate: [0, 15, -15, 0]
+              }}
+              transition={{ 
+                duration: 5 + Math.random() * 5, 
+                repeat: Infinity,
+                delay: Math.random() * 5
+              }}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+            >
+              <Heart className="w-6 h-6 fill-current" />
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* LOVE CALCULATOR */}
@@ -198,7 +265,7 @@ export function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <Card className="border-pink-100 dark:border-pink-900/30 shadow-2xl shadow-pink-500/5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-5 sm:p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+          <Card className="border-pink-100 dark:border-pink-900/30 shadow-2xl shadow-pink-500/5 p-5 sm:p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-black text-slate-900 dark:text-white flex items-center justify-center gap-3">
                 <Heart className="w-8 h-8 text-pink-500 fill-pink-500" />
@@ -267,46 +334,57 @@ export function Home() {
               {/* ✨ THE CARD (Optimized for Capture) */}
               <div 
                 id="calculator-result" 
-                className="relative overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/5 shadow-2xl w-full max-w-[380px] aspect-[4/5] flex flex-col"
+                className="relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-950 border border-pink-100 dark:border-white/5 shadow-2xl w-full max-w-[380px] aspect-[4/5] flex flex-col"
               >
                 {/* 🌈 Capture-Safe Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#121212] via-[#0a0a0a] to-[#121212]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-50 dark:from-[#121212] dark:via-[#0a0a0a] dark:to-[#121212]" />
                 <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-pink-500/10 blur-[80px]" />
                 <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-600/10 blur-[80px]" />
                 
                 <div className="relative z-10 p-8 h-full flex flex-col items-center justify-between text-center">
                   {/* Top Header */}
                   <div className="space-y-6 w-full flex flex-col items-center">
-                    <div className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] uppercase font-black tracking-[0.2em] text-pink-400">
-                      HeartSpark Analysis
+                    <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10 dark:bg-white/5 border border-pink-200/50 dark:border-white/10 flex items-center gap-2">
+                      <Logo size="sm" showText={false} />
+                      <span className="text-[10px] uppercase font-black tracking-[0.3em] text-pink-600 dark:text-pink-400">
+                        HeartSpark Analysis
+                      </span>
                     </div>
                     
                     <div className="space-y-1">
-                      <h2 className="text-4xl font-black text-white tracking-tighter italic leading-tight break-words px-2 uppercase">
+                      <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic leading-tight break-words px-2 uppercase">
                         {name1} <span className="text-pink-500 font-serif not-italic">&</span> {name2}
                       </h2>
-                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Global Vibe Check 2.0</p>
+                      <p className="text-slate-500 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Global Vibe Check 2.0</p>
                     </div>
                   </div>
 
                   {/* Hero Score */}
                   <div className="relative flex flex-col items-center">
-                    <span className="text-[100px] font-black tracking-tighter leading-none text-white drop-shadow-[0_0_30px_rgba(236,72,153,0.3)]">
+                    <span className="text-[100px] font-black tracking-tighter leading-none text-slate-900 dark:text-white drop-shadow-[0_0_30px_rgba(236,72,153,0.3)]">
                       {result.score}%
                     </span>
                     <div className="h-1.5 w-24 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full -mt-2 opacity-60" />
                   </div>
 
                   {/* Message Box */}
-                  <div className="w-full space-y-8">
-                    <div className="bg-white/5 border border-white/10 p-6 rounded-[1.5rem] shadow-inner">
-                      <p className="text-lg font-bold text-pink-100 leading-tight italic">
+                  <div className="w-full space-y-6">
+                    <div className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-pink-100/50 dark:border-white/10 p-6 rounded-[2rem] shadow-[inner_0_2px_4px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 to-purple-500" />
+                      <p className="text-xl font-bold text-pink-600 dark:text-pink-100 leading-tight italic relative z-10">
                         "{result.message}"
                       </p>
                     </div>
-                    <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.5em] pb-2">
-                      heartspark.app
-                    </p>
+                    <div className="flex flex-col items-center gap-1">
+                      <p className="text-[10px] text-slate-400 dark:text-zinc-600 font-black uppercase tracking-[0.6em]">
+                        heartspark.app
+                      </p>
+                      <div className="flex gap-1">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="w-1 h-1 rounded-full bg-pink-500/30" />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -325,7 +403,7 @@ export function Home() {
                  {/* SAVE BUTTON: Midnight Glass (Won't turn white) */}
                  <Button 
                    onClick={handleDownload} 
-                   className="flex-[2] rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white font-bold h-12 backdrop-blur-xl border border-pink-500/40 shadow-xl transition-all active:scale-95 flex items-center justify-center group"
+                   className="flex-[2] rounded-full bg-white dark:bg-zinc-900/80 hover:bg-pink-50 dark:hover:bg-zinc-800 text-pink-600 dark:text-white font-bold h-12 backdrop-blur-xl border border-pink-200 dark:border-pink-500/40 shadow-xl transition-all active:scale-95 flex items-center justify-center group"
                  >
                     <Download className="w-4 h-4 mr-2 text-pink-500 group-hover:animate-bounce" /> 
                     <span>Save</span>
@@ -334,7 +412,7 @@ export function Home() {
                  {/* RECALCULATE BUTTON: Visible Ghost Circle */}
                  <button 
                    onClick={() => setResult(null)} 
-                   className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-700 hover:border-pink-500/50 hover:bg-zinc-800 text-zinc-300 hover:text-pink-400 flex items-center justify-center transition-all active:scale-90 group shadow-2xl"
+                   className="w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-pink-100 dark:border-zinc-700 hover:border-pink-500/50 hover:bg-pink-50 dark:hover:bg-zinc-800 text-slate-400 dark:text-zinc-300 hover:text-pink-500 dark:hover:text-pink-400 flex items-center justify-center transition-all active:scale-90 group shadow-lg dark:shadow-2xl"
                    title="Recalculate"
                  >
                     <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />

@@ -24,12 +24,14 @@ export function CoupleStory() {
     try {
       const prompt = `
         You are Heart Spark, an expert romance novelist.
-        Write a short, engaging, and ${theme} story about two people named ${name1} and ${name2}.
+        Write a very short, engaging, and ${theme} story about two people named ${name1} and ${name2}.
+        
+        CRITICAL: The story MUST be exactly 2-4 lines long. Keep it punchy and perfect for sharing on social media.
         
         Please format the response in markdown with these sections:
         
         ### The Story
-        (Write a 2-3 paragraph story here. Make it fun and memorable.)
+        (Write the 2-4 line story here.)
         
         ### Fun Scores
         * **Romance IQ**: (Score from 0-100%)
@@ -135,35 +137,76 @@ export function CoupleStory() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            className="flex flex-col items-center space-y-8 pb-20"
           >
-            <Card id="story-result" className="space-y-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-pink-100 dark:border-pink-900/30">
-                <div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-pink-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-zinc-800 dark:text-white">
-                  A Tale of {name1} & {name2}
-                </h2>
-              </div>
+            {/* ✨ THE CARD (Optimized for Capture) */}
+            <div 
+              id="story-result" 
+              className="relative overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/5 shadow-2xl w-full max-w-[380px] aspect-[4/5] flex flex-col"
+            >
+              {/* 🌈 Capture-Safe Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#121212] via-[#0a0a0a] to-[#121212]" />
+              <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-pink-500/10 blur-[80px]" />
+              <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-600/10 blur-[80px]" />
               
-              <div className="prose dark:prose-invert max-w-none">
-                <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
-                  <Markdown>{story}</Markdown>
+              <div className="relative z-10 p-8 h-full flex flex-col items-center justify-between text-center">
+                {/* Top Header */}
+                <div className="space-y-6 w-full flex flex-col items-center">
+                  <div className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] uppercase font-black tracking-[0.2em] text-pink-400">
+                    HeartSpark Story
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h2 className="text-3xl font-black text-white tracking-tighter italic leading-tight break-words px-2 uppercase">
+                      {name1} <span className="text-pink-500 font-serif not-italic">&</span> {name2}
+                    </h2>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">A {theme} Tale</p>
+                  </div>
+                </div>
+
+                {/* Story Content */}
+                <div className="w-full flex-grow flex items-center justify-center px-2">
+                  <div className="prose prose-invert max-w-none">
+                    <div className="text-pink-50 text-base font-medium italic leading-relaxed markdown-body">
+                      <Markdown>{story}</Markdown>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="w-full mt-4">
+                  <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.5em] pb-2">
+                    heartspark.app
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-wrap gap-4 pt-6 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-                <Button variant="outline" onClick={() => setStory('')} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
-                  <RefreshCw className="w-4 h-4 mr-2" /> New Story
-                </Button>
-                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
-                  <Share2 className="w-4 h-4 mr-2" /> Share Story
-                </Button>
-                <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
-                  <Download className="w-4 h-4 mr-2" /> Download
-                </Button>
-              </div>
-            </Card>
+            {/* 🕹️ ACTION DOCK */}
+            <div className="flex items-center justify-center gap-3 w-full max-w-[380px] px-2">
+              <Button 
+                onClick={handleShare} 
+                className="flex-[2] rounded-full bg-pink-600 hover:bg-pink-500 text-white font-bold h-12 shadow-lg shadow-pink-500/20 transition-all active:scale-95 flex items-center justify-center border-none"
+              >
+                <Share2 className="w-4 h-4 mr-2" /> Share
+              </Button>
+              
+              <Button 
+                onClick={handleDownload} 
+                className="flex-[2] rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white font-bold h-12 backdrop-blur-xl border border-pink-500/40 shadow-xl transition-all active:scale-95 flex items-center justify-center group"
+              >
+                <Download className="w-4 h-4 mr-2 text-pink-500 group-hover:animate-bounce" /> 
+                <span>Save</span>
+              </Button>
+
+              <button 
+                onClick={() => setStory('')} 
+                className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-700 hover:border-pink-500/50 hover:bg-zinc-800 text-zinc-300 hover:text-pink-400 flex items-center justify-center transition-all active:scale-90 group shadow-2xl"
+                title="New Story"
+              >
+                <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -19,20 +19,20 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = "inline-flex items-center justify-center rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+  const baseStyles = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-black disabled:opacity-50 disabled:pointer-events-none";
   
   const variants = {
-    primary: "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 shadow-sm",
-    secondary: "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700",
-    outline: "border border-zinc-200 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/50",
-    ghost: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
+    primary: "bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] hover:brightness-110 animate-gradient-x",
+    secondary: "bg-pink-50 dark:bg-white/10 text-pink-600 dark:text-white backdrop-blur-md border border-pink-100 dark:border-white/20 hover:bg-pink-100 dark:hover:bg-white/20",
+    outline: "border border-pink-500/50 text-pink-500 dark:text-pink-400 hover:bg-pink-500/10 hover:border-pink-500 shadow-[0_0_10px_rgba(236,72_153,0.1)] dark:shadow-[0_0_10px_rgba(236,72_153,0.2)]",
+    ghost: "text-zinc-500 dark:text-zinc-400 hover:text-pink-500 dark:hover:text-pink-400 hover:bg-pink-50 dark:hover:bg-white/5",
     custom: "", // Allows full override via className
   };
 
   const sizes = {
     sm: "h-9 px-4 text-sm",
     md: "h-11 px-6 text-base",
-    lg: "h-14 px-8 text-lg",
+    lg: "h-14 px-8 text-lg font-display tracking-wide",
   };
 
   return (

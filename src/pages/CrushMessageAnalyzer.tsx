@@ -153,7 +153,7 @@ export function CrushMessageAnalyzer() {
         </p>
       </div>
 
-      <Card className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden">
+      <Card className="backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden">
         <form onSubmit={handleAnalyze} className="space-y-6 p-2 md:p-4">
           <div className="space-y-3">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 ml-1">
@@ -231,7 +231,7 @@ export function CrushMessageAnalyzer() {
 
       {analysis && (
         <>
-          <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden p-6 md:p-8">
+          <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden p-6 md:p-8">
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800/50">
               <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center">
                 <MessageSquare className="w-6 h-6 text-pink-500" />
@@ -289,12 +289,12 @@ export function CrushMessageAnalyzer() {
             transition={{ delay: 0.5 }}
             className="mt-8"
           >
-            <Card className="bg-indigo-950/20 backdrop-blur-md border border-indigo-800/30 p-8 rounded-[2rem] text-center shadow-lg">
-              <h3 className="text-xl font-bold text-indigo-100 mb-2 flex items-center justify-center gap-2">
+            <Card className="bg-indigo-50 dark:bg-indigo-950/20 backdrop-blur-md border border-indigo-100 dark:border-indigo-800/30 p-8 rounded-[2rem] text-center shadow-lg">
+              <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center justify-center gap-2">
                 Is this written in the stars? ✨
               </h3>
-              <p className="text-sm text-indigo-300/80 mb-6">
-                Discover your true cosmic destiny with <span className="font-bold text-purple-400">Astro Vibe.</span>
+              <p className="text-sm text-indigo-600 dark:text-indigo-300/80 mb-6">
+                Discover your true cosmic destiny with <span className="font-bold text-purple-600 dark:text-purple-400">Astro Vibe.</span>
               </p>
               <Link to="/astrology">
                 <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full sm:w-auto rounded-2xl h-12 font-bold shadow-lg shadow-purple-500/30 px-8">

@@ -1,0 +1,214 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - displayName: string (required, 1-100 chars)
+    //   - bio: string (optional, 0-500 chars)
+    //   - updatedAt: timestamp (optional)
+    //   - role: string (optional, enum: ['user', 'admin'])
+    //
+    // Collection: stories
+    // Document ID: storyId
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - content: string (required, 1-10000 chars)
+    //   - title: string (optional, 0-200 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //   - likes: number (optional, >= 0)
+    //   - likedBy: list (optional, strings)
+    //
+    // Collection: community_stories
+    // Document ID: storyId
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - authorName: string (required, 1-100 chars)
+    //   - content: string (required, 1-10000 chars)
+    //   - title: string (optional, 0-200 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //   - likes: number (optional, >= 0)
+    //   - likedBy: list (optional, strings)
+    //   - tags: list (optional, strings)
+    //
+    // Collection: community_stories/{storyId}/comments
+    // Document ID: commentId
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - authorName: string (required, 1-100 chars)
+    //   - content: string (required, 1-1000 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // Collection: notifications
+    // Document ID: notificationId
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - type: string (required)
+    //   - message: string (required, 1-500 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //   - read: bool (required)
+    //
+    // Collection: riya_searches
+    // Document ID: searchId
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - query: string (required, 1-500 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          request.auth.token.email == "shubh656577@gmail.com");
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validString(field, min, max) {
+      return request.resource.data[field] is string && 
+             request.resource.data[field].size() >= min && 
+             request.resource.data[field].size() <= max;
+    }
+
+    function validOptionalString(field, min, max) {
+      return !(field in request.resource.data) || 
+             (request.resource.data[field] is string && 
+              request.resource.data[field].size() >= min && 
+              request.resource.data[field].size() <= max);
+    }
+
+    function validList(field, maxItems, itemType) {
+      return !(field in request.resource.data) || 
+             (request.resource.data[field] is list && 
+              request.resource.data[field].size() <= maxItems);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['displayName']) &&
+             hasOnlyAllowedFields(['displayName', 'bio', 'updatedAt', 'role']) &&
+             validString('displayName', 1, 100) &&
+             validOptionalString('bio', 0, 500) &&
+             (data.role == 'user' || data.role == 'admin' || !( 'role' in data));
+    }
+
+    function isValidStory(data) {
+      return hasRequiredFields(['userId', 'content', 'createdAt']) &&
+             hasOnlyAllowedFields(['userId', 'content', 'title', 'createdAt', 'likes', 'likedBy']) &&
+             data.userId == request.auth.uid &&
+             validString('content', 1, 10000) &&
+             validOptionalString('title', 0, 200) &&
+             data.createdAt is timestamp &&
+             (!( 'likes' in data) || (data.likes is number && data.likes >= 0)) &&
+             validList('likedBy', 1000, 'string');
+    }
+
+    function isValidCommunityStory(data) {
+      return hasRequiredFields(['userId', 'author', 'content', 'createdAt']) &&
+             validString('author', 1, 100) &&
+             validString('content', 1, 10000) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidComment(data) {
+      return hasRequiredFields(['userId', 'author', 'text', 'createdAt']) &&
+             validString('author', 1, 100) &&
+             validString('text', 1, 1000) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return hasRequiredFields(['userId', 'type', 'message', 'createdAt', 'read']) &&
+             hasOnlyAllowedFields(['userId', 'type', 'message', 'createdAt', 'read']) &&
+             validString('type', 1, 50) &&
+             validString('message', 1, 500) &&
+             data.createdAt is timestamp &&
+             data.read is bool;
+    }
+
+    function isValidRiyaSearch(data) {
+      return hasRequiredFields(['userId', 'query', 'createdAt']) &&
+             hasOnlyAllowedFields(['userId', 'query', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             validString('query', 1, 500) &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || !('role' in resource.data) || request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /stories/{storyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidStory(request.resource.data);
+      allow update: if isAuthenticated() && isValidStory(request.resource.data) && (isOwner(resource.data.userId) || isAdmin());
+      allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+    }
+
+    match /community_stories/{storyId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidCommunityStory(request.resource.data);
+      allow update: if isAuthenticated() && request.resource.data.userId == resource.data.userId && isValidCommunityStory(request.resource.data);
+      allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidComment(request.resource.data);
+        allow update: if isAuthenticated() && request.resource.data.userId == resource.data.userId && isValidComment(request.resource.data);
+        allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      }
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if isAuthenticated(); // Anyone can send a notification (e.g. system or other users)
+      allow update: if isOwner(resource.data.userId) && hasOnlyAllowedFields(['read']) && request.resource.data.read is bool;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    match /riya_searches/{searchId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidRiyaSearch(request.resource.data);
+      allow update: if false; // Search history is immutable
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

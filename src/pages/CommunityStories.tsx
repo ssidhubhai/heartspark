@@ -1,4 +1,6 @@
+import { Logo } from '../components/Logo';
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   collection,
   addDoc,
@@ -39,11 +41,17 @@ import {
   Shield,
   CheckCircle2,
   Share2,
-  Database,
+  Heart,
+  Eye,
+  MoreHorizontal,
+  Edit2,
+  Repeat,
 } from "lucide-react";
 import { generateContentWithFallback } from "../utils/ai";
 import { motion, AnimatePresence } from "motion/react";
-import seedStories from "../data/seedStories.json";
+import seedStoriesData from "../data/seedStories.json";
+
+const seedStories: any[] = seedStoriesData;
 
 interface PollOption {
   id: string;
@@ -74,31 +82,38 @@ interface Story {
   commentCount: number;
   reportCount?: number;
   reactedUsers?: string[];
-  comments?: any[]; // For local seeds
 }
-
-const localStories: Story[] = seedStories.map((s, index) => ({
-  id: `seed_${index}`,
-  content: s.content,
-  author: s.author || "Anonymous",
-  category: s.category || "General",
-  likes: s.likes || 0,
-  likedBy: [],
-  reactions: { aww: s.likes || 0, redFlag: 0, drama: 0, heartbreak: 0, slay: 0 },
-  commentCount: s.comments ? s.comments.length : 0,
-  reportCount: 0,
-  reactedUsers: [],
-  createdAt: Timestamp.fromMillis(Date.now() - (index + 1) * 3600000), // 1 hour apart
-  userId: `seed_user_${index}`,
-  comments: s.comments, // Keep local comments
-}));
 
 interface Comment {
   id: string;
   text: string;
   author: string;
+  userId: string;
   createdAt: any;
+  parentId?: string;
+  replyToAuthor?: string;
 }
+
+const formatRelativeTime = (timestamp: any) => {
+  if (!timestamp) return "now";
+  try {
+    const date = timestamp.toMillis ? new Date(timestamp.toMillis()) : new Date(timestamp);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 0) return "now";
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch (e) {
+    return "now";
+  }
+};
 
 export function CommunityStories() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -111,7 +126,17 @@ export function CommunityStories() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [loading, setLoading] = useState(false);
   const [moderating, setModerating] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedingProgress, setSeedingProgress] = useState(0);
+  const [totalToSeed, setTotalToSeed] = useState(0);
+  const [editingStory, setEditingStory] = useState<Story | null>(null);
+  const [editingComment, setEditingComment] = useState<Comment | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [shuffledStories, setShuffledStories] = useState<Story[] | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const { user, isConfigured } = useAuth();
+  const [searchParams] = useSearchParams();
+  const storyIdFromUrl = searchParams.get("id");
 
   // Admin Check
   const isAdmin = user?.email === "shubh656577@gmail.com";
@@ -121,10 +146,20 @@ export function CommunityStories() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; author: string; userId: string } | null>(null);
 
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
   const [blockingUserId, setBlockingUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (storyIdFromUrl && stories.length > 0) {
+      const story = stories.find((s) => s.id === storyIdFromUrl);
+      if (story) {
+        setSelectedStory(story);
+      }
+    }
+  }, [storyIdFromUrl, stories]);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -140,7 +175,7 @@ export function CommunityStories() {
 
   const [showReportedOnly, setShowReportedOnly] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
-  const [activeSort, setActiveSort] = useState("Trending");
+  const [activeSort, setActiveSort] = useState("✨ Newest");
   const [inlineExpandedStories, setInlineExpandedStories] = useState<Set<string>>(new Set());
 
   const toggleInlineExpand = (storyId: string, e: React.MouseEvent) => {
@@ -160,25 +195,6 @@ export function CommunityStories() {
   useEffect(() => {
     const storyId = selectedStory?.id || expandedStory;
     if (!storyId) return;
-
-    if (storyId.startsWith("seed_")) {
-      const seedIndex = parseInt(storyId.replace("seed_", ""));
-      const seedStory = seedStories[seedIndex];
-      if (seedStory && seedStory.comments) {
-        setComments(
-          seedStory.comments.map((c, i) => ({
-            id: `seed_comment_${i}`,
-            text: c.text,
-            author: c.user || "Anonymous",
-            createdAt: Timestamp.fromMillis(Date.now() - i * 60000),
-            userId: `seed_user_${i}`,
-          }))
-        );
-      } else {
-        setComments([]);
-      }
-      return;
-    }
 
     if (!db) return;
 
@@ -206,16 +222,9 @@ export function CommunityStories() {
     return () => unsubscribe();
   }, [expandedStory, selectedStory?.id]);
 
-  // Fetch stories
+// Fetch stories
   useEffect(() => {
     if (!db) {
-      if (!showReportedOnly && activeSort !== "👤 My Posts") {
-        let fallbackData = [...localStories];
-        if (activeSort === "🏆 Top (All Time)") {
-          fallbackData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-        }
-        setStories(fallbackData);
-      }
       setLoadingStories(false);
       return;
     }
@@ -256,51 +265,18 @@ export function CommunityStories() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        let storyData = snapshot.docs.map((doc) => ({
+        const storyData = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Story[];
-        
-        // Merge local stories if not filtering by My Posts or Reported
-        if (!showReportedOnly && activeSort !== "👤 My Posts") {
-          storyData = [...storyData, ...localStories];
-          
-          // Re-sort the combined array
-          if (activeSort === "🏆 Top (All Time)") {
-            storyData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-          } else {
-            storyData.sort((a, b) => {
-              const timeA = a.createdAt?.toMillis() || 0;
-              const timeB = b.createdAt?.toMillis() || 0;
-              return timeB - timeA;
-            });
-          }
-        } else if (activeSort === "👤 My Posts") {
-          // Client-side sort for My Posts to avoid requiring a composite index
-          storyData = storyData.sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-          });
-        }
         
         setStories(storyData);
         setLoadingStories(false);
       },
       (error) => {
         console.error("Error fetching stories:", error);
-        
-        // IF FIREBASE FAILS ENTIRELY, STILL SHOW LOCAL STORIES!
-        if (!showReportedOnly && activeSort !== "👤 My Posts") {
-           let fallbackData = [...localStories];
-           if (activeSort === "🏆 Top (All Time)") {
-             fallbackData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-           }
-           setStories(fallbackData);
-        }
-        
         setLoadingStories(false);
-        showToast("Failed to connect to the database. Showing community archive.", "error");
+        showToast("Failed to connect to the database.", "error");
       }
     );
 
@@ -344,17 +320,27 @@ export function CommunityStories() {
   };
 
   const handleSeedDatabase = async () => {
-    if (!db) return;
+    console.log("Seed button clicked!");
+    if (!db) {
+      console.error("Database not initialized");
+      showToast("Database not initialized", "error");
+      return;
+    }
     if (!user) {
+      console.error("User not logged in");
       showToast("Please login to seed the database.", "error");
       return;
     }
-    if (!window.confirm("Are you sure you want to seed the database? This will add 100+ stories.")) return;
     
-    setLoading(true);
+    console.log("Starting seeding process with", seedStories.length, "stories");
+    setIsSeeding(true);
+    setSeedingProgress(0);
+    setTotalToSeed(seedStories.length);
+    
     try {
       let batch = writeBatch(db);
       let count = 0;
+      let storiesProcessed = 0;
       
       for (const story of seedStories) {
         const newStoryRef = doc(collection(db, "community_stories"));
@@ -373,10 +359,18 @@ export function CommunityStories() {
           userId: user.uid,
         });
         count++;
+        storiesProcessed++;
+        
+        // Update progress every 5 stories to avoid too many state updates
+        if (storiesProcessed % 5 === 0 || storiesProcessed === seedStories.length) {
+          setSeedingProgress(storiesProcessed);
+        }
 
-        if (count % 400 === 0) {
+        if (count >= 400) {
+          console.log(`Committing batch at ${storiesProcessed} stories...`);
           await batch.commit();
           batch = writeBatch(db);
+          count = 0;
         }
 
         if (story.comments && story.comments.length > 0) {
@@ -390,25 +384,29 @@ export function CommunityStories() {
             });
             count++;
 
-            if (count % 400 === 0) {
+            if (count >= 400) {
+              console.log(`Committing batch at ${storiesProcessed} stories (comment)...`);
               await batch.commit();
               batch = writeBatch(db);
+              count = 0;
             }
           }
         }
       }
       
-      // Commit any remaining
-      if (count % 400 !== 0) {
+      if (count > 0) {
+        console.log("Committing final batch...");
         await batch.commit();
       }
       
-      showToast(`Successfully seeded stories!`, "success");
-    } catch (error) {
+      console.log("Seeding complete!");
+      showToast(`Successfully seeded ${seedStories.length} stories!`, "success");
+    } catch (error: any) {
       console.error("Error seeding database:", error);
-      showToast("Failed to seed database. Check console for details.", "error");
+      showToast(`Failed to seed database: ${error.message || "Unknown error"}`, "error");
     } finally {
-      setLoading(false);
+      setIsSeeding(false);
+      setSeedingProgress(0);
     }
   };
 
@@ -506,7 +504,7 @@ export function CommunityStories() {
 
       setNewStory("");
       setAuthorName("");
-      setPostCategory("Crush");
+      setPostCategory("General");
       setShowPollInput(false);
       setPollOptions(["", ""]);
       setShowPostModal(false);
@@ -579,31 +577,18 @@ export function CommunityStories() {
     }
   };
 
+  const [reactingToId, setReactingToId] = useState<string | null>(null);
+
   const handleReaction = async (story: Story, emoji: string) => {
     if (!user) {
       showToast("Please login to react to stories!", "info");
       return;
     }
-    if (story.id.startsWith("seed_")) {
-      // Optimistic update for seed stories
-      const updatedStories = stories.map((s) => {
-        if (s.id === story.id) {
-          const newReactions = { ...s.reactions };
-          newReactions[emoji as keyof typeof newReactions] = (newReactions[emoji as keyof typeof newReactions] || 0) + 1;
-          const updatedStory = { ...s, reactions: newReactions };
-          if (selectedStory?.id === story.id) {
-            setSelectedStory(updatedStory);
-          }
-          return updatedStory;
-        }
-        return s;
-      });
-      setStories(updatedStories);
-      showToast("✨ Reaction added to archived community story!", "success");
-      return;
-    }
+    if (reactingToId === story.id) return; // Prevent double clicks
+
     if (!db) return;
 
+    setReactingToId(story.id);
     const userReactionKey = `${user.uid}_${emoji}`;
     const hasReactedToThis = story.reactedUsers?.includes(userReactionKey);
 
@@ -643,11 +628,17 @@ export function CommunityStories() {
             newReactedUsers.push(userReactionKey);
           }
 
-          return {
+          const updatedStory = {
             ...s,
             reactions: newReactions,
             reactedUsers: newReactedUsers,
           };
+          
+          if (selectedStory?.id === story.id) {
+            setSelectedStory(updatedStory);
+          }
+          
+          return updatedStory;
         }
         return s;
       }),
@@ -681,16 +672,14 @@ export function CommunityStories() {
     } catch (error) {
       console.error("Error updating reaction: ", error);
       showToast("Failed to update reaction.", "error");
+    } finally {
+      setReactingToId(null);
     }
   };
 
   const handleReport = async (storyId: string) => {
     if (!user) {
       showToast("Please login to report stories.", "error");
-      return;
-    }
-    if (storyId.startsWith("seed_")) {
-      showToast("This story has already been moderated and archived.", "info");
       return;
     }
     if (!db) return;
@@ -720,10 +709,6 @@ export function CommunityStories() {
 
   // --- ADMIN FUNCTIONS ---
   const handleClearReports = async (storyId: string) => {
-    if (storyId.startsWith("seed_")) {
-      showToast("Cannot modify archived community stories.", "error");
-      return;
-    }
     if (!db) return;
     try {
       await updateDoc(doc(db, "community_stories", storyId), {
@@ -797,6 +782,59 @@ export function CommunityStories() {
       setBlockingUserId(null);
     }
   };
+
+  const handleEditPost = async (storyId: string, newContent: string) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, "community_stories", storyId), {
+        content: newContent,
+        updatedAt: serverTimestamp(),
+      });
+      showToast("Post updated successfully!", "success");
+      setEditingStory(null);
+      setEditContent("");
+    } catch (error) {
+      console.error("Error updating post:", error);
+      showToast("Failed to update post.", "error");
+    }
+  };
+
+  const handleEditComment = async (storyId: string, commentId: string, newText: string) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, `community_stories/${storyId}/comments`, commentId), {
+        text: newText,
+        updatedAt: serverTimestamp(),
+      });
+      showToast("Comment updated!", "success");
+      setEditingComment(null);
+      setEditContent("");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      showToast("Failed to update comment.", "error");
+    }
+  };
+
+  const handleDeleteComment = async (storyId: string, commentId: string) => {
+    if (!db) return;
+    try {
+      await deleteDoc(doc(db, `community_stories/${storyId}/comments`, commentId));
+      await updateDoc(doc(db, "community_stories", storyId), {
+        commentCount: increment(-1),
+      });
+      showToast("Comment deleted.", "success");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      showToast("Failed to delete comment.", "error");
+    }
+  };
+
+  const handleShufflePosts = () => {
+    if (!isAdmin) return;
+    const shuffled = [...stories].sort(() => Math.random() - 0.5);
+    setShuffledStories(shuffled);
+    showToast("Posts shuffled for variety!", "success");
+  };
   // -----------------------
 
   const toggleComments = (storyId: string) => {
@@ -828,15 +866,24 @@ export function CommunityStories() {
     }
 
     const commentText = newComment.trim();
+    const currentReplyTo = replyTo;
     setNewComment("");
+    setReplyTo(null);
 
     try {
-      await addDoc(collection(db, `community_stories/${storyId}/comments`), {
+      const commentData: any = {
         text: commentText,
         author: user.displayName || "Anonymous",
         createdAt: serverTimestamp(),
         userId: user.uid,
-      });
+      };
+
+      if (currentReplyTo) {
+        commentData.parentId = currentReplyTo.id;
+        commentData.replyToAuthor = currentReplyTo.author;
+      }
+
+      await addDoc(collection(db, `community_stories/${storyId}/comments`), commentData);
 
       const storyRef = doc(db, "community_stories", storyId);
       await updateDoc(storyRef, {
@@ -845,8 +892,22 @@ export function CommunityStories() {
 
       // Find the story to get the author's userId
       const story = stories.find((s) => s.id === storyId);
-      if (story && story.userId && story.userId !== user.uid) {
-        // Create notification for the story author
+
+      // Notification logic
+      if (currentReplyTo) {
+        // Notify the person being replied to
+        if (currentReplyTo.userId !== user.uid) {
+          await addDoc(collection(db, "notifications"), {
+            userId: currentReplyTo.userId,
+            type: "reply",
+            storyId: storyId,
+            message: `${user.displayName || "Someone"} replied to your comment: "${commentText.substring(0, 30)}..."`,
+            createdAt: serverTimestamp(),
+            read: false,
+          });
+        }
+      } else if (story && story.userId && story.userId !== user.uid) {
+        // Create notification for the story author (only if it's a top-level comment)
         await addDoc(collection(db, "notifications"), {
           userId: story.userId,
           type: "comment",
@@ -878,15 +939,17 @@ export function CommunityStories() {
   }
 
   const sortedStories = useMemo(() => {
-    if (activeSort === "Trending") {
-      return [...stories].sort((a, b) => {
-        const scoreA = (a.likes || 0) + (a.commentCount || 0);
-        const scoreB = (b.likes || 0) + (b.commentCount || 0);
-        return scoreB - scoreA;
+    if (shuffledStories) return shuffledStories;
+    let sorted = [...stories];
+    if (activeSort === "✨ Newest" || activeSort === "👤 My Posts") {
+      sorted.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return bTime - aTime;
       });
     }
-    return stories;
-  }, [stories, activeSort]);
+    return sorted;
+  }, [stories, activeSort, shuffledStories]);
 
   return (
     <div className="w-full max-w-5xl mx-auto min-h-screen pb-20 relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 z-10">
@@ -900,33 +963,45 @@ export function CommunityStories() {
       {/* Sticky Header */}
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-pink-100 dark:border-white/10 py-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-6">
         <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
-          <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white text-adaptive-readable flex items-center gap-2">
-            Community <MessageCircle className="w-6 h-6 text-pink-500" />
-          </h1>
+          <div className="flex items-center gap-3">
+            <Logo size="sm" />
+            <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
+            <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              Community
+            </h1>
+          </div>
           <div className="flex items-center gap-2">
-            {import.meta.env.DEV && (
-              <button
-                onClick={handleSeedDatabase}
-                className="p-2 rounded-full transition-colors bg-indigo-500/20 text-indigo-500 hover:bg-indigo-500/30"
-                title="Seed Database (Dev Only)"
-              >
-                <Database className="w-5 h-5" />
-              </button>
-            )}
             {isAdmin && (
-              <button
-                onClick={() => setShowReportedOnly(!showReportedOnly)}
-                className={`p-2 rounded-full transition-colors ${showReportedOnly ? "bg-red-500/20 text-red-500" : "bg-white/60 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-white"}`}
-              >
-                <Flag className="w-5 h-5" />
-              </button>
+              <>
+                <button
+                  onClick={handleShufflePosts}
+                  className="p-2 rounded-full transition-colors bg-purple-500/20 text-purple-500 hover:bg-purple-500/30"
+                  title="Shuffle Posts"
+                >
+                  <Repeat className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleSeedDatabase}
+                  disabled={isSeeding}
+                  className="p-2 rounded-full transition-colors bg-indigo-500/20 text-indigo-500 hover:bg-indigo-500/30 disabled:opacity-50"
+                  title="Seed Database"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowReportedOnly(!showReportedOnly)}
+                  className={`p-2 rounded-full transition-colors ${showReportedOnly ? "bg-red-500/20 text-red-500" : "bg-white/60 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-white"}`}
+                >
+                  <Flag className="w-5 h-5" />
+                </button>
+              </>
             )}
           </div>
         </div>
 
         {/* Category Pills */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {["Trending", "✨ Newest", "🏆 Top (All Time)", ...(user ? ["👤 My Posts"] : [])].map((sortOption) => (
+          {["✨ Newest", "🏆 Top (All Time)", ...(user ? ["👤 My Posts"] : [])].map((sortOption) => (
             <button
               key={sortOption}
               onClick={() => setActiveSort(sortOption)}
@@ -999,24 +1074,6 @@ export function CommunityStories() {
             </h2>
 
             <form onSubmit={handlePostStory} className="space-y-4">
-              {/* Category Selection */}
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {["Crush", "Confession", "Advice"].map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setPostCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      postCategory === cat
-                        ? "bg-pink-500 text-white"
-                        : "bg-white/60 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 hover:bg-white/80 dark:bg-white/10"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
               <textarea
                 value={newStory}
                 onChange={(e) => {
@@ -1129,8 +1186,68 @@ export function CommunityStories() {
         </div>
       )}
 
+      {isSeeding && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center border border-pink-500/20"
+          >
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  className="text-zinc-100 dark:text-zinc-800"
+                />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={2 * Math.PI * 40}
+                  strokeDashoffset={2 * Math.PI * 40 * (1 - (totalToSeed > 0 ? seedingProgress / totalToSeed : 0))}
+                  className="text-pink-500 transition-all duration-300"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Plus className="w-8 h-8 text-pink-500 animate-pulse" />
+              </div>
+            </div>
+            
+            <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-2">
+              Seeding Database...
+            </h3>
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6">
+              Please wait while we populate the community with stories.
+            </p>
+            
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 flex justify-between items-center">
+              <div className="text-left">
+                <span className="block text-xs font-bold text-zinc-400 uppercase tracking-widest">Progress</span>
+                <span className="text-lg font-black text-pink-500">
+                  {totalToSeed > 0 ? Math.round((seedingProgress / totalToSeed) * 100) : 0}%
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="block text-xs font-bold text-zinc-400 uppercase tracking-widest">Stories</span>
+                <span className="text-lg font-black text-zinc-900 dark:text-white">
+                  {seedingProgress} / {totalToSeed}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Stories Feed */}
-      <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <AnimatePresence mode="popLayout">
           {loadingStories ? (
             // Skeleton Loaders
@@ -1140,18 +1257,18 @@ export function CommunityStories() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border-b border-gray-200/20 px-4 py-4"
               >
-                <Card className="animate-pulse space-y-4 border-pink-100 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-xl p-5 sm:p-6 rounded-[24px]">
-                  <div className="h-6 bg-white/80 dark:bg-white/10 rounded w-3/4"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-white/10"></div>
-                    <div className="h-4 bg-white/80 dark:bg-white/10 rounded w-1/4"></div>
+                <div className="flex gap-3 animate-pulse">
+                  <div className="w-10 h-10 rounded-full bg-white/80 dark:bg-white/10 shrink-0"></div>
+                  <div className="flex-1 space-y-3">
+                    <div className="h-4 bg-white/80 dark:bg-white/10 rounded w-1/3"></div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-white/80 dark:bg-white/10 rounded w-full"></div>
+                      <div className="h-3 bg-white/80 dark:bg-white/10 rounded w-5/6"></div>
+                    </div>
                   </div>
-                  <div className="space-y-2 mt-4">
-                    <div className="h-4 bg-white/80 dark:bg-white/10 rounded w-full"></div>
-                    <div className="h-4 bg-white/80 dark:bg-white/10 rounded w-5/6"></div>
-                  </div>
-                </Card>
+                </div>
               </motion.div>
             ))
           ) : stories.length === 0 ? (
@@ -1171,156 +1288,186 @@ export function CommunityStories() {
             </motion.div>
           ) : (
             sortedStories.map((story) => (
-                <motion.div
-                  key={story.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div
-                    id={`story-${story.id}`}
-                    className="rounded-[24px] bg-white/60 dark:bg-white/5 backdrop-blur-md border border-pink-100 dark:border-white/10 p-5 sm:p-6 hover:bg-white/80 dark:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-pink-500/5 cursor-pointer relative overflow-hidden group"
-                    onClick={() => setSelectedStory(story)}
-                  >
+              <motion.div
+                key={story.id}
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border-b border-gray-200/20 px-4 py-3 hover:bg-white/80 dark:bg-white/10 transition-all duration-300 cursor-pointer relative overflow-hidden group"
+                onClick={() => setSelectedStory(story)}
+              >
+                <div id={`story-${story.id}`} className="flex gap-3">
+                  {/* Left Column: Avatar */}
+                  <div className="shrink-0 pt-1">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20">
+                      {story.author.charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Content */}
+                  <div className="flex-1 min-w-0">
                     {/* Admin Warning Banner */}
                     {isAdmin && (story.reportCount || 0) > 0 && (
-                      <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-xs font-bold px-4 py-1 flex items-center gap-2">
+                      <div className="mb-2 bg-red-500/10 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 w-fit">
                         <AlertCircle className="w-3 h-3" />
-                        REPORTED POST ({story.reportCount} reports)
+                        REPORTED ({story.reportCount})
                       </div>
                     )}
 
-                    <div
-                      className={`space-y-3 ${isAdmin && (story.reportCount || 0) > 0 ? "mt-4" : ""}`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20">
-                            {story.author.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-zinc-900 dark:text-white">
-                                {story.author}
-                              </span>
-                              {story.category && (
-                                <span className="px-2 py-0.5 bg-white/80 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 text-[10px] rounded-full font-medium uppercase tracking-wider">
-                                  {story.category}
-                                </span>
-                              )}
-                              {user && user.uid === story.userId && (
-                                <span className="px-2 py-0.5 bg-pink-500/20 text-pink-400 text-[10px] rounded-full font-bold uppercase tracking-wider">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-zinc-500">
-                              {story.createdAt
-                                ? new Date(
-                                    story.createdAt.toMillis(),
-                                  ).toLocaleDateString(undefined, {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })
-                                : "Just now"}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Delete Post Button */}
-                        {user && (user.uid === story.userId || isAdmin) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeletePost(story.id);
-                            }}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors shrink-0 ${
-                              deletingPostId === story.id
-                                ? "bg-red-500 text-white shadow-md"
-                                : "text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                            }`}
-                            title={isAdmin ? "Delete post (Admin)" : "Delete your post"}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            {deletingPostId === story.id && (
-                              <span>Confirm?</span>
-                            )}
-                          </button>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        <span className="font-bold text-[14px] text-zinc-900 dark:text-white truncate">
+                          {story.author}
+                        </span>
+                        {story.category && (
+                          <span className="px-1.5 py-0.5 bg-pink-500/10 text-pink-500 text-[9px] rounded-full font-bold uppercase tracking-wider">
+                            {story.category}
+                          </span>
                         )}
+                        {user && user.uid === story.userId && (
+                          <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-500 text-[9px] rounded-full font-bold uppercase tracking-wider">
+                            You
+                          </span>
+                        )}
+                        <span className="text-[13px] text-zinc-500 shrink-0">
+                          · {formatRelativeTime(story.createdAt)}
+                        </span>
                       </div>
+                      
+                      <div className="flex items-center gap-1 relative">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(activeMenuId === story.id ? null : story.id);
+                          }}
+                          className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors rounded-full hover:bg-zinc-500/10"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
 
-                      <div className="pt-2">
-                        <p className={`text-zinc-600 dark:text-zinc-300 leading-relaxed text-base transition-all duration-300 ${inlineExpandedStories.has(story.id) ? '' : 'line-clamp-3'}`}>
-                          {story.content}
-                        </p>
-                        {story.content.length > 100 && (
-                          <button
-                            onClick={(e) => toggleInlineExpand(story.id, e)}
-                            className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 text-sm font-semibold mt-2 hover:opacity-80 transition-opacity"
-                          >
-                            {inlineExpandedStories.has(story.id) ? 'Show less' : 'Read more...'}
-                          </button>
+                        {activeMenuId === story.id && (
+                          <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                            {user && user.uid === story.userId && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingStory(story);
+                                    setEditContent(story.content);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                                >
+                                  <Edit2 className="w-4 h-4" /> Edit Post
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeletePost(story.id);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                >
+                                  <Trash2 className="w-4 h-4" /> Delete Post
+                                </button>
+                              </>
+                            )}
+                            {isAdmin && showReportedOnly && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeletePost(story.id);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" /> Admin Delete
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                handleShare(story, e);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                            >
+                              <Share2 className="w-4 h-4" /> Share
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReport(story.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                            >
+                              <Flag className="w-4 h-4" /> Report
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Interaction Bar */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-pink-50 dark:border-white/5">
+                    {/* Content Body */}
+                    <div className="mb-3 mt-1">
+                      <p className="text-[15px] text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap break-words">
+                        {story.content}
+                      </p>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between max-w-[280px] -ml-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleReaction(story, "aww");
                         }}
-                        className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-pink-400 transition-colors"
+                        className="group flex items-center gap-1 text-zinc-500 hover:text-pink-500 transition-colors"
                       >
-                        <span className="text-xl">❤️</span>
-                        <span className="text-sm font-medium">
+                        <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
+                          <Heart className={`w-4 h-4 ${story.reactedUsers?.some(u => u.startsWith(user?.uid || '')) ? 'fill-pink-500 text-pink-500' : ''}`} />
+                        </div>
+                        <span className="text-[12px] font-medium">
                           {story.reactions?.aww || 0}
                         </span>
                       </button>
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedStory(story);
                         }}
-                        className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-blue-400 transition-colors"
+                        className="group flex items-center gap-1 text-zinc-500 hover:text-blue-500 transition-colors"
                       >
-                        <span className="text-xl">💬</span>
-                        <span className="text-sm font-medium">
+                        <div className="p-2 rounded-full group-hover:bg-blue-500/10 transition-colors">
+                          <MessageCircle className="w-4 h-4" />
+                        </div>
+                        <span className="text-[12px] font-medium">
                           {story.commentCount || 0}
                         </span>
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedStory(story);
-                        }}
-                        className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-purple-400 transition-colors"
-                      >
-                        <span className="text-xl">📊</span>
-                        <span className="text-sm font-medium">
+
+                      <div className="group flex items-center gap-1 text-zinc-500 hover:text-purple-500 transition-colors">
+                        <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
+                          <Eye className="w-4 h-4" />
+                        </div>
+                        <span className="text-[12px] font-medium">
                           {story.poll
                             ? story.poll.options.reduce(
                                 (acc, curr) => acc + curr.votes,
                                 0,
                               )
-                            : 0}
+                            : Math.floor((story.reactions?.aww || 0) * 2.5 + (story.commentCount || 0) * 5 + 10)}
                         </span>
-                      </button>
-                      <button
-                        onClick={(e) => handleShare(story, e)}
-                        className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-green-500 transition-colors"
-                        title="Share this story"
-                      >
-                        <Share2 className="w-5 h-5" />
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              ))
+                </div>
+              </motion.div>
+            ))
           )}
         </AnimatePresence>
       </div>
@@ -1384,7 +1531,7 @@ export function CommunityStories() {
                   </div>
                 </div>
 
-                <p className="text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-8 text-lg">
+                <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed mb-8 text-[15px] sm:text-base">
                   {selectedStory.content}
                 </p>
 
@@ -1508,30 +1655,165 @@ export function CommunityStories() {
                           No comments yet. Be the first to share your thoughts!
                         </p>
                       ) : (
-                        comments.map((comment) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs shrink-0">
-                              {comment.author.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="flex items-baseline gap-2 mb-1">
-                                <span className="font-bold text-zinc-900 dark:text-white text-sm">
-                                  {comment.author}
-                                </span>
-                                <span className="text-xs text-zinc-500">
-                                  {comment.createdAt
-                                    ? new Date(
-                                        comment.createdAt.toMillis(),
-                                      ).toLocaleDateString()
-                                    : "Just now"}
-                                </span>
+                        comments
+                          .filter((c) => !c.parentId)
+                          .map((comment) => (
+                            <div key={comment.id} className="space-y-4">
+                              <div className="flex gap-3">
+                                <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs shrink-0">
+                                  {comment.author.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-baseline gap-2 mb-1">
+                                    <span className="font-bold text-zinc-900 dark:text-white text-sm">
+                                      {comment.author}
+                                    </span>
+                                    <span className="text-xs text-zinc-500">
+                                      {comment.createdAt
+                                        ? formatRelativeTime(comment.createdAt)
+                                        : "now"}
+                                    </span>
+                                  </div>
+                                  <p className="text-zinc-800 dark:text-zinc-200 text-[15px] leading-relaxed mt-1">
+                                    {comment.text}
+                                  </p>
+                                  <div className="flex items-center gap-3 mt-2">
+                                    <button
+                                      onClick={() =>
+                                        setReplyTo({
+                                          id: comment.id,
+                                          author: comment.author,
+                                          userId: comment.userId,
+                                        })
+                                      }
+                                      className="text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors"
+                                    >
+                                      Reply
+                                    </button>
+                                    
+                                    <div className="relative">
+                                      <button
+                                        onClick={() => setActiveMenuId(activeMenuId === comment.id ? null : comment.id)}
+                                        className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full hover:bg-zinc-500/10"
+                                      >
+                                        <MoreHorizontal className="w-3.5 h-3.5" />
+                                      </button>
+                                      
+                                      {activeMenuId === comment.id && (
+                                        <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50">
+                                          {user && user.uid === comment.userId && (
+                                            <button
+                                              onClick={() => {
+                                                setEditingComment(comment);
+                                                setEditContent(comment.text);
+                                                setActiveMenuId(null);
+                                              }}
+                                              className="w-full px-3 py-1.5 text-left text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                                            >
+                                              <Edit2 className="w-3.5 h-3.5" /> Edit
+                                            </button>
+                                          )}
+                                          {(isAdmin || (user && user.uid === comment.userId)) && (
+                                            <button
+                                              onClick={() => {
+                                                handleDeleteComment(selectedStory.id, comment.id);
+                                                setActiveMenuId(null);
+                                              }}
+                                              className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <p className="text-zinc-600 dark:text-zinc-300 text-sm leading-relaxed">
-                                {comment.text}
-                              </p>
+
+                              {/* Replies */}
+                              {comments
+                                .filter((r) => r.parentId === comment.id)
+                                .map((reply) => (
+                                  <div key={reply.id} className="flex gap-3 ml-11">
+                                    <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-[10px] shrink-0">
+                                      {reply.author.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-baseline gap-2 mb-1">
+                                        <span className="font-bold text-zinc-900 dark:text-white text-xs">
+                                          {reply.author}
+                                        </span>
+                                        <span className="text-[10px] text-zinc-500">
+                                          {reply.createdAt
+                                            ? formatRelativeTime(reply.createdAt)
+                                            : "now"}
+                                        </span>
+                                      </div>
+                                      <p className="text-zinc-800 dark:text-zinc-200 text-sm leading-relaxed mt-1">
+                                        {reply.replyToAuthor && (
+                                          <span className="text-pink-500 font-medium mr-1">
+                                            @{reply.replyToAuthor}
+                                          </span>
+                                        )}
+                                        {reply.text}
+                                      </p>
+                                      <div className="flex items-center gap-3 mt-1">
+                                        <button
+                                          onClick={() =>
+                                            setReplyTo({
+                                              id: comment.id,
+                                              author: reply.author,
+                                              userId: reply.userId,
+                                            })
+                                          }
+                                          className="text-[10px] font-medium text-pink-500 hover:text-pink-600 transition-colors"
+                                        >
+                                          Reply
+                                        </button>
+                                        
+                                        <div className="relative">
+                                          <button
+                                            onClick={() => setActiveMenuId(activeMenuId === reply.id ? null : reply.id)}
+                                            className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full hover:bg-zinc-500/10"
+                                          >
+                                            <MoreHorizontal className="w-3 h-3" />
+                                          </button>
+                                          
+                                          {activeMenuId === reply.id && (
+                                            <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50">
+                                              {user && user.uid === reply.userId && (
+                                                <button
+                                                  onClick={() => {
+                                                    setEditingComment(reply);
+                                                    setEditContent(reply.text);
+                                                    setActiveMenuId(null);
+                                                  }}
+                                                  className="w-full px-3 py-1.5 text-left text-[10px] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                                                >
+                                                  <Edit2 className="w-3 h-3" /> Edit
+                                                </button>
+                                              )}
+                                              {(isAdmin || (user && user.uid === reply.userId)) && (
+                                                <button
+                                                  onClick={() => {
+                                                    handleDeleteComment(selectedStory.id, reply.id);
+                                                    setActiveMenuId(null);
+                                                  }}
+                                                  className="w-full px-3 py-1.5 text-left text-[10px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                                >
+                                                  <Trash2 className="w-3 h-3" /> Delete
+                                                </button>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                             </div>
-                          </div>
-                        ))
+                          ))
                       )}
                     </div>
                   )}
@@ -1541,32 +1823,47 @@ export function CommunityStories() {
               {/* Fixed Comment Input */}
               <div className="p-4 sm:p-6 border-t border-pink-100 dark:border-white/10 bg-white dark:bg-[#121214]/90 backdrop-blur-xl shrink-0">
                 {user ? (
-                  <form
-                    onSubmit={(e) => handlePostComment(selectedStory.id, e)}
-                    className="flex gap-3 max-w-2xl mx-auto"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold shrink-0 border border-pink-500/20">
-                      {user.displayName?.charAt(0).toUpperCase() || "U"}
-                    </div>
-                    <div className="flex-1 flex gap-2">
-                      <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        className="flex-1 h-10 px-4 rounded-full border border-pink-100 dark:border-white/10 bg-white/60 dark:bg-white/5 focus:border-pink-500 outline-none text-sm text-zinc-900 dark:text-white transition-colors"
-                        required
-                        maxLength={200}
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newComment.trim()}
-                        className="h-10 w-10 rounded-full bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white shrink-0 disabled:opacity-50 transition-colors"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </form>
+                  <div className="max-w-2xl mx-auto space-y-3">
+                    {replyTo && (
+                      <div className="flex items-center justify-between bg-pink-50/50 dark:bg-pink-500/5 px-3 py-2 rounded-lg border border-pink-100 dark:border-pink-500/10">
+                        <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                          Replying to <span className="font-bold text-pink-500">@{replyTo.author}</span>
+                        </span>
+                        <button
+                          onClick={() => setReplyTo(null)}
+                          className="text-zinc-400 hover:text-pink-500 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    <form
+                      onSubmit={(e) => handlePostComment(selectedStory.id, e)}
+                      className="flex gap-3"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold shrink-0 border border-pink-500/20">
+                        {user.displayName?.charAt(0).toUpperCase() || "U"}
+                      </div>
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="text"
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder={replyTo ? `Reply to @${replyTo.author}...` : "Add a comment..."}
+                          className="flex-1 h-10 px-4 rounded-full border border-pink-100 dark:border-white/10 bg-white/60 dark:bg-white/5 focus:border-pink-500 outline-none text-sm text-zinc-900 dark:text-white transition-colors"
+                          required
+                          maxLength={200}
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newComment.trim()}
+                          className="h-10 w-10 rounded-full bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white shrink-0 disabled:opacity-50 transition-colors shadow-lg shadow-pink-500/20"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 ) : (
                   <div className="text-center py-2 bg-white/60 dark:bg-white/5 rounded-xl border border-pink-100 dark:border-white/10 max-w-2xl mx-auto">
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -1577,6 +1874,62 @@ export function CommunityStories() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+      {/* Edit Story Modal */}
+      <AnimatePresence>
+        {editingStory && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
+            <Card className="w-full max-w-2xl bg-white dark:bg-[#121214] relative shadow-2xl p-6 border-pink-100 dark:border-white/10">
+              <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-white">Edit Story</h2>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full min-h-[10rem] p-4 rounded-xl border-2 border-pink-100 dark:border-white/10 bg-white/60 dark:bg-white/5 focus:border-pink-500 outline-none resize-none transition-all text-zinc-900 dark:text-white"
+                placeholder="Edit your story..."
+              />
+              <div className="flex justify-end gap-3 mt-4">
+                <Button variant="outline" onClick={() => setEditingStory(null)}>Cancel</Button>
+                <Button 
+                  variant="custom" 
+                  className="bg-pink-500 hover:bg-pink-600 text-white border-none"
+                  onClick={() => handleEditPost(editingStory.id, editContent)}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Comment Modal */}
+      <AnimatePresence>
+        {editingComment && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
+            <Card className="w-full max-w-lg bg-white dark:bg-[#121214] relative shadow-2xl p-6 border-pink-100 dark:border-white/10">
+              <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-white">Edit Comment</h2>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full min-h-[6rem] p-4 rounded-xl border-2 border-pink-100 dark:border-white/10 bg-white/60 dark:bg-white/5 focus:border-pink-500 outline-none resize-none transition-all text-zinc-900 dark:text-white"
+                placeholder="Edit your comment..."
+              />
+              <div className="flex justify-end gap-3 mt-4">
+                <Button variant="outline" onClick={() => setEditingComment(null)}>Cancel</Button>
+                <Button 
+                  variant="custom" 
+                  className="bg-pink-500 hover:bg-pink-600 text-white border-none"
+                  onClick={() => {
+                    const storyId = selectedStory?.id || expandedStory;
+                    if (storyId) handleEditComment(storyId, editingComment.id, editContent);
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
       </AnimatePresence>
     </div>

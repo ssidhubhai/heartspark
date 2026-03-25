@@ -2,35 +2,27 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, getDocFromServer, doc } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY as string,
-  authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN as string,
-  projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID as string,
-  storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET as string,
-  messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID as string,
-  appId: (import.meta as any).env.VITE_FIREBASE_APP_ID as string
-};
+// Import the Firebase configuration
+import firebaseConfig from '../../firebase-applet-config.json';
 
-const isFirebaseConfigured = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'TODO_KEYHERE' && !firebaseConfig.apiKey.includes('TODO');
+// Initialize Firebase SDK
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const googleProvider = new GoogleAuthProvider();
 
-export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
-export const auth = isFirebaseConfigured ? getAuth(app!) : null;
-export const db = isFirebaseConfigured ? getFirestore(app!) : null;
-export const googleProvider = isFirebaseConfigured ? new GoogleAuthProvider() : null;
-
-if (db) {
-  async function testConnection() {
-    try {
-      await getDocFromServer(doc(db!, 'test', 'connection'));
-    } catch (error) {
-      if(error instanceof Error && error.message.includes('the client is offline')) {
-        console.error("Please check your Firebase configuration. The client is offline, which typically means the Firestore database has not been provisioned or the configuration is incorrect.");
-      }
-      // Skip logging for other errors, as this is simply a connection test.
+// Connection test
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if(error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your Firebase configuration. The client is offline, which typically means the Firestore database has not been provisioned or the configuration is incorrect.");
     }
+    // Skip logging for other errors, as this is simply a connection test.
   }
-  testConnection();
 }
+testConnection();
 
 export const loginWithGoogle = async () => {
   if (!auth || !googleProvider) {
@@ -53,7 +45,7 @@ export const loginWithEmail = async (email: string, password: string) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
     if (!result.user.emailVerified) {
       await signOut(auth);
-      throw new Error("Please verify your email address before logging in. Check your inbox or spam folder.");
+      throw new Error("Please verify your email address before logging in. Check your inbox for the verification link.");
     }
     return result.user;
   } catch (error) {
@@ -70,7 +62,7 @@ export const registerWithEmail = async (email: string, password: string, name: s
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: name });
     await sendEmailVerification(result.user);
-    await signOut(auth); // Force them to login after verification
+    await signOut(auth); // Force sign out so they have to verify
     return result.user;
   } catch (error) {
     console.error("Error registering with Email", error);
@@ -99,3 +91,54 @@ export const logout = async () => {
     throw error;
   }
 };
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo: auth?.currentUser?.providerData.map(provider => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
