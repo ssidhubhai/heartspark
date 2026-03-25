@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { MessageSquare, Sparkles, Brain, Loader2, Image as ImageIcon, Trash2, Share2, Download } from 'lucide-react';
+import { MessageSquare, Sparkles, Brain, Loader2, Image as ImageIcon, Trash2, Share2, Download, X } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 import { downloadAsPdf, shareAsPdf } from '../utils/downloadImage';
 import { motion } from 'framer-motion';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 export function CrushMessageAnalyzer() {
   const [message, setMessage] = useState('');
@@ -14,6 +15,7 @@ export function CrushMessageAnalyzer() {
   const [image, setImage] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,16 +135,36 @@ export function CrushMessageAnalyzer() {
   };
 
   const handleShare = async () => {
-    const text = `I just decoded a text message using Heart Spark's Crush Message Analyzer! Try it out:`;
-    await shareAsPdf('analysis-result', 'Message Analyzer Result', text);
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      const text = `I just decoded a text message using Heart Spark's Crush Message Analyzer! Try it out:`;
+      await shareAsPdf('analysis-result', 'Message Analyzer Result', text);
+    } catch (error) {
+      console.error('Share failed:', error);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
-  const handleDownload = () => {
-    downloadAsPdf('analysis-result', 'message-analysis');
+  const handleDownload = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      await downloadAsPdf('analysis-result', 'message-analysis');
+    } catch (error) {
+      console.error('Download failed:', error);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto h-full flex flex-col">
+      <LoadingOverlay 
+        isVisible={loading || isSharing} 
+        message={loading ? "Decoding emotional signals..." : "Preparing your analysis report..."} 
+      />
       <div className="flex-1 overflow-y-auto pb-12 space-y-8 px-1 sm:px-2">
         <div className="text-center space-y-4 pt-4">
         <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white flex items-center justify-center gap-3 tracking-tight">

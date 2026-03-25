@@ -76,9 +76,11 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/">
-                <Logo size="md" />
-              </Link>
+              {location.pathname !== '/astrology' && (
+                <Link to="/">
+                  <Logo size="md" />
+                </Link>
+              )}
             </div>
 
             {/* Desktop Nav */}
@@ -318,7 +320,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main id="main-content" className={cn(
-        "w-full relative z-10 pb-20 md:pb-0",
+        "w-full relative z-10 pb-28 md:pb-0",
         (location.pathname === '/love-gpt' || location.pathname === '/astrology') ? "flex-1 overflow-hidden" : "flex-grow",
         location.pathname === '/' ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : 
         (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories') ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
@@ -359,7 +361,6 @@ export function Layout({ children }: { children: ReactNode }) {
               <div>
                 <h3 className={cn("text-[10px] font-black uppercase tracking-[0.3em] mb-8", theme === 'dark' ? "text-white" : "text-zinc-900")}>LABORATORY</h3>
                 <ul className="space-y-4 text-xs font-bold text-zinc-500">
-                  <li><Link to="/love-gpt" className="hover:text-pink-400 transition-colors uppercase tracking-widest">AI Coach</Link></li>
                   <li><Link to="/analyzer" className="hover:text-pink-400 transition-colors uppercase tracking-widest">Message Decoder</Link></li>
                   <li><Link to="/astrology" className="hover:text-pink-400 transition-colors uppercase tracking-widest">Astrology AI</Link></li>
                   <li><Link to="/tools/story" className="hover:text-pink-400 transition-colors uppercase tracking-widest">Story Maker</Link></li>

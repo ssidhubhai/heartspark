@@ -4,18 +4,21 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 export function Home() {
   const navigate = useNavigate();
   const [name1, setName1] = useState('');
   const [name2, setName2] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [result, setResult] = useState<{ score: number; message: string } | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const calculateLove = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,13 +126,38 @@ export function Home() {
   };
 
   const handleShare = async () => {
-    if (!result) return;
-    const text = `Compatibility analysis for ${name1} and ${name2}: ${result.score}%. "${result.message}"`;
-    await shareAsImage('calculator-result', 'Compatibility Result', text);
+    if (!result || isSharing) return;
+    setIsSharing(true);
+    
+    // Ensure the card is in view for better capture
+    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for scroll
+
+    try {
+      const text = `Check out our love compatibility on HeartSpark! ${name1} & ${name2} got ${result.score}%! 💖`;
+      await shareAsImage('calculator-result', 'HeartSpark Love Result', text);
+    } catch (error) {
+      console.error('Error sharing:', error);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
-  const handleDownload = () => {
-    downloadAsImage('calculator-result', 'compatibility-result');
+  const handleDownload = async () => {
+    if (!result || isSharing) return;
+    setIsSharing(true);
+
+    // Ensure the card is in view for better capture
+    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for scroll
+
+    try {
+      await downloadAsImage('calculator-result', `heartspark-${name1}-${name2}`);
+    } catch (error) {
+      console.error('Error downloading:', error);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const features = [
@@ -157,6 +185,9 @@ export function Home() {
 
   return (
     <div className="space-y-24 py-12">
+      <LoadingOverlay isVisible={isCalculating} />
+      <LoadingOverlay isVisible={isSharing} message="Generating your result image..." />
+      
       {/* HERO SECTION */}
       <section className="text-center space-y-6 max-w-4xl mx-auto relative px-4 mt-12 mb-20">
         {/* Floating Heart with Glow */}
@@ -334,7 +365,8 @@ export function Home() {
               {/* ✨ THE CARD (Optimized for Capture) */}
               <div 
                 id="calculator-result" 
-                className="relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-950 border border-pink-100 dark:border-white/5 shadow-2xl w-full max-w-[380px] aspect-[4/5] flex flex-col"
+                ref={resultRef}
+                className="relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-950 border border-pink-100 dark:border-white/5 shadow-2xl w-full max-w-[380px] min-h-[480px] h-auto flex flex-col"
               >
                 {/* 🌈 Capture-Safe Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-50 dark:from-[#121212] dark:via-[#0a0a0a] dark:to-[#121212]" />
@@ -395,17 +427,20 @@ export function Home() {
                  {/* SHARE BUTTON: Primary Pink */}
                  <Button 
                    onClick={handleShare} 
-                   className="flex-[2] rounded-full bg-pink-600 hover:bg-pink-500 text-white font-bold h-12 shadow-lg shadow-pink-500/20 transition-all active:scale-95 flex items-center justify-center border-none"
+                   disabled={isSharing}
+                   className="flex-[2] rounded-full bg-pink-600 hover:bg-pink-500 text-white font-bold h-12 shadow-lg shadow-pink-500/20 transition-all active:scale-95 flex items-center justify-center border-none disabled:opacity-50"
                  >
-                    <Share2 className="w-4 h-4 mr-2" /> Share
+                    {isSharing ? <Sparkles className="w-4 h-4 animate-spin mr-2" /> : <Share2 className="w-4 h-4 mr-2" />} 
+                    Share
                  </Button>
                  
                  {/* SAVE BUTTON: Midnight Glass (Won't turn white) */}
                  <Button 
                    onClick={handleDownload} 
-                   className="flex-[2] rounded-full bg-white dark:bg-zinc-900/80 hover:bg-pink-50 dark:hover:bg-zinc-800 text-pink-600 dark:text-white font-bold h-12 backdrop-blur-xl border border-pink-200 dark:border-pink-500/40 shadow-xl transition-all active:scale-95 flex items-center justify-center group"
+                   disabled={isSharing}
+                   className="flex-[2] rounded-full bg-white dark:bg-zinc-900/80 hover:bg-pink-50 dark:hover:bg-zinc-800 text-pink-600 dark:text-white font-bold h-12 backdrop-blur-xl border border-pink-200 dark:border-pink-500/40 shadow-xl transition-all active:scale-95 flex items-center justify-center group disabled:opacity-50"
                  >
-                    <Download className="w-4 h-4 mr-2 text-pink-500 group-hover:animate-bounce" /> 
+                    {isSharing ? <Sparkles className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2 text-pink-500 group-hover:animate-bounce" />} 
                     <span>Save</span>
                  </Button>
 

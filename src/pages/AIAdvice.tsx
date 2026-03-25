@@ -22,7 +22,7 @@ export function AIAdvice() {
 
     try {
       const prompt = `
-        You are Heart Spark, an expert dating coach and relationship guru.
+        You are Heart Spark, an expert in dating and relationship advice.
         The user (${names}) is asking for advice on this topic: "${topic}".
         
         Please provide thoughtful, practical, and slightly playful advice.
@@ -57,10 +57,10 @@ export function AIAdvice() {
     <div className="max-w-3xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
-          Heart Spark Coach <MessageSquareHeart className="w-8 h-8 text-pink-500 animate-pulse" />
+          AI Love Advice <MessageSquareHeart className="w-8 h-8 text-pink-500 animate-pulse" />
         </h1>
         <p className="text-lg text-zinc-600 dark:text-zinc-400">
-          Get cute, playful, and practical relationship advice from your personal AI love guru.
+          Get cute, playful, and practical relationship advice from Heart Spark.
         </p>
       </div>
 

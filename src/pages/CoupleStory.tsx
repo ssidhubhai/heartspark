@@ -33,11 +33,6 @@ export function CoupleStory() {
         ### The Story
         (Write the 2-4 line story here.)
         
-        ### Fun Scores
-        * **Romance IQ**: (Score from 0-100%)
-        * **Charm Score**: (Score from 0-100%)
-        * **Destiny Meter**: (Score from 0-100%)
-        
         ### Heart Spark's Tip
         (Give one cute piece of relationship advice based on the story theme)
       `;
@@ -142,7 +137,7 @@ export function CoupleStory() {
             {/* ✨ THE CARD (Optimized for Capture) */}
             <div 
               id="story-result" 
-              className="relative overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/5 shadow-2xl w-full max-w-[380px] aspect-[4/5] flex flex-col"
+              className="relative overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/5 shadow-2xl w-full max-w-md min-h-[500px] flex flex-col"
             >
               {/* 🌈 Capture-Safe Background */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#121212] via-[#0a0a0a] to-[#121212]" />

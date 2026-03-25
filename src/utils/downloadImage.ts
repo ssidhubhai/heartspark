@@ -25,15 +25,18 @@ const addWatermark = (element: HTMLElement) => {
   return watermark;
 };
 
-const getHtmlToImageOptions = () => ({
+const getHtmlToImageOptions = (element: HTMLElement) => ({
   backgroundColor: 'transparent',
   pixelRatio: 2, // Higher resolution
+  width: element.offsetWidth,
+  height: element.offsetHeight,
   style: {
     transform: 'scale(1)',
-    transformOrigin: 'top left'
+    transformOrigin: 'top left',
+    margin: '0',
+    padding: '0'
   },
   filter: (node: HTMLElement) => {
-    // Ignore elements with data-html2canvas-ignore attribute (for backward compatibility)
     if (node instanceof HTMLElement && node.dataset.html2canvasIgnore !== undefined) {
       return false;
     }
@@ -45,10 +48,13 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
   const element = document.getElementById(elementId);
   if (!element) return;
 
+  // Add a small delay to ensure any animations are settled
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   const watermark = addWatermark(element);
 
   try {
-    const dataUrl = await htmlToImage.toPng(element, getHtmlToImageOptions());
+    const dataUrl = await htmlToImage.toPng(element, getHtmlToImageOptions(element));
 
     const link = document.createElement('a');
     link.download = `${filename}.png`;
@@ -56,7 +62,7 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
     link.click();
   } catch (error) {
     console.error('Error downloading image:', error);
-    alert('Failed to download image. Please try again.');
+    throw error; // Let the caller handle it
   } finally {
     if (element.contains(watermark)) {
       element.removeChild(watermark);
@@ -76,10 +82,15 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
   if (!element) return;
 
   isSharing = true;
+  
+  // Add a small delay to ensure any animations are settled
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   const watermark = addWatermark(element);
 
   try {
-    const dataUrl = await htmlToImage.toPng(element, getHtmlToImageOptions());
+    const options = getHtmlToImageOptions(element);
+    const dataUrl = await htmlToImage.toPng(element, options);
     
     const res = await fetch(dataUrl);
     const blob = await res.blob();
@@ -87,7 +98,7 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
 
     const shareText = text + "\n\nCheck it out at: " + window.location.href;
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         title,
         text: shareText,
@@ -100,13 +111,13 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
         url: window.location.href,
       });
     } else {
-      navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(shareText);
       alert('Result copied to clipboard!');
     }
   } catch (error: any) {
     console.error('Error sharing image:', error);
     if (error.name !== 'AbortError') {
-      alert('Failed to share image. Please try again.');
+      throw error; // Let the caller handle it
     }
   } finally {
     isSharing = false;
@@ -124,7 +135,7 @@ export const generatePdfBlob = async (elementId: string): Promise<Blob | null> =
 
   try {
     const dataUrl = await htmlToImage.toPng(element, {
-      ...getHtmlToImageOptions(),
+      ...getHtmlToImageOptions(element),
       backgroundColor: '#ffffff' // PDF needs white background instead of transparent
     });
     
@@ -149,8 +160,7 @@ export const generatePdfBlob = async (elementId: string): Promise<Blob | null> =
 export const downloadAsPdf = async (elementId: string, filename: string) => {
   const blob = await generatePdfBlob(elementId);
   if (!blob) {
-    alert('Failed to generate PDF. Please try again.');
-    return;
+    throw new Error('Failed to generate PDF.');
   }
   
   const url = URL.createObjectURL(blob);
@@ -171,8 +181,7 @@ export const shareAsPdf = async (elementId: string, title: string, text: string)
   const blob = await generatePdfBlob(elementId);
   if (!blob) {
     isSharing = false;
-    alert('Failed to generate PDF. Please try again.');
-    return;
+    throw new Error('Failed to generate PDF.');
   }
 
   const file = new File([blob], 'heartspark-result.pdf', { type: 'application/pdf' });
@@ -192,13 +201,12 @@ export const shareAsPdf = async (elementId: string, title: string, text: string)
         url: window.location.href,
       });
     } else {
-      navigator.clipboard.writeText(shareText);
-      alert('Result copied to clipboard!');
+      await navigator.clipboard.writeText(shareText);
     }
   } catch (error: any) {
     console.error('Error sharing PDF:', error);
     if (error.name !== 'AbortError') {
-      alert('Failed to share PDF. Please try again.');
+      throw error;
     }
   } finally {
     isSharing = false;

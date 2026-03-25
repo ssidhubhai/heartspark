@@ -5,8 +5,8 @@ import { Button } from '../components/Button';
 import { Send, Settings, Loader2, Bot, User, Star, Trash2, Plus, MessageSquare, Menu, X, Copy, Check, Sparkles, Heart, PanelLeftClose, Edit2 } from 'lucide-react';
 import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
 import { calculatePlacements, AstrologicalPlacements } from '../utils/astrology';
-import { Logo } from '../components/Logo';
 import Markdown from 'react-markdown';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 interface Message {
   role: 'user' | 'model';
@@ -374,6 +374,10 @@ export function AstrologyAI() {
 
   return (
     <div className="max-w-7xl mx-auto h-full px-0 md:px-4 lg:px-8 flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
+      <LoadingOverlay 
+        isVisible={loading && !activeThreadId} 
+        message="Consulting the celestial network..." 
+      />
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
@@ -448,9 +452,6 @@ export function AstrologyAI() {
               </h1>
             </div>
           </div>
-          <Link to="/" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all text-sm font-medium border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
-            <Logo size="sm" />
-          </Link>
         </div>
 
         {!activeThread ? (
