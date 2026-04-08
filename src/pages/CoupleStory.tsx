@@ -7,6 +7,8 @@ import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 import { generateContentWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
 
+import { LoadingOverlay } from '../components/LoadingOverlay';
+
 export function CoupleStory() {
   const [name1, setName1] = useState('');
   const [name2, setName2] = useState('');
@@ -62,6 +64,7 @@ export function CoupleStory() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
+      <LoadingOverlay isVisible={isGenerating} type="story" />
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
           Couple Story Generator <BookOpen className="w-8 h-8 text-pink-500 animate-pulse" />
@@ -160,10 +163,29 @@ export function CoupleStory() {
                 </div>
 
                 {/* Story Content */}
-                <div className="w-full flex-grow flex items-center justify-center px-2">
+                <div className="w-full flex-grow flex flex-col items-center justify-center px-2 space-y-6">
                   <div className="prose prose-invert max-w-none">
                     <div className="text-pink-50 text-base font-medium italic leading-relaxed markdown-body">
                       <Markdown>{story}</Markdown>
+                    </div>
+                  </div>
+
+                  {/* Love Meter */}
+                  <div className="w-full pt-4 border-t border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Vibe Rating</span>
+                      <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Off the charts</span>
+                    </div>
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden flex gap-1">
+                      {[...Array(10)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.5 + (i * 0.1) }}
+                          className="h-full flex-1 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>

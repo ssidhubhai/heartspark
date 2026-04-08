@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
-import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { PremiumStoryFeedItem } from '../components/PremiumStoryFeedItem';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, 
   AlertCircle, 
@@ -19,11 +20,15 @@ import {
   Heart, 
   Share2, 
   Link as LinkIcon,
-  Check
+  Check,
+  Camera,
+  Calendar,
+  MapPin,
+  Sparkles
 } from 'lucide-react';
 
 export function Profile() {
-  const { user, isConfigured } = useAuth();
+  const { user, isConfigured, showToast } = useAuth();
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
@@ -33,6 +38,9 @@ export function Profile() {
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPostEditModal, setShowPostEditModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [postEditContent, setPostEditContent] = useState('');
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editBio, setEditBio] = useState('');
   const [updatingProfile, setUpdatingProfile] = useState(false);
@@ -145,10 +153,10 @@ export function Profile() {
       setUserBio(editBio);
       setCurrentDisplayName(editDisplayName);
       setShowEditModal(false);
-      // Removed window.location.reload() to prevent session loss in iframes.
-      // The updated displayName will be reflected on the next natural reload or auth state change.
+      showToast('Profile updated successfully!');
     } catch (error) {
       console.error("Error updating profile:", error);
+      showToast('Failed to update profile', 'error');
     } finally {
       setUpdatingProfile(false);
     }
@@ -159,13 +167,48 @@ export function Profile() {
     setUpdatingAvatar(true);
     try {
       await updateProfile(auth.currentUser, { photoURL: avatarUrl.trim() });
+      await setDoc(doc(db, 'users', auth.currentUser.uid), {
+        photoURL: avatarUrl.trim(),
+        updatedAt: new Date()
+      }, { merge: true });
       setCurrentPhotoURL(avatarUrl.trim());
       setShowAvatarModal(false);
-      // Removed window.location.reload() to prevent session loss in iframes.
+      showToast('Avatar updated successfully!');
     } catch (error) {
       console.error("Error updating avatar:", error);
+      showToast('Failed to update avatar', 'error');
     } finally {
       setUpdatingAvatar(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!db) return;
+    try {
+      await deleteDoc(doc(db, 'community_stories', postId));
+      setStories(prev => prev.filter(s => s.id !== postId));
+      setStats(prev => ({ ...prev, stories: prev.stories - 1 }));
+      showToast('Post deleted successfully!');
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      showToast('Failed to delete post', 'error');
+    }
+  };
+
+  const handleEditPost = async () => {
+    if (!db || !editingPost) return;
+    try {
+      await updateDoc(doc(db, 'community_stories', editingPost.id), {
+        content: postEditContent,
+        updatedAt: new Date()
+      });
+      setStories(prev => prev.map(s => s.id === editingPost.id ? { ...s, content: postEditContent } : s));
+      setShowPostEditModal(false);
+      setEditingPost(null);
+      showToast('Post updated successfully!');
+    } catch (error) {
+      console.error("Error updating post:", error);
+      showToast('Failed to update post', 'error');
     }
   };
 
@@ -187,7 +230,7 @@ export function Profile() {
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Profile link copied to clipboard!');
+      showToast('Profile link copied to clipboard!');
     }
   };
 
@@ -315,7 +358,6 @@ export function Profile() {
         <div className="flex">
           {[
             { id: 'POSTS', icon: Grid },
-            { id: 'SAVED', icon: Bookmark },
             { id: 'LIKED', icon: Heart },
           ].map((tab) => (
             <button
@@ -369,6 +411,13 @@ export function Profile() {
                 onLike={(id) => console.log('Like', id)}
                 onComment={(id) => console.log('Comment', id)}
                 onShare={(id) => console.log('Share', id)}
+                onEdit={(s) => {
+                  setEditingPost(s);
+                  setPostEditContent(s.content);
+                  setShowPostEditModal(true);
+                }}
+                onDelete={(id) => handleDeletePost(id)}
+                isOwner={story.userId === user.uid}
               />
             ))}
           </div>
@@ -427,6 +476,47 @@ export function Profile() {
                       Save Profile
                     </div>
                   )}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Post Modal */}
+      {showPostEditModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card className="w-full max-w-md relative shadow-2xl border-0 rounded-3xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-black text-zinc-900 dark:text-white">Edit Post</h2>
+                <button 
+                  onClick={() => setShowPostEditModal(false)} 
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-zinc-500" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1">Content</label>
+                  <textarea
+                    value={postEditContent}
+                    onChange={(e) => setPostEditContent(e.target.value)}
+                    placeholder="What's on your mind?"
+                    rows={6}
+                    className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm resize-none"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleEditPost} 
+                  disabled={!postEditContent.trim()} 
+                  variant="custom"
+                  className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl border-0 shadow-lg shadow-pink-500/20 transition-all disabled:opacity-50"
+                >
+                  Save Changes
                 </Button>
               </div>
             </div>

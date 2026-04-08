@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MessageSquare, Sparkles, Brain, Loader2, Image as ImageIcon, Trash2, Share2, Download, X } from 'lucide-react';
-import { generateContentWithFallback, generateContentStreamWithFallback } from '../utils/ai';
+import { generateContentWithFallback, generateContentStreamWithFallback, safeParseJSON } from '../utils/ai';
 import Markdown from 'react-markdown';
-import { downloadAsPdf, shareAsPdf } from '../utils/downloadImage';
+import { downloadAsPdf, shareAsPdf, shareAsImage } from '../utils/downloadImage';
 import { motion } from 'framer-motion';
 import { LoadingOverlay } from '../components/LoadingOverlay';
 
@@ -45,13 +45,21 @@ export function CrushMessageAnalyzer() {
         ${message ? `The text message: "${message}"` : ''}
         ${image ? `I have also attached a screenshot of our conversation or their profile.` : ''}
         
-        Please provide a concise analysis broken down into these sections. Use simple, everyday language (like talking to a friend). Use markdown formatting and emojis:
-        1. **Hidden Meaning**: What are they actually trying to say? (Keep it brief)
-        2. **Flirting Score**: Give a score from 0-100% on how flirty this message is.
-        3. **Interest Level**: Cold, Friendly, or Flirting? (Briefly explain why)
-        4. **Suggested Replies**: Give me 3 short options for exactly what I should reply (one funny, one flirty, one playing it cool).
-        
-        IMPORTANT: At the very end, suggest 1 or 2 follow-up questions the user can ask you next (e.g., "Should we analyze their previous text too?").
+        CRITICAL: You MUST respond ONLY with a valid JSON object. Do not include any markdown formatting like \`\`\`json.
+        The JSON must have exactly this structure:
+        {
+          "hiddenMeaning": "What are they actually trying to say? (Keep it brief, 1-2 sentences)",
+          "flirtingScore": 85, // A number from 0 to 100
+          "vibe": "Friendly", // One of: "Cold", "Friendly", "Flirting", "Mixed Signals"
+          "redFlags": ["flag 1", "flag 2"], // Array of strings, empty if none
+          "greenFlags": ["flag 1", "flag 2"], // Array of strings, empty if none
+          "suggestedReplies": [
+            { "type": "Funny", "text": "reply 1" },
+            { "type": "Flirty", "text": "reply 2" },
+            { "type": "Cool", "text": "reply 3" }
+          ],
+          "followUpSuggestion": "A suggested follow-up question the user can ask you."
+        }
       `;
 
       const parts: any[] = [{ text: prompt }];
@@ -68,21 +76,34 @@ export function CrushMessageAnalyzer() {
         }
       }
 
-      const stream = await generateContentStreamWithFallback({
+      const response = await generateContentWithFallback({
         model: 'gemini-3-flash-preview',
         contents: { parts },
       });
 
-      setAnalysis('');
-      let fullResponse = '';
-      for await (const chunk of stream) {
-        fullResponse += chunk.text || '';
-        setAnalysis(fullResponse);
+      const text = response.text || '';
+      try {
+        const parsed = safeParseJSON(text);
+        setAnalysis(JSON.stringify(parsed)); // Store as string to keep state type, we'll parse in render
+      } catch (e) {
+        console.error("Failed to parse JSON", e, text);
+        // Fallback to a generic response if JSON parsing fails
+        setAnalysis(JSON.stringify({
+          hiddenMeaning: "The AI was a bit confused by this one, but it seems like they are keeping things casual.",
+          flirtingScore: 50,
+          vibe: "Mixed Signals",
+          redFlags: [],
+          greenFlags: ["They replied!"],
+          suggestedReplies: [
+            { type: "Safe", text: "Haha yeah" }
+          ],
+          followUpSuggestion: "Want me to try analyzing it again?"
+        }));
       }
 
     } catch (error) {
       console.error('Error analyzing text:', error);
-      setAnalysis('Oops! The AI is taking a break. Please check your API key or try again later.');
+      setAnalysis('error');
     } finally {
       setLoading(false);
     }
@@ -139,7 +160,7 @@ export function CrushMessageAnalyzer() {
     setIsSharing(true);
     try {
       const text = `I just decoded a text message using Heart Spark's Crush Message Analyzer! Try it out:`;
-      await shareAsPdf('analysis-result', 'Message Analyzer Result', text);
+      await shareAsImage('analysis-result', 'Message Analyzer Result', text);
     } catch (error) {
       console.error('Share failed:', error);
     } finally {
@@ -163,7 +184,8 @@ export function CrushMessageAnalyzer() {
     <div className="max-w-3xl mx-auto h-full flex flex-col">
       <LoadingOverlay 
         isVisible={loading || isSharing} 
-        message={loading ? "Decoding emotional signals..." : "Preparing your analysis report..."} 
+        type={loading ? "analyzer" : "default"}
+        message={isSharing ? "Preparing your analysis report..." : undefined}
       />
       <div className="flex-1 overflow-y-auto pb-12 space-y-8 px-1 sm:px-2">
         <div className="text-center space-y-4 pt-4">
@@ -181,16 +203,19 @@ export function CrushMessageAnalyzer() {
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 ml-1">
               What did they text you? (Or upload a screenshot)
             </label>
-            <textarea
-              value={message}
-              onChange={(e) => {
-                setMessage(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = `${e.target.scrollHeight}px`;
-              }}
-              placeholder="e.g., 'haha okay' or 'what are you up to later?'"
-              className="w-full min-h-[8rem] max-h-[24rem] p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:border-pink-500/50 focus:ring-2 focus:ring-pink-500/20 outline-none resize-none transition-all overflow-y-auto placeholder:text-zinc-400"
-            />
+            <div className="relative">
+              <div className="absolute -left-2 top-4 w-4 h-4 bg-zinc-100 dark:bg-zinc-800 rotate-45 rounded-sm"></div>
+              <textarea
+                value={message}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                placeholder="e.g., 'haha okay' or 'what are you up to later?'"
+                className="w-full min-h-[6rem] max-h-[24rem] p-4 rounded-2xl rounded-tl-none border-none bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 outline-none resize-none transition-all overflow-y-auto placeholder:text-zinc-400 relative z-10 text-lg"
+              />
+            </div>
             
             <div className="flex items-center gap-4 mt-2">
               <input
@@ -251,20 +276,122 @@ export function CrushMessageAnalyzer() {
         </form>
       </Card>
 
-      {analysis && (
+      {analysis && analysis !== 'error' && (
         <>
           <Card id="analysis-result" className="animate-in fade-in slide-in-from-bottom-4 duration-500 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none rounded-3xl overflow-hidden p-6 md:p-8">
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800/50">
               <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-pink-500" />
+                <Brain className="w-6 h-6 text-pink-500" />
               </div>
-              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">AI Analysis</h3>
-            </div>
-            <div className="prose dark:prose-invert max-w-none">
-              <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
-                <Markdown>{analysis}</Markdown>
+              <div>
+                <h3 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">Vibe Check</h3>
+                <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest">HeartSpark AI Analysis</p>
               </div>
             </div>
+            
+            {(() => {
+              try {
+                const data = JSON.parse(analysis);
+                return (
+                  <div className="space-y-8">
+                    {/* Score & Vibe */}
+                    <div className="flex flex-col md:flex-row gap-6 items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl p-6 border border-zinc-100 dark:border-zinc-800/50">
+                      <div className="text-center">
+                        <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+                          {data.flirtingScore}%
+                        </div>
+                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mt-1">Flirting Score</div>
+                      </div>
+                      <div className="hidden md:block w-px h-16 bg-zinc-200 dark:bg-zinc-800"></div>
+                      <div className="text-center">
+                        <div className="text-3xl font-black text-zinc-800 dark:text-zinc-100">
+                          {data.vibe}
+                        </div>
+                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mt-1">Overall Vibe</div>
+                      </div>
+                    </div>
+
+                    {/* Hidden Meaning */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-pink-500" /> What they actually mean:
+                      </h4>
+                      <p className="text-zinc-700 dark:text-zinc-300 bg-pink-50/50 dark:bg-pink-900/10 p-4 rounded-2xl border border-pink-100/50 dark:border-pink-900/20 leading-relaxed">
+                        {data.hiddenMeaning}
+                      </p>
+                    </div>
+
+                    {/* Flags */}
+                    {(data.redFlags?.length > 0 || data.greenFlags?.length > 0) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {data.greenFlags?.length > 0 && (
+                          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/20">
+                            <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
+                              🟩 Green Flags
+                            </h4>
+                            <ul className="space-y-1">
+                              {data.greenFlags.map((flag: string, i: number) => (
+                                <li key={i} className="text-sm text-emerald-600 dark:text-emerald-300/80 flex items-start gap-2">
+                                  <span className="mt-1 text-[10px]">✨</span> {flag}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {data.redFlags?.length > 0 && (
+                          <div className="bg-rose-50/50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100/50 dark:border-rose-900/20">
+                            <h4 className="text-sm font-bold text-rose-700 dark:text-rose-400 mb-2 flex items-center gap-2">
+                              🚩 Red Flags
+                            </h4>
+                            <ul className="space-y-1">
+                              {data.redFlags.map((flag: string, i: number) => (
+                                <li key={i} className="text-sm text-rose-600 dark:text-rose-300/80 flex items-start gap-2">
+                                  <span className="mt-1 text-[10px]">⚠️</span> {flag}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Suggested Replies */}
+                    {data.suggestedReplies?.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-purple-500" /> How to reply:
+                        </h4>
+                        <div className="grid gap-3">
+                          {data.suggestedReplies.map((reply: any, i: number) => (
+                            <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 rounded-2xl shadow-sm">
+                              <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider rounded-full w-fit">
+                                {reply.type}
+                              </span>
+                              <p className="text-zinc-800 dark:text-zinc-200 text-sm flex-1">{reply.text}</p>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 rounded-xl shrink-0"
+                                onClick={() => navigator.clipboard.writeText(reply.text)}
+                              >
+                                Copy
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              } catch (e) {
+                return (
+                  <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
+                    <Markdown>{analysis}</Markdown>
+                  </div>
+                );
+              }
+            })()}
+
             <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800/50" data-html2canvas-ignore>
               <Button onClick={handleShare} className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none rounded-xl shadow-sm">
                 <Share2 className="w-4 h-4 mr-2" /> Share Analysis

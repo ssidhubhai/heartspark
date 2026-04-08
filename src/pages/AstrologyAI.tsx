@@ -52,6 +52,28 @@ export function AstrologyAI() {
   const [partnerDob, setPartnerDob] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
 
+  const [savedProfiles, setSavedProfiles] = useState<{name: string, dob: string, time: string, place: string}[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('astrology_profiles');
+    if (saved) setSavedProfiles(JSON.parse(saved));
+  }, []);
+
+  const saveProfile = () => {
+    if (!name || !dob || !place) return;
+    const newProfile = { name, dob, time, place };
+    const updated = [newProfile, ...savedProfiles.filter(p => p.name !== name)].slice(0, 3);
+    setSavedProfiles(updated);
+    localStorage.setItem('astrology_profiles', JSON.stringify(updated));
+  };
+
+  const loadProfile = (p: {name: string, dob: string, time: string, place: string}) => {
+    setName(p.name);
+    setDob(p.dob);
+    setTime(p.time);
+    setPlace(p.place);
+  };
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('astrology_threads');
@@ -376,7 +398,7 @@ export function AstrologyAI() {
     <div className="max-w-7xl mx-auto h-full px-0 md:px-4 lg:px-8 flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
       <LoadingOverlay 
         isVisible={loading && !activeThreadId} 
-        message="Consulting the celestial network..." 
+        type="astro"
       />
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
@@ -466,100 +488,126 @@ export function AstrologyAI() {
                   <p className="text-zinc-500 dark:text-zinc-400">Enter your details and your crush/partner's details to reveal everything about your cosmic connection.</p>
                 </div>
                 <form onSubmit={handleInitialSubmit} className="space-y-6">
-                  <div className="space-y-6">
+                <div className="space-y-6">
                     {/* User Details */}
-                    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 space-y-4">
-                      <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                        <User className="w-4 h-4 text-pink-500" /> Your Details
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Your Name</label>
-                          <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Your Date of Birth</label>
-                          <input
-                            type="date"
-                            value={dob}
-                            onChange={(e) => setDob(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Time of Birth (Optional)</label>
-                          <input
-                            type="time"
-                            value={time}
-                            onChange={(e) => setTime(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Place of Birth</label>
-                          <input
-                            type="text"
-                            value={place}
-                            onChange={(e) => setPlace(e.target.value)}
-                            placeholder="City, Country"
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
-                            required
-                          />
+                    <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-black text-zinc-900 dark:text-white flex items-center gap-2 uppercase tracking-widest">
+                          <User className="w-4 h-4 text-pink-500" /> Your Profile
+                        </h3>
+                        <div className="flex gap-2">
+                          {savedProfiles.map((p, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => loadProfile(p)}
+                              className="px-2 py-1 rounded-md bg-zinc-200 dark:bg-zinc-700 text-[9px] font-bold text-zinc-600 dark:text-zinc-300 hover:bg-pink-500 hover:text-white transition-all"
+                            >
+                              {p.name}
+                            </button>
+                          ))}
                         </div>
                       </div>
-                    </div>
-
-                    {/* Partner Details */}
-                    <div className="p-4 bg-pink-50/50 dark:bg-pink-900/10 rounded-2xl border border-pink-100 dark:border-pink-900/30 space-y-4">
-                      <h3 className="text-sm font-bold text-pink-600 dark:text-pink-400 flex items-center gap-2">
-                        <Heart className="w-4 h-4" /> Partner / Crush Details
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Their Name</label>
-                          <input
-                            type="text"
-                            value={partnerName}
-                            onChange={(e) => setPartnerName(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
-                            required
-                          />
+                          <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Full Name</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="w-full h-12 px-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all text-sm font-medium"
+                              placeholder="Your name"
+                              required
+                            />
+                            {name && !savedProfiles.some(p => p.name === name) && (
+                              <button
+                                type="button"
+                                onClick={saveProfile}
+                                className="absolute right-2 top-2 h-8 px-3 rounded-xl bg-pink-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-pink-600 transition-all"
+                              >
+                                Save
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Their Date of Birth</label>
-                          <input
-                            type="date"
-                            value={partnerDob}
-                            onChange={(e) => setPartnerDob(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
-                            required
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Birth Date</label>
+                        <input
+                          type="date"
+                          value={dob}
+                          onChange={(e) => setDob(e.target.value)}
+                          className="w-full h-12 px-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all text-sm font-medium"
+                          required
+                        />
                       </div>
-                    </div>
-
-                    {/* Additional Information */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Additional Information (Optional)</label>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                        Give our AI more context for a hyper-accurate reading. <br/>
-                        <span className="italic">Example: "We met at a coffee shop 2 months ago and talk every day. I want to know if they see me romantically or just as a friend."</span>
-                      </p>
-                      <textarea
-                        value={additionalInfo}
-                        onChange={(e) => setAdditionalInfo(e.target.value)}
-                        placeholder="Tell us about your relationship, how you met, or specific questions you have..."
-                        className="w-full h-24 px-4 py-3 rounded-xl border border-pink-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all resize-none text-sm"
-                      />
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Birth Time (Optional)</label>
+                        <input
+                          type="time"
+                          value={time}
+                          onChange={(e) => setTime(e.target.value)}
+                          className="w-full h-12 px-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all text-sm font-medium"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Birth Place</label>
+                        <input
+                          type="text"
+                          value={place}
+                          onChange={(e) => setPlace(e.target.value)}
+                          placeholder="City, Country"
+                          className="w-full h-12 px-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all text-sm font-medium"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  {/* Partner Details */}
+                  <div className="p-6 bg-pink-50/30 dark:bg-pink-900/10 rounded-3xl border border-pink-100 dark:border-pink-900/20 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-black text-pink-600 dark:text-pink-400 flex items-center gap-2 uppercase tracking-widest">
+                        <Heart className="w-4 h-4" /> Partner / Crush
+                      </h3>
+                      <div className="px-2 py-0.5 rounded-md bg-pink-100 dark:bg-pink-900/30 text-[10px] font-black text-pink-600 dark:text-pink-400 uppercase tracking-tighter">Required</div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Their Name</label>
+                        <input
+                          type="text"
+                          value={partnerName}
+                          onChange={(e) => setPartnerName(e.target.value)}
+                          className="w-full h-12 px-4 rounded-2xl border-2 border-pink-100/50 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all text-sm font-medium"
+                          placeholder="Their name"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Their Birth Date</label>
+                        <input
+                          type="date"
+                          value={partnerDob}
+                          onChange={(e) => setPartnerDob(e.target.value)}
+                          className="w-full h-12 px-4 rounded-2xl border-2 border-pink-100/50 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all text-sm font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Information */}
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Context & Intentions</label>
+                    <textarea
+                      value={additionalInfo}
+                      onChange={(e) => setAdditionalInfo(e.target.value)}
+                      placeholder="Tell us about your relationship, how you met, or specific questions you have..."
+                      className="w-full h-32 px-4 py-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all resize-none text-sm font-medium"
+                    />
+                  </div>
+                </div>
 
                   <Button 
                     type="submit" 

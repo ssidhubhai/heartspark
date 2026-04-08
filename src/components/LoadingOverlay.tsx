@@ -1,33 +1,58 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles } from 'lucide-react';
+import { Heart, Sparkles, Bot, Brain, Star, BookHeart } from 'lucide-react';
 
 interface LoadingOverlayProps {
   isVisible: boolean;
   message?: string;
+  type?: 'default' | 'calculator' | 'astro' | 'analyzer' | 'fortune' | 'story';
 }
 
-export function LoadingOverlay({ isVisible, message = "Analyzing your vibes..." }: LoadingOverlayProps) {
-  const loadingMessages = [
-    "Analyzing your vibes...",
-    "Checking the stars...",
-    "Calculating chemistry...",
-    "Consulting the love oracle...",
-    "Decoding emotional signals...",
-    "Measuring heartbeats...",
-    "Syncing your energies..."
-  ];
+export function LoadingOverlay({ isVisible, message, type = 'default' }: LoadingOverlayProps) {
+  const themedContent = {
+    default: {
+      icon: <Heart className="w-12 h-12 text-white fill-current animate-pulse" />,
+      color: "from-pink-400 to-purple-500",
+      messages: ["Analyzing your vibes...", "Syncing your energies...", "Measuring heartbeats..."]
+    },
+    calculator: {
+      icon: <Sparkles className="w-12 h-12 text-white animate-spin-slow" />,
+      color: "from-rose-400 to-pink-600",
+      messages: ["Calculating chemistry...", "Running love algorithms...", "Checking compatibility..."]
+    },
+    astro: {
+      icon: <Bot className="w-12 h-12 text-white" />,
+      color: "from-indigo-500 to-blue-600",
+      messages: ["Consulting the stars...", "Reading birth charts...", "Aligning planets..."]
+    },
+    analyzer: {
+      icon: <Brain className="w-12 h-12 text-white" />,
+      color: "from-purple-500 to-indigo-600",
+      messages: ["Decoding emotional signals...", "Analyzing subtext...", "Vibe checking..."]
+    },
+    fortune: {
+      icon: <Star className="w-12 h-12 text-white" />,
+      color: "from-amber-400 to-orange-500",
+      messages: ["Gazing into the future...", "Unfolding your destiny...", "Peeking at tomorrow..."]
+    },
+    story: {
+      icon: <BookHeart className="w-12 h-12 text-white" />,
+      color: "from-pink-500 to-purple-600",
+      messages: ["Writing your romance...", "Crafting your story...", "Imagining the plot..."]
+    }
+  };
 
-  const [currentMessage, setCurrentMessage] = React.useState(message);
+  const currentTheme = themedContent[type] || themedContent.default;
+  const [currentMessage, setCurrentMessage] = React.useState(message || currentTheme.messages[0]);
 
   React.useEffect(() => {
     if (isVisible) {
       const interval = setInterval(() => {
-        setCurrentMessage(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]);
+        setCurrentMessage(currentTheme.messages[Math.floor(Math.random() * currentTheme.messages.length)]);
       }, 2000);
       return () => clearInterval(interval);
     }
-  }, [isVisible]);
+  }, [isVisible, type]);
 
   return (
     <AnimatePresence>
@@ -36,74 +61,72 @@ export function LoadingOverlay({ isVisible, message = "Analyzing your vibes..." 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 dark:bg-black/90 backdrop-blur-xl"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl"
         >
           <div className="relative">
             {/* Pulsing Outer Glow */}
             <motion.div
               animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.6, 0.3]
+                scale: [1, 1.3, 1],
+                opacity: [0.2, 0.4, 0.2]
               }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute inset-0 bg-pink-500/30 blur-3xl rounded-full"
+              transition={{ duration: 3, repeat: Infinity }}
+              className={`absolute inset-0 bg-gradient-to-br ${currentTheme.color} blur-3xl rounded-full`}
             />
             
-            {/* Central Heart */}
+            {/* Central Icon */}
             <motion.div
               animate={{ 
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0]
+                scale: [1, 1.05, 1],
+                y: [0, -5, 0]
               }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="relative z-10 w-24 h-24 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-2xl shadow-pink-500/40"
+              transition={{ duration: 2, repeat: Infinity }}
+              className={`relative z-10 w-28 h-28 rounded-[2.5rem] bg-gradient-to-br ${currentTheme.color} flex items-center justify-center shadow-2xl shadow-pink-500/20`}
             >
-              <Heart className="w-12 h-12 text-white fill-current animate-pulse" />
+              {currentTheme.icon}
             </motion.div>
             
-            {/* Orbiting Sparkles */}
-            {[...Array(5)].map((_, i) => (
+            {/* Orbiting Elements */}
+            {[...Array(6)].map((_, i) => (
               <motion.div
                 key={i}
                 animate={{ 
                   rotate: 360,
-                  scale: [1, 1.5, 1],
-                  opacity: [0.5, 1, 0.5]
+                  scale: [0.8, 1.2, 0.8],
+                  opacity: [0.3, 0.7, 0.3]
                 }}
                 transition={{ 
-                  rotate: { duration: 3 + i, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 2, repeat: Infinity, delay: i * 0.4 }
+                  rotate: { duration: 4 + i, repeat: Infinity, ease: "linear" },
+                  scale: { duration: 2, repeat: Infinity, delay: i * 0.3 }
                 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 text-yellow-400"
+                className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-white/40"
                 style={{ 
-                  marginTop: -8, 
-                  marginLeft: -8,
-                  transformOrigin: `${40 + i * 10}px ${40 + i * 10}px` 
+                  marginTop: -6, 
+                  marginLeft: -6,
+                  transformOrigin: `${50 + i * 12}px ${50 + i * 12}px` 
                 }}
-              >
-                <Sparkles className="w-full h-full fill-current" />
-              </motion.div>
+              />
             ))}
           </div>
           
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="mt-12 text-center"
+            className="mt-16 text-center px-6"
           >
-            <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 tracking-tight">
+            <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-500 tracking-tight">
               {currentMessage}
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">This might take a few seconds...</p>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg">Heart Spark is working its magic...</p>
           </motion.div>
           
           {/* Progress Bar */}
-          <div className="mt-8 w-64 h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+          <div className="mt-12 w-72 h-2 bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden p-0.5">
             <motion.div
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
-              transition={{ duration: 5, ease: "easeInOut" }}
-              className="h-full bg-gradient-to-r from-pink-500 to-purple-500"
+              transition={{ duration: 8, ease: "easeInOut" }}
+              className={`h-full rounded-full bg-gradient-to-r ${currentTheme.color}`}
             />
           </div>
         </motion.div>

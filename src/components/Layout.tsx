@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download, Settings } from 'lucide-react';
+import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download, Settings, ShieldCheck, Sparkles, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo } from './Logo';
@@ -154,26 +154,97 @@ export function Layout({ children }: { children: ReactNode }) {
 
                         <AnimatePresence>
                           {isProfileDropdownOpen && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                              className={cn(
-                                "absolute right-0 top-full mt-3 w-64 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] py-3 border backdrop-blur-3xl z-50",
-                                theme === 'dark' ? "border-white/10 bg-[#0A0A0B]/95" : "border-zinc-200 bg-white/95"
-                              )}
-                            >
-                              <div className={cn("px-5 py-3 border-b mb-2", theme === 'dark' ? "border-white/5" : "border-zinc-100")}>
-                                <p className={cn("text-xs font-black truncate uppercase tracking-widest", theme === 'dark' ? "text-white" : "text-zinc-900")}>{user.displayName || 'USER'}</p>
-                                <p className="text-[10px] text-zinc-500 truncate mt-1 font-bold">{user.email}</p>
-                              </div>
-                              <Link to="/profile" onClick={() => setIsProfileDropdownOpen(false)} className={cn("flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all", theme === 'dark' ? "text-zinc-400 hover:bg-white/5 hover:text-white" : "text-zinc-500 hover:bg-pink-50 hover:text-pink-600")}>
-                                <Settings className="w-4 h-4 text-pink-500" /> ACCOUNT SETTINGS
-                              </Link>
-                              <button onClick={() => { logout(); setIsProfileDropdownOpen(false); }} className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-all">
-                                <LogOut className="w-4 h-4" /> SIGN OUT
-                              </button>
-                            </motion.div>
+                            <>
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsProfileDropdownOpen(false)}
+                                className="fixed inset-0 z-40"
+                              />
+                              <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className={cn(
+                                  "absolute right-0 top-full mt-4 w-72 rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border backdrop-blur-3xl z-50 overflow-hidden",
+                                  theme === 'dark' ? "border-white/10 bg-[#0A0A0B]/95" : "border-zinc-200 bg-white/95"
+                                )}
+                              >
+                                {/* Header */}
+                                <div className={cn("p-6 border-b relative overflow-hidden", theme === 'dark' ? "border-white/5" : "border-zinc-100")}>
+                                  <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -z-10" />
+                                  <div className="flex items-center gap-4 mb-4">
+                                    <div className="relative">
+                                      {user.photoURL ? (
+                                        <img src={user.photoURL} alt="User" className="w-14 h-14 rounded-2xl border-2 border-white dark:border-zinc-800 object-cover shadow-lg" />
+                                      ) : (
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border-2 border-white dark:border-zinc-800 shadow-lg">
+                                          <User className="w-6 h-6 text-pink-500" />
+                                        </div>
+                                      )}
+                                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-zinc-900 rounded-full" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className={cn("text-sm font-black truncate uppercase tracking-tight", theme === 'dark' ? "text-white" : "text-zinc-900")}>{user.displayName || 'USER'}</p>
+                                      <p className="text-[10px] text-zinc-500 truncate mt-0.5 font-bold">{user.email}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-500 text-[10px] font-black uppercase tracking-widest">
+                                    <Sparkles className="w-3 h-3" /> Pro Member
+                                  </div>
+                                </div>
+
+                                {/* Links */}
+                                <div className="p-2">
+                                  <Link 
+                                    to="/profile" 
+                                    onClick={() => setIsProfileDropdownOpen(false)} 
+                                    className={cn(
+                                      "flex items-center justify-between px-4 py-3 rounded-xl transition-all group",
+                                      theme === 'dark' ? "hover:bg-white/5 text-zinc-400 hover:text-white" : "hover:bg-pink-50 text-zinc-600 hover:text-pink-600"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                                        <User className="w-4 h-4 text-pink-500" />
+                                      </div>
+                                      <span className="text-xs font-black uppercase tracking-widest">My Profile</span>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                                  </Link>
+
+                                  <Link 
+                                    to="/profile" 
+                                    onClick={() => setIsProfileDropdownOpen(false)} 
+                                    className={cn(
+                                      "flex items-center justify-between px-4 py-3 rounded-xl transition-all group",
+                                      theme === 'dark' ? "hover:bg-white/5 text-zinc-400 hover:text-white" : "hover:bg-pink-50 text-zinc-600 hover:text-pink-600"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                        <Settings className="w-4 h-4 text-purple-500" />
+                                      </div>
+                                      <span className="text-xs font-black uppercase tracking-widest">Settings</span>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                                  </Link>
+
+                                  <div className={cn("h-px my-2 mx-4", theme === 'dark' ? "bg-white/5" : "bg-zinc-100")} />
+
+                                  <button 
+                                    onClick={() => { logout(); setIsProfileDropdownOpen(false); }} 
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all text-xs font-black uppercase tracking-widest"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                                      <LogOut className="w-4 h-4 text-red-500" />
+                                    </div>
+                                    Sign Out
+                                  </button>
+                                </div>
+                              </motion.div>
+                            </>
                           )}
                         </AnimatePresence>
                       </>

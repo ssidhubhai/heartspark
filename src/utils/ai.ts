@@ -93,6 +93,35 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
   throw new Error(`All available API keys failed. Last error: ${lastError?.message || 'Unknown error'}`);
 };
 
+/**
+ * Safely parses JSON from a string that might contain markdown or conversational filler.
+ * Uses regex to find the first JSON block.
+ */
+export const safeParseJSON = (text: string) => {
+  try {
+    // Try direct parse first
+    return JSON.parse(text);
+  } catch (e) {
+    try {
+      // Look for JSON block in markdown (```json ... ```)
+      const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      
+      // Look for anything that looks like a JSON object or array
+      const genericMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+      if (genericMatch && genericMatch[0]) {
+        return JSON.parse(genericMatch[0]);
+      }
+    } catch (innerError) {
+      console.error("Failed to parse JSON from text:", text);
+      throw new Error("Invalid JSON format from AI response");
+    }
+    throw new Error("No JSON found in AI response");
+  }
+};
+
 export const generateContentStreamWithFallback = async function* (params: GenerateContentParameters) {
   const keys = getApiKeys();
   

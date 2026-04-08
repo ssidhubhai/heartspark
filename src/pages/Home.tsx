@@ -1,15 +1,20 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight } from 'lucide-react';
+import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight, Zap, Coffee, Ghost, Flame, User } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { LoadingOverlay } from '../components/LoadingOverlay';
+import { generateContentWithFallback, safeParseJSON } from '../utils/ai';
+import { LiveTicker } from '../components/LiveTicker';
+import { PWAPrompt } from '../components/PWAPrompt';
+import { OnboardingTour } from '../components/OnboardingTour';
+import { ToolCarousel } from '../components/ToolCarousel';
 
 export function Home() {
   const navigate = useNavigate();
@@ -19,6 +24,39 @@ export function Home() {
   const [isSharing, setIsSharing] = useState(false);
   const [result, setResult] = useState<{ score: number; message: string } | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    // Basic Streak Logic
+    const lastVisit = localStorage.getItem('last_visit');
+    const currentStreak = parseInt(localStorage.getItem('streak') || '0');
+    const today = new Date().toLocaleDateString();
+
+    if (lastVisit === today) {
+      setStreak(currentStreak);
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (lastVisit === yesterday.toLocaleDateString()) {
+        const newStreak = currentStreak + 1;
+        setStreak(newStreak);
+        localStorage.setItem('streak', newStreak.toString());
+      } else {
+        setStreak(1);
+        localStorage.setItem('streak', '1');
+      }
+      localStorage.setItem('last_visit', today);
+    }
+  }, []);
+
+  const getDefaultMessage = (score: number) => {
+    if (score > 90) return "Basically Soulmates. When is the wedding? 💍 (Send this to them as a hint)";
+    if (score > 80) return "The chemistry is giving main character energy. Shoot your shot! 🚀";
+    if (score > 70) return "Definitely a vibe. Try sending them a meme and see what happens. 👀";
+    if (score > 50) return "It's giving 'just friends' right now, but there's room for character development. 📈";
+    return "The math ain't mathing. Focus on your career and JEE prep instead bro 💀📚";
+  };
 
   const calculateLove = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,22 +117,25 @@ export function Home() {
           score = 99;
         }
 
-        const isRiya = (name: string) => name === 'riya' || name === 'riya rai';
-        const isSagar = (name: string) => name === 'sagar' || name === 'sagar gupta';
-        const isSiddharth = (name: string) => name === 'siddharth' || name === 'siddharth gupta';
+        // Generate dynamic message using AI
+        try {
+          const prompt = `You are Heart Spark, a Gen-Z love calculator. 
+          The love score between ${name1} and ${name2} is ${score}%. 
+          Write a funny, highly relatable, 1-2 sentence Gen-Z style reaction to this score.
+          If the score is low (< 50), make it funny but not mean (e.g., "focus on your career").
+          If the score is high (> 80), hype them up.
+          Return ONLY a JSON object: {"message": "your reaction"}`;
 
-        if ((isRiya(n1) && isSagar(n2)) || (isRiya(n2) && isSagar(n1))) {
-          score = 93;
-        } else if ((isRiya(n1) && isSiddharth(n2)) || (isRiya(n2) && isSiddharth(n1))) {
-          score = 93;
+          const response = await generateContentWithFallback({
+            model: 'gemini-3-flash-preview',
+            contents: prompt
+          });
+          const text = response.text || '';
+          const parsed = safeParseJSON(text);
+          message = parsed.message || getDefaultMessage(score);
+        } catch (e) {
+          message = getDefaultMessage(score);
         }
-
-        // ✨ GEN-Z VIBE MESSAGES
-        if (score > 90) message = "Basically Soulmates. When is the wedding? 💍 (Send this to them as a hint)";
-        else if (score > 80) message = "The chemistry is giving main character energy. Shoot your shot! 🚀";
-        else if (score > 70) message = "Definitely a vibe. Try sending them a meme and see what happens. 👀";
-        else if (score > 50) message = "It's giving 'just friends' right now, but there's room for character development. 📈";
-        else message = "The math ain't mathing. Focus on your career and JEE prep instead bro 💀📚";
       }
 
       setResult({ score, message });
@@ -108,20 +149,6 @@ export function Home() {
           colors: ['#ec4899', '#d946ef', '#fbcfe8']
         });
       }
-
-      const isRiya = (name: string) => name === 'riya' || name === 'riya rai';
-      if (db && (isRiya(n1) || isRiya(n2))) {
-        try {
-          await addDoc(collection(db, 'riya_searches'), {
-            name1: name1.trim(),
-            name2: name2.trim(),
-            score,
-            timestamp: serverTimestamp()
-          });
-        } catch (error) {
-          console.error("Error saving search to Firebase:", error);
-        }
-      }
     }, 1200);
   };
 
@@ -129,10 +156,6 @@ export function Home() {
     if (!result || isSharing) return;
     setIsSharing(true);
     
-    // Ensure the card is in view for better capture
-    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for scroll
-
     try {
       const text = `Check out our love compatibility on HeartSpark! ${name1} & ${name2} got ${result.score}%! 💖`;
       await shareAsImage('calculator-result', 'HeartSpark Love Result', text);
@@ -147,10 +170,6 @@ export function Home() {
     if (!result || isSharing) return;
     setIsSharing(true);
 
-    // Ensure the card is in view for better capture
-    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for scroll
-
     try {
       await downloadAsImage('calculator-result', `heartspark-${name1}-${name2}`);
     } catch (error) {
@@ -163,33 +182,49 @@ export function Home() {
   const features = [
     {
       title: "Message Analyzer",
-      description: "Paste your 'Hmm' or 'Ok' texts. Let AI decode the real vibe.",
+      description: "Paste your 'Hmm' or 'Ok' texts. Let AI decode the real vibe, find red flags, and suggest the perfect reply.",
       icon: <MessageCircleHeart className="w-6 h-6 text-purple-500" />,
       path: "/analyzer",
-      badge: "HOT"
+      badge: "HOT",
+      color: "from-purple-500 to-indigo-500"
     },
     {
       title: "Astro Vibe",
-      description: "Are your zodiacs actually compatible or just a 'canon event'?",
+      description: "Are your zodiacs actually compatible or just a 'canon event'? Get a deep cosmic consultation for your relationship.",
       icon: <Bot className="w-6 h-6 text-pink-500" />,
       path: "/astrology",
-      badge: "NEW"
+      badge: "NEW",
+      color: "from-pink-500 to-rose-500"
     },
     {
       title: "Viral Stories",
-      description: "Anonymous tea from the community. Read or leak yours.",
+      description: "Anonymous tea from the community. Share your toxic traits, wholesome moments, or ghosting horror stories.",
       icon: <BookHeart className="w-6 h-6 text-rose-500" />,
       path: "/stories",
+      color: "from-rose-500 to-orange-500"
     }
   ];
 
   return (
     <div className="space-y-24 py-12">
-      <LoadingOverlay isVisible={isCalculating} />
+      <OnboardingTour />
+      <LiveTicker />
+      <PWAPrompt />
+      <LoadingOverlay isVisible={isCalculating} type="calculator" />
       <LoadingOverlay isVisible={isSharing} message="Generating your result image..." />
       
       {/* HERO SECTION */}
       <section className="text-center space-y-6 max-w-4xl mx-auto relative px-4 mt-12 mb-20">
+        {/* Streak Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black uppercase tracking-widest mb-4"
+        >
+          <Zap className="w-3 h-3 fill-current" />
+          {streak} Day Streak
+        </motion.div>
+
         {/* Floating Heart with Glow */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
@@ -255,6 +290,7 @@ export function Home() {
             Explore viral crush games, test your compatibility, and find out if they're the one. ✨
           </motion.p>
         </div>
+
 
         {/* Subtle Floating Hearts Background */}
         <div className="absolute inset-0 -z-10 overflow-visible pointer-events-none">
@@ -354,6 +390,7 @@ export function Home() {
           </Card>
         </motion.div>
 
+
        <AnimatePresence>
           {result && !isCalculating && (
             <motion.div
@@ -392,20 +429,37 @@ export function Home() {
                   </div>
 
                   {/* Hero Score */}
-                  <div className="relative flex flex-col items-center">
-                    <span className="text-[100px] font-black tracking-tighter leading-none text-slate-900 dark:text-white drop-shadow-[0_0_30px_rgba(236,72,153,0.3)]">
-                      {result.score}%
-                    </span>
-                    <div className="h-1.5 w-24 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full -mt-2 opacity-60" />
+                  <div className="relative flex flex-col items-center py-4">
+                    <div className="absolute inset-0 bg-pink-500/5 blur-3xl rounded-full scale-150" />
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", damping: 12, stiffness: 200 }}
+                      className="relative"
+                    >
+                      <span className="text-[110px] font-black tracking-tighter leading-none text-slate-900 dark:text-white drop-shadow-[0_0_40px_rgba(236,72,153,0.4)]">
+                        {result.score}%
+                      </span>
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ delay: 0.5, duration: 1 }}
+                        className="h-2 w-full bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500 rounded-full -mt-2 opacity-80" 
+                      />
+                    </motion.div>
+                    <p className="text-[10px] font-black text-pink-500 uppercase tracking-[0.3em] mt-4">Compatibility Level</p>
                   </div>
 
                   {/* Message Box */}
                   <div className="w-full space-y-6">
-                    <div className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-pink-100/50 dark:border-white/10 p-6 rounded-[2rem] shadow-[inner_0_2px_4px_rgba(0,0,0,0.05)] relative overflow-hidden group">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 to-purple-500" />
-                      <p className="text-xl font-bold text-pink-600 dark:text-pink-100 leading-tight italic relative z-10">
+                    <div className="bg-white/60 dark:bg-white/5 backdrop-blur-md border-2 border-pink-100/50 dark:border-white/10 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500" />
+                      <p className="text-2xl font-black text-slate-900 dark:text-pink-50 leading-tight italic relative z-10">
                         "{result.message}"
                       </p>
+                      <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                        <Heart className="w-24 h-24 text-pink-500 fill-current" />
+                      </div>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <p className="text-[10px] text-slate-400 dark:text-zinc-600 font-black uppercase tracking-[0.6em]">
@@ -506,53 +560,67 @@ export function Home() {
         </AnimatePresence>
       </section>
 
-      {/* VIRAL FEATURES GRID */}
-      <section className="px-4 max-w-5xl mx-auto">
+      {/* FEATURED TOOLS CAROUSEL */}
+      <section className="px-4 max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">Viral Features</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium text-lg">The best tools to navigate your love life.</p>
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">Featured Tools</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium text-lg">Swipe to explore our viral AI features.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index, duration: 0.4 }}
-              className="h-full relative group"
-            >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-[2.5rem] opacity-0 group-hover:opacity-30 blur-lg transition duration-500" />
-              
-              <Link to={feature.path} className="block h-full relative z-10">
-                <Card className="h-full flex flex-col p-8 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-3xl border border-pink-100/80 dark:border-white/5 rounded-[2rem] overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-lg shadow-pink-500/5">
-                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-pink-400/10 dark:bg-pink-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 group-hover:scale-150 transition-all duration-700 pointer-events-none" />
+        <ToolCarousel features={features} />
+      </section>
 
-                  {feature.badge && (
-                    <div className="absolute top-6 right-6 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-md z-10">
-                      {feature.badge}
-                    </div>
-                  )}
-                  
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-pink-50 dark:from-zinc-800 dark:to-zinc-800 border border-pink-100 dark:border-zinc-700 flex items-center justify-center mb-6 shadow-sm group-hover:shadow-pink-500/25 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300 relative z-10">
-                    {feature.icon}
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-pink-500 group-hover:to-purple-500 transition-all relative z-10">
-                    {feature.title}
-                  </h3>
-                  
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed flex-grow font-medium relative z-10">
-                    {feature.description}
-                  </p>
-                  
-                  <div className="mt-6 flex items-center text-pink-500 font-bold text-sm group-hover:text-purple-500 transition-colors relative z-10">
-                    Try it now <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform" />
-                  </div>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
+      {/* TRENDING TEA TEASER */}
+      <section className="px-4 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-pink-500/10 flex items-center justify-center">
+              <Coffee className="w-5 h-5 text-pink-500" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Trending Tea</h2>
+          </div>
+          <Link to="/stories" className="text-sm font-bold text-pink-500 hover:text-pink-600 transition-colors flex items-center gap-1">
+            View All <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6 rounded-3xl border-zinc-100 dark:border-white/5 bg-white dark:bg-zinc-900/50 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Ghost className="w-12 h-12 text-zinc-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-600 dark:text-zinc-400 italic mb-4">
+              "He left me on read for 3 days then liked my story... what is the vibe? 💀"
+            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs">💅</div>
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Anonymous</span>
+              </div>
+              <div className="flex items-center gap-3 text-zinc-400">
+                <div className="flex items-center gap-1 text-[10px] font-bold"><Heart className="w-3 h-3" /> 1.2k</div>
+                <div className="flex items-center gap-1 text-[10px] font-bold"><MessageCircleHeart className="w-3 h-3" /> 42</div>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-6 rounded-3xl border-zinc-100 dark:border-white/5 bg-white dark:bg-zinc-900/50 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Flame className="w-12 h-12 text-rose-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-600 dark:text-zinc-400 italic mb-4">
+              "My toxic trait is thinking I can fix a Scorpio man. Wish me luck. 🔥"
+            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs">🤡</div>
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Anonymous</span>
+              </div>
+              <div className="flex items-center gap-3 text-zinc-400">
+                <div className="flex items-center gap-1 text-[10px] font-bold"><Heart className="w-3 h-3" /> 856</div>
+                <div className="flex items-center gap-1 text-[10px] font-bold"><MessageCircleHeart className="w-3 h-3" /> 18</div>
+              </div>
+            </div>
+          </Card>
         </div>
       </section>
 

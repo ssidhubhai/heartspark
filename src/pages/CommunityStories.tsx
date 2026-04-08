@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { generateContentWithFallback } from "../utils/ai";
 import { motion, AnimatePresence } from "motion/react";
+import { cn } from "../utils/cn";
 import seedStoriesData from "../data/seedStories.json";
 
 const seedStories: any[] = seedStoriesData;
@@ -134,6 +135,17 @@ export function CommunityStories() {
   const [editContent, setEditContent] = useState("");
   const [shuffledStories, setShuffledStories] = useState<Story[] | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [isPostingComment, setIsPostingComment] = useState(false);
+
+  const toggleReplies = (commentId: string) => {
+    setExpandedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(commentId)) next.delete(commentId);
+      else next.add(commentId);
+      return next;
+    });
+  };
   const { user, isConfigured } = useAuth();
   const [searchParams] = useSearchParams();
   const storyIdFromUrl = searchParams.get("id");
@@ -860,8 +872,10 @@ export function CommunityStories() {
     }
     if (!newComment.trim() || !db) return;
 
+    setIsPostingComment(true);
     if (hasLinks(newComment)) {
       showToast("⚠️ Links are not allowed in comments.", "error");
+      setIsPostingComment(false);
       return;
     }
 
@@ -890,6 +904,11 @@ export function CommunityStories() {
         commentCount: increment(1),
       });
 
+      // If it's a reply, auto-expand the parent
+      if (currentReplyTo) {
+        setExpandedComments(prev => new Set(prev).add(currentReplyTo.id));
+      }
+
       // Find the story to get the author's userId
       const story = stories.find((s) => s.id === storyId);
 
@@ -917,9 +936,12 @@ export function CommunityStories() {
           read: false,
         });
       }
+      showToast("Comment posted!", "success");
     } catch (error) {
       console.error("Error posting comment:", error);
       showToast("Failed to post comment.", "error");
+    } finally {
+      setIsPostingComment(false);
     }
   };
 
@@ -1425,10 +1447,23 @@ export function CommunityStories() {
                           e.stopPropagation();
                           handleReaction(story, "aww");
                         }}
-                        className="group flex items-center gap-1 text-zinc-500 hover:text-pink-500 transition-colors"
+                        className={cn(
+                          "group flex items-center gap-1 transition-colors",
+                          story.reactedUsers?.some(u => u.startsWith(user?.uid || ''))
+                            ? "text-pink-500"
+                            : "text-zinc-500 hover:text-pink-500"
+                        )}
                       >
-                        <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
-                          <Heart className={`w-4 h-4 ${story.reactedUsers?.some(u => u.startsWith(user?.uid || '')) ? 'fill-pink-500 text-pink-500' : ''}`} />
+                        <div className={cn(
+                          "p-2 rounded-full transition-colors",
+                          story.reactedUsers?.some(u => u.startsWith(user?.uid || ''))
+                            ? "bg-pink-500/10"
+                            : "group-hover:bg-pink-500/10"
+                        )}>
+                          <Heart className={cn(
+                            "w-4 h-4 transition-all",
+                            story.reactedUsers?.some(u => u.startsWith(user?.uid || '')) && "fill-pink-500 scale-110"
+                          )} />
                         </div>
                         <span className="text-[12px] font-medium">
                           {story.reactions?.aww || 0}
@@ -1655,166 +1690,199 @@ export function CommunityStories() {
                           No comments yet. Be the first to share your thoughts!
                         </p>
                       ) : (
-                        comments
-                          .filter((c) => !c.parentId)
-                          .map((comment) => (
-                            <div key={comment.id} className="space-y-4">
-                              <div className="flex gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs shrink-0">
-                                  {comment.author.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="flex items-baseline gap-2 mb-1">
-                                    <span className="font-bold text-zinc-900 dark:text-white text-sm">
-                                      {comment.author}
-                                    </span>
-                                    <span className="text-xs text-zinc-500">
-                                      {comment.createdAt
-                                        ? formatRelativeTime(comment.createdAt)
-                                        : "now"}
-                                    </span>
+                        <AnimatePresence mode="popLayout">
+                          {comments
+                            .filter((c) => !c.parentId)
+                            .map((comment) => (
+                              <motion.div
+                                key={comment.id}
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="space-y-4"
+                              >
+                                <div className="flex gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs shrink-0">
+                                    {comment.author.charAt(0).toUpperCase()}
                                   </div>
-                                  <p className="text-zinc-800 dark:text-zinc-200 text-[15px] leading-relaxed mt-1">
-                                    {comment.text}
-                                  </p>
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <button
-                                      onClick={() =>
-                                        setReplyTo({
-                                          id: comment.id,
-                                          author: comment.author,
-                                          userId: comment.userId,
-                                        })
-                                      }
-                                      className="text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors"
-                                    >
-                                      Reply
-                                    </button>
-                                    
-                                    <div className="relative">
+                                  <div className="flex-1">
+                                    <div className="flex items-baseline gap-2 mb-1">
+                                      <span className="font-bold text-zinc-900 dark:text-white text-sm">
+                                        {comment.author}
+                                      </span>
+                                      <span className="text-xs text-zinc-500">
+                                        {comment.createdAt
+                                          ? formatRelativeTime(comment.createdAt)
+                                          : "now"}
+                                      </span>
+                                    </div>
+                                    <p className="text-zinc-800 dark:text-zinc-200 text-[15px] leading-relaxed mt-1">
+                                      {comment.text}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-2">
                                       <button
-                                        onClick={() => setActiveMenuId(activeMenuId === comment.id ? null : comment.id)}
-                                        className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full hover:bg-zinc-500/10"
+                                        onClick={() =>
+                                          setReplyTo({
+                                            id: comment.id,
+                                            author: comment.author,
+                                            userId: comment.userId,
+                                          })
+                                        }
+                                        className="text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors"
                                       >
-                                        <MoreHorizontal className="w-3.5 h-3.5" />
+                                        Reply
                                       </button>
-                                      
-                                      {activeMenuId === comment.id && (
-                                        <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50">
-                                          {user && user.uid === comment.userId && (
-                                            <button
-                                              onClick={() => {
-                                                setEditingComment(comment);
-                                                setEditContent(comment.text);
-                                                setActiveMenuId(null);
-                                              }}
-                                              className="w-full px-3 py-1.5 text-left text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
-                                            >
-                                              <Edit2 className="w-3.5 h-3.5" /> Edit
-                                            </button>
-                                          )}
-                                          {(isAdmin || (user && user.uid === comment.userId)) && (
-                                            <button
-                                              onClick={() => {
-                                                handleDeleteComment(selectedStory.id, comment.id);
-                                                setActiveMenuId(null);
-                                              }}
-                                              className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
-                                            >
-                                              <Trash2 className="w-3.5 h-3.5" /> Delete
-                                            </button>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
 
-                              {/* Replies */}
-                              {comments
-                                .filter((r) => r.parentId === comment.id)
-                                .map((reply) => (
-                                  <div key={reply.id} className="flex gap-3 ml-11">
-                                    <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-[10px] shrink-0">
-                                      {reply.author.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-baseline gap-2 mb-1">
-                                        <span className="font-bold text-zinc-900 dark:text-white text-xs">
-                                          {reply.author}
-                                        </span>
-                                        <span className="text-[10px] text-zinc-500">
-                                          {reply.createdAt
-                                            ? formatRelativeTime(reply.createdAt)
-                                            : "now"}
-                                        </span>
-                                      </div>
-                                      <p className="text-zinc-800 dark:text-zinc-200 text-sm leading-relaxed mt-1">
-                                        {reply.replyToAuthor && (
-                                          <span className="text-pink-500 font-medium mr-1">
-                                            @{reply.replyToAuthor}
-                                          </span>
-                                        )}
-                                        {reply.text}
-                                      </p>
-                                      <div className="flex items-center gap-3 mt-1">
+                                      {comments.some(r => r.parentId === comment.id) && (
                                         <button
-                                          onClick={() =>
-                                            setReplyTo({
-                                              id: comment.id,
-                                              author: reply.author,
-                                              userId: reply.userId,
-                                            })
-                                          }
-                                          className="text-[10px] font-medium text-pink-500 hover:text-pink-600 transition-colors"
+                                          onClick={() => toggleReplies(comment.id)}
+                                          className="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex items-center gap-1"
                                         >
-                                          Reply
+                                          {expandedComments.has(comment.id) ? (
+                                            <>Hide Replies</>
+                                          ) : (
+                                            <>Show Replies ({comments.filter(r => r.parentId === comment.id).length})</>
+                                          )}
+                                        </button>
+                                      )}
+                                      
+                                      <div className="relative">
+                                        <button
+                                          onClick={() => setActiveMenuId(activeMenuId === comment.id ? null : comment.id)}
+                                          className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full hover:bg-zinc-500/10"
+                                        >
+                                          <MoreHorizontal className="w-3.5 h-3.5" />
                                         </button>
                                         
-                                        <div className="relative">
-                                          <button
-                                            onClick={() => setActiveMenuId(activeMenuId === reply.id ? null : reply.id)}
-                                            className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full hover:bg-zinc-500/10"
-                                          >
-                                            <MoreHorizontal className="w-3 h-3" />
-                                          </button>
-                                          
-                                          {activeMenuId === reply.id && (
-                                            <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50">
-                                              {user && user.uid === reply.userId && (
-                                                <button
-                                                  onClick={() => {
-                                                    setEditingComment(reply);
-                                                    setEditContent(reply.text);
-                                                    setActiveMenuId(null);
-                                                  }}
-                                                  className="w-full px-3 py-1.5 text-left text-[10px] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
-                                                >
-                                                  <Edit2 className="w-3 h-3" /> Edit
-                                                </button>
-                                              )}
-                                              {(isAdmin || (user && user.uid === reply.userId)) && (
-                                                <button
-                                                  onClick={() => {
-                                                    handleDeleteComment(selectedStory.id, reply.id);
-                                                    setActiveMenuId(null);
-                                                  }}
-                                                  className="w-full px-3 py-1.5 text-left text-[10px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
-                                                >
-                                                  <Trash2 className="w-3 h-3" /> Delete
-                                                </button>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
+                                        {activeMenuId === comment.id && (
+                                          <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50">
+                                            {user && user.uid === comment.userId && (
+                                              <button
+                                                onClick={() => {
+                                                  setEditingComment(comment);
+                                                  setEditContent(comment.text);
+                                                  setActiveMenuId(null);
+                                                }}
+                                                className="w-full px-3 py-1.5 text-left text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                                              >
+                                                <Edit2 className="w-3.5 h-3.5" /> Edit
+                                              </button>
+                                            )}
+                                            {(isAdmin || (user && user.uid === comment.userId)) && (
+                                              <button
+                                                onClick={() => {
+                                                  handleDeleteComment(selectedStory.id, comment.id);
+                                                  setActiveMenuId(null);
+                                                }}
+                                                className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
-                                ))}
-                            </div>
-                          ))
+                                </div>
+
+                                {expandedComments.has(comment.id) && (
+                                  <AnimatePresence mode="popLayout">
+                                    {comments
+                                      .filter((r) => r.parentId === comment.id)
+                                      .map((reply) => (
+                                        <motion.div
+                                          key={reply.id}
+                                          layout
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          exit={{ opacity: 0, scale: 0.95 }}
+                                          className="flex gap-3 ml-11"
+                                        >
+                                          <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-[10px] shrink-0">
+                                            {reply.author.charAt(0).toUpperCase()}
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="flex items-baseline gap-2 mb-1">
+                                              <span className="font-bold text-zinc-900 dark:text-white text-xs">
+                                                {reply.author}
+                                              </span>
+                                              <span className="text-[10px] text-zinc-500">
+                                                {reply.createdAt
+                                                  ? formatRelativeTime(reply.createdAt)
+                                                  : "now"}
+                                              </span>
+                                            </div>
+                                            <p className="text-zinc-800 dark:text-zinc-200 text-sm leading-relaxed mt-1">
+                                              {reply.replyToAuthor && (
+                                                <span className="text-pink-500 font-medium mr-1">
+                                                  @{reply.replyToAuthor}
+                                                </span>
+                                              )}
+                                              {reply.text}
+                                            </p>
+                                            <div className="flex items-center gap-3 mt-1">
+                                              <button
+                                                onClick={() =>
+                                                  setReplyTo({
+                                                    id: comment.id,
+                                                    author: reply.author,
+                                                    userId: reply.userId,
+                                                  })
+                                                }
+                                                className="text-[10px] font-medium text-pink-500 hover:text-pink-600 transition-colors"
+                                              >
+                                                Reply
+                                              </button>
+                                              
+                                              <div className="relative">
+                                                <button
+                                                  onClick={() => setActiveMenuId(activeMenuId === reply.id ? null : reply.id)}
+                                                  className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full hover:bg-zinc-500/10"
+                                                >
+                                                  <MoreHorizontal className="w-3 h-3" />
+                                                </button>
+                                                
+                                                {activeMenuId === reply.id && (
+                                                  <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 py-1 z-50">
+                                                    {user && user.uid === reply.userId && (
+                                                      <button
+                                                        onClick={() => {
+                                                          setEditingComment(reply);
+                                                          setEditContent(reply.text);
+                                                          setActiveMenuId(null);
+                                                        }}
+                                                        className="w-full px-3 py-1.5 text-left text-[10px] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center gap-2"
+                                                      >
+                                                        <Edit2 className="w-3 h-3" /> Edit
+                                                      </button>
+                                                    )}
+                                                    {(isAdmin || (user && user.uid === reply.userId)) && (
+                                                      <button
+                                                        onClick={() => {
+                                                          handleDeleteComment(selectedStory.id, reply.id);
+                                                          setActiveMenuId(null);
+                                                        }}
+                                                        className="w-full px-3 py-1.5 text-left text-[10px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                                      >
+                                                        <Trash2 className="w-3 h-3" /> Delete
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                  </AnimatePresence>
+                                )}
+                              </motion.div>
+                            ))}
+                        </AnimatePresence>
                       )}
+
                     </div>
                   )}
                 </div>
@@ -1856,10 +1924,14 @@ export function CommunityStories() {
                         />
                         <button
                           type="submit"
-                          disabled={!newComment.trim()}
+                          disabled={!newComment.trim() || isPostingComment}
                           className="h-10 w-10 rounded-full bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white shrink-0 disabled:opacity-50 transition-colors shadow-lg shadow-pink-500/20"
                         >
-                          <Send className="w-4 h-4" />
+                          {isPostingComment ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </form>

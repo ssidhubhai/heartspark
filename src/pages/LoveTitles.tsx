@@ -6,6 +6,8 @@ import { Wand2, RefreshCw, Share2, Download, Sparkles } from 'lucide-react';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 import { generateContentWithFallback } from '../utils/ai';
 
+import { LoadingOverlay } from '../components/LoadingOverlay';
+
 export function LoveTitles() {
   const [name, setName] = useState('');
   const [trait, setTrait] = useState('');
@@ -51,6 +53,7 @@ export function LoveTitles() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
+      <LoadingOverlay isVisible={isGenerating} type="calculator" />
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
           Funny Love Titles <Wand2 className="w-8 h-8 text-pink-500" />
@@ -113,35 +116,70 @@ export function LoveTitles() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
           >
-            <Card id="title-result" className="text-center space-y-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500"></div>
-              
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-2 mt-4">
-                <Wand2 className="w-8 h-8 text-pink-500" />
+            <div id="title-result" className="relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-950 border-8 border-double border-pink-200 dark:border-pink-900/50 shadow-2xl p-8 md:p-12 text-center">
+              {/* Certificate Background Elements */}
+              <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full h-full bg-grid-pink"></div>
               </div>
-              
-              <h2 className="text-2xl font-bold text-zinc-800 dark:text-white">
-                {name}, you are officially...
-              </h2>
-              
-              <div className="py-8 bg-pink-50/50 dark:bg-pink-900/10 rounded-2xl border border-pink-100 dark:border-pink-900/20">
-                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 px-4 leading-tight">
-                  "{title}"
-                </p>
-              </div>
+              <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-pink-500/30 rounded-tl-xl"></div>
+              <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-pink-500/30 rounded-tr-xl"></div>
+              <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-pink-500/30 rounded-bl-xl"></div>
+              <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-pink-500/30 rounded-br-xl"></div>
 
-              <div className="flex flex-wrap justify-center gap-4 pt-4" data-html2canvas-ignore>
-                <Button variant="outline" onClick={() => setTitle('')} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
-                  <RefreshCw className="w-4 h-4 mr-2" /> Try Again
-                </Button>
-                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
-                  <Share2 className="w-4 h-4 mr-2" /> Share Result
-                </Button>
-                <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
-                  <Download className="w-4 h-4 mr-2" /> Download
-                </Button>
+              <div className="relative z-10 space-y-8">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-pink-50 dark:bg-pink-900/20 border-4 border-pink-100 dark:border-pink-900/40 mb-4 shadow-inner">
+                    <Wand2 className="w-10 h-10 text-pink-500" />
+                  </div>
+                  <h2 className="text-xs font-black text-pink-500 uppercase tracking-[0.4em]">Official Certification</h2>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-zinc-500 dark:text-zinc-400 font-serif italic text-lg">This document hereby confirms that</p>
+                  <h3 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">
+                    {name}
+                  </h3>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-serif italic text-lg">is officially designated as the</p>
+                </div>
+                
+                <div className="py-10 px-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-3xl border-2 border-pink-100 dark:border-pink-900/30 shadow-inner relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500"></div>
+                  <p className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 leading-tight">
+                    {title}
+                  </p>
+                </div>
+
+                <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-8 border-t border-zinc-100 dark:border-zinc-800/50">
+                  <div className="text-left">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Date Issued</p>
+                    <p className="text-sm font-bold text-zinc-600 dark:text-zinc-300">{new Date().toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full border-4 border-pink-500/20 flex items-center justify-center relative">
+                      <Sparkles className="w-8 h-8 text-pink-500/40" />
+                      <div className="absolute inset-0 rounded-full border-2 border-dashed border-pink-500/20 animate-spin-slow"></div>
+                    </div>
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-2">HeartSpark Seal</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Authorized By</p>
+                    <p className="text-sm font-bold text-pink-500 font-serif italic">Heart Spark AI</p>
+                  </div>
+                </div>
               </div>
-            </Card>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-3 mt-8" data-html2canvas-ignore>
+              <Button variant="outline" onClick={() => setTitle('')} className="rounded-2xl h-12 px-6 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                <RefreshCw className="w-4 h-4 mr-2" /> New Title
+              </Button>
+              <Button variant="custom" onClick={handleShare} className="rounded-2xl h-12 px-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none shadow-lg transition-all">
+                <Share2 className="w-4 h-4 mr-2" /> Share Certificate
+              </Button>
+              <Button variant="outline" onClick={handleDownload} className="rounded-2xl h-12 px-6 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                <Download className="w-4 h-4 mr-2" /> Download
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

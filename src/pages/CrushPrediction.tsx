@@ -5,7 +5,9 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Sparkles, RefreshCw, Share2, Download, Heart, Flame, Zap } from 'lucide-react';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
-import { generateContentWithFallback } from '../utils/ai';
+import { generateContentWithFallback, safeParseJSON } from '../utils/ai';
+
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 const VIBES = [
   { id: 'romantic', label: 'Romantic', icon: <Heart className="w-4 h-4" /> },
@@ -32,30 +34,29 @@ export function CrushPrediction() {
       const prompt = `You are Heart Spark, a playful and mystical fortune teller.
       Generate a short, fun, and highly specific crush prediction for ${name} and their crush ${crush}. 
       The vibe should be ${vibe}. 
-      Keep it under 2 sentences.
-      Do NOT include the probability score in the text, just the prediction.`;
+      
+      CRITICAL: You MUST respond ONLY with a valid JSON object. Do not include any markdown formatting like \`\`\`json.
+      The JSON must have exactly this structure:
+      {
+        "prediction": "The short, fun, 1-2 sentence prediction.",
+        "probability": 85 // A number from 0 to 100 representing the success probability
+      }`;
 
       const response = await generateContentWithFallback({
         model: 'gemini-3-flash-preview',
         contents: prompt
       });
       
-      const result = response.text || "The stars are clouded right now. Try again later!";
-      
-      // Generate a random probability based on the vibe
-      let minProb = 40;
-      let maxProb = 99;
-      if (vibe === 'chaotic') {
-        minProb = 10;
-        maxProb = 100;
-      } else if (vibe === 'romantic') {
-        minProb = 70;
-        maxProb = 99;
+      const text = response.text || "";
+      try {
+        const parsed = safeParseJSON(text);
+        setPrediction(parsed.prediction);
+        setProbability(parsed.probability);
+      } catch (e) {
+        console.error("Failed to parse JSON", e, text);
+        setPrediction(text || "The stars are clouded right now. Try again later!");
+        setProbability(Math.floor(Math.random() * 50) + 40);
       }
-      const randomProb = Math.floor(Math.random() * (maxProb - minProb + 1)) + minProb;
-      
-      setPrediction(result);
-      setProbability(randomProb);
     } catch (error) {
       console.error("Failed to generate prediction:", error);
       setPrediction("The stars are clouded right now. Try again later!");
@@ -76,6 +77,7 @@ export function CrushPrediction() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
+      <LoadingOverlay isVisible={isPredicting} type="calculator" />
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
           Crush Prediction <Sparkles className="w-8 h-8 text-pink-500" />
@@ -179,21 +181,64 @@ export function CrushPrediction() {
                 <span className="absolute -bottom-4 -right-2 text-4xl text-pink-200 dark:text-pink-900/50">"</span>
               </div>
 
-              <div className="py-6 bg-pink-50/50 dark:bg-pink-900/10 rounded-2xl border border-pink-100 dark:border-pink-900/20">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold mb-2">Probability of happening</p>
-                <div className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
-                  {probability}%
+              <div className="py-8 bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl border border-zinc-100 dark:border-zinc-800/50 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-full h-full bg-grid-pink"></div>
+                </div>
+                
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] font-black mb-6 relative z-10">Success Probability</p>
+                
+                <div className="relative inline-flex items-center justify-center mb-4">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="58"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      className="text-zinc-200 dark:text-zinc-800"
+                    />
+                    <motion.circle
+                      cx="64"
+                      cy="64"
+                      r="58"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      strokeDasharray={364.4}
+                      initial={{ strokeDashoffset: 364.4 }}
+                      animate={{ strokeDashoffset: 364.4 - (364.4 * probability) / 100 }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                      className="text-pink-500"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl font-black text-zinc-900 dark:text-white">{probability}%</span>
+                  </div>
+                </div>
+
+                <div className="max-w-xs mx-auto mt-2 relative z-10">
+                  <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${probability}%` }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                      className="h-full bg-gradient-to-r from-pink-500 to-purple-500"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-4 pt-4" data-html2canvas-ignore>
-                <Button variant="outline" onClick={() => setPrediction('')} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
+              <div className="flex flex-wrap justify-center gap-3 pt-4" data-html2canvas-ignore>
+                <Button variant="outline" onClick={() => setPrediction('')} className="rounded-2xl h-12 px-6 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
                   <RefreshCw className="w-4 h-4 mr-2" /> Try Again
                 </Button>
-                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+                <Button variant="custom" onClick={handleShare} className="rounded-2xl h-12 px-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none shadow-lg transition-all">
                   <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
-                <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
+                <Button variant="outline" onClick={handleDownload} className="rounded-2xl h-12 px-6 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
                   <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               </div>

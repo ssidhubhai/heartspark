@@ -25,9 +25,9 @@ const addWatermark = (element: HTMLElement) => {
   return watermark;
 };
 
-const getHtmlToImageOptions = (element: HTMLElement) => ({
+const getHtmlToImageOptions = (element: HTMLElement, isSharing = false) => ({
   backgroundColor: 'transparent',
-  pixelRatio: 2, // Higher resolution
+  pixelRatio: isSharing ? 1.5 : 2, // Slightly lower for sharing to speed up generation
   width: element.offsetWidth,
   height: element.offsetHeight,
   style: {
@@ -70,10 +70,10 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
   }
 };
 
-let isSharing = false;
+let isSharingInProgress = false;
 
 export const shareAsImage = async (elementId: string, title: string, text: string) => {
-  if (isSharing) {
+  if (isSharingInProgress) {
     console.warn('A share operation is already in progress.');
     return;
   }
@@ -81,21 +81,19 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
   const element = document.getElementById(elementId);
   if (!element) return;
 
-  isSharing = true;
+  isSharingInProgress = true;
   
-  // Add a small delay to ensure any animations are settled
-  await new Promise(resolve => setTimeout(resolve, 100));
-
   const watermark = addWatermark(element);
 
   try {
-    const options = getHtmlToImageOptions(element);
-    const dataUrl = await htmlToImage.toPng(element, options);
+    const options = getHtmlToImageOptions(element, true);
+    const blob = await htmlToImage.toBlob(element, options);
     
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const file = new File([blob], 'heartspark-result.png', { type: 'image/png' });
+    if (!blob) {
+      throw new Error('Failed to generate image blob');
+    }
 
+    const file = new File([blob], 'heartspark-result.png', { type: 'image/png' });
     const shareText = text + "\n\nCheck it out at: " + window.location.href;
 
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -112,22 +110,22 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
       });
     } else {
       await navigator.clipboard.writeText(shareText);
-      alert('Result copied to clipboard!');
+      console.log('Result copied to clipboard');
     }
   } catch (error: any) {
     console.error('Error sharing image:', error);
-    if (error.name !== 'AbortError') {
-      throw error; // Let the caller handle it
+    if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
+      throw error;
     }
   } finally {
-    isSharing = false;
+    isSharingInProgress = false;
     if (element.contains(watermark)) {
       element.removeChild(watermark);
     }
   }
 };
 
-export const generatePdfBlob = async (elementId: string): Promise<Blob | null> => {
+export const generatePdfBlob = async (elementId: string, isSharing = false): Promise<Blob | null> => {
   const element = document.getElementById(elementId);
   if (!element) return null;
 
@@ -135,7 +133,7 @@ export const generatePdfBlob = async (elementId: string): Promise<Blob | null> =
 
   try {
     const dataUrl = await htmlToImage.toPng(element, {
-      ...getHtmlToImageOptions(element),
+      ...getHtmlToImageOptions(element, isSharing),
       backgroundColor: '#ffffff' // PDF needs white background instead of transparent
     });
     
@@ -172,23 +170,26 @@ export const downloadAsPdf = async (elementId: string, filename: string) => {
 };
 
 export const shareAsPdf = async (elementId: string, title: string, text: string) => {
-  if (isSharing) {
+  if (isSharingInProgress) {
     console.warn('A share operation is already in progress.');
     return;
   }
   
-  isSharing = true;
-  const blob = await generatePdfBlob(elementId);
-  if (!blob) {
-    isSharing = false;
-    throw new Error('Failed to generate PDF.');
-  }
+  const element = document.getElementById(elementId);
+  if (!element) return;
 
-  const file = new File([blob], 'heartspark-result.pdf', { type: 'application/pdf' });
-  const shareText = text + "\n\nCheck it out at: " + window.location.href;
-
+  isSharingInProgress = true;
+  
   try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    const blob = await generatePdfBlob(elementId, true);
+    if (!blob) {
+      throw new Error('Failed to generate PDF.');
+    }
+
+    const file = new File([blob], 'heartspark-result.pdf', { type: 'application/pdf' });
+    const shareText = text + "\n\nCheck it out at: " + window.location.href;
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         title,
         text: shareText,
@@ -202,13 +203,14 @@ export const shareAsPdf = async (elementId: string, title: string, text: string)
       });
     } else {
       await navigator.clipboard.writeText(shareText);
+      console.log('Result copied to clipboard');
     }
   } catch (error: any) {
     console.error('Error sharing PDF:', error);
-    if (error.name !== 'AbortError') {
+    if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
       throw error;
     }
   } finally {
-    isSharing = false;
+    isSharingInProgress = false;
   }
 };

@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { MessageSquareHeart, Sparkles, Share2, Download, Loader2, Lightbulb } from 'lucide-react';
+import { MessageSquareHeart, Sparkles, Share2, Download, Loader2, Lightbulb, Heart } from 'lucide-react';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 import { generateContentWithFallback } from '../utils/ai';
 import Markdown from 'react-markdown';
+
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 export function AIAdvice() {
   const [names, setNames] = useState('');
@@ -55,6 +57,7 @@ export function AIAdvice() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
+      <LoadingOverlay isVisible={isLoading} type="analyzer" />
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 flex items-center justify-center gap-2">
           AI Love Advice <MessageSquareHeart className="w-8 h-8 text-pink-500 animate-pulse" />
@@ -152,31 +155,64 @@ export function AIAdvice() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
           >
-            <Card id="advice-result" className="space-y-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-pink-100 dark:border-pink-900/30 p-8">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-pink-100 dark:border-pink-900/30">
-                <div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-pink-500" />
+            <div id="advice-result" className="relative overflow-hidden rounded-[2rem] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-8 md:p-12">
+              {/* Report Header */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-8 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center shadow-inner">
+                    <MessageSquareHeart className="w-8 h-8 text-pink-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Consultation Report</h2>
+                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Case ID: HS-{Math.floor(Math.random() * 10000)}</p>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-zinc-800 dark:text-white">
-                  Heart Spark's Advice
-                </h2>
-              </div>
-              
-              <div className="prose dark:prose-invert max-w-none">
-                <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
-                  <Markdown>{advice}</Markdown>
+                <div className="text-left md:text-right">
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Subject</p>
+                  <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{topic}</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-4 pt-6 border-t border-pink-100 dark:border-pink-900/30" data-html2canvas-ignore>
-                <Button variant="custom" onClick={handleShare} className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
-                  <Share2 className="w-4 h-4 mr-2" /> Share Advice
-                </Button>
-                <Button variant="outline" onClick={handleDownload} className="border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
-                  <Download className="w-4 h-4 mr-2" /> Download
-                </Button>
+              {/* Report Content */}
+              <div className="space-y-8">
+                <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-700/50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-4 h-4 text-pink-500" />
+                    <h3 className="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider">Heart Spark's Analysis</h3>
+                  </div>
+                  <div className="prose prose-zinc dark:prose-invert max-w-none">
+                    <div className="text-zinc-700 dark:text-zinc-300 leading-relaxed markdown-body">
+                      <Markdown>{advice}</Markdown>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 bg-pink-50/30 dark:bg-pink-900/10 rounded-xl border border-pink-100/50 dark:border-pink-900/20">
+                  <Lightbulb className="w-5 h-5 text-pink-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
+                    "Remember, the best advice comes from your own heart. I'm just here to help you hear it more clearly." — Heart Spark AI
+                  </p>
+                </div>
               </div>
-            </Card>
+
+              {/* Report Footer */}
+              <div className="mt-12 pt-8 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center">
+                    <Heart className="w-4 h-4 text-white fill-white" />
+                  </div>
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Validated by HeartSpark Laboratory</p>
+                </div>
+                <div className="flex gap-3" data-html2canvas-ignore>
+                  <Button variant="outline" onClick={handleDownload} className="rounded-xl h-10 px-4 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-xs">
+                    <Download className="w-3.5 h-3.5 mr-2" /> Download PDF
+                  </Button>
+                  <Button variant="custom" onClick={handleShare} className="rounded-xl h-10 px-6 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 border-none shadow-lg transition-all text-xs">
+                    <Share2 className="w-3.5 h-3.5 mr-2" /> Share Report
+                  </Button>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
