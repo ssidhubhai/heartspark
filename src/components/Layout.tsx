@@ -20,7 +20,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const location = useLocation();
-  const { user, login, logout, isConfigured } = useAuth();
+  const { user, userData, login, logout, isConfigured } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   // Close menu and scroll to top on route change
@@ -146,8 +146,8 @@ export function Layout({ children }: { children: ReactNode }) {
                           onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                           className="relative ml-2"
                         >
-                          {user.photoURL ? (
-                            <img src={user.photoURL} alt="User" className="w-8 h-8 rounded-full border border-zinc-200 object-cover" />
+                          {(userData?.photoURL || user.photoURL) ? (
+                            <img src={userData?.photoURL || user.photoURL} alt="User" className="w-8 h-8 rounded-full border border-zinc-200 object-cover" />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200">
                               <User className="w-4 h-4 text-zinc-400" />
@@ -179,8 +179,8 @@ export function Layout({ children }: { children: ReactNode }) {
                                   <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -z-10" />
                                   <div className="flex items-center gap-4 mb-4">
                                     <div className="relative">
-                                      {user.photoURL ? (
-                                        <img src={user.photoURL} alt="User" className="w-14 h-14 rounded-2xl border-2 border-white dark:border-zinc-800 object-cover shadow-lg" />
+                                      {(userData?.photoURL || user.photoURL) ? (
+                                        <img src={userData?.photoURL || user.photoURL} alt="User" className="w-14 h-14 rounded-2xl border-2 border-white dark:border-zinc-800 object-cover shadow-lg" />
                                       ) : (
                                         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border-2 border-white dark:border-zinc-800 shadow-lg">
                                           <User className="w-6 h-6 text-pink-500" />
@@ -189,7 +189,7 @@ export function Layout({ children }: { children: ReactNode }) {
                                       <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-zinc-900 rounded-full" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className={cn("text-sm font-black truncate uppercase tracking-tight", theme === 'dark' ? "text-white" : "text-zinc-900")}>{user.displayName || 'USER'}</p>
+                                      <p className={cn("text-sm font-black truncate uppercase tracking-tight", theme === 'dark' ? "text-white" : "text-zinc-900")}>{userData?.displayName || user.displayName || 'USER'}</p>
                                       <p className="text-[10px] text-zinc-500 truncate mt-0.5 font-bold">{user.email}</p>
                                     </div>
                                   </div>
@@ -394,10 +394,16 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main id="main-content" className={cn(
-        "w-full relative z-10 pb-28 md:pb-0",
-        (location.pathname === '/love-gpt' || location.pathname === '/astrology') ? "flex-1 overflow-hidden" : "flex-grow",
+        "w-full relative z-10",
+        (location.pathname.startsWith('/messages') || 
+         location.pathname.startsWith('/profile') || 
+         location.pathname.startsWith('/analyzer') || 
+         location.pathname.startsWith('/love-gpt') || 
+         location.pathname.startsWith('/astrology') || 
+         location.pathname.startsWith('/tools')) ? "pb-0 md:pb-0" : "pb-32 md:pb-0",
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/messages') ? "flex-1 overflow-hidden" : "flex-grow",
         location.pathname === '/' ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : 
-        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories') ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories' || location.pathname === '/messages') ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
       )}>
         <AnimatePresence mode="wait">
           <motion.div

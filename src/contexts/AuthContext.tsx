@@ -131,6 +131,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (token && token !== privateData.fcmToken) {
                 await updateDoc(privateDocRef, { fcmToken: token });
               }
+
+              // Update online status and last seen
+              if (!publicData.isOnline) {
+                await updateDoc(userDocRef, {
+                  isOnline: true,
+                  lastSeen: serverTimestamp()
+                });
+              }
+
+              // Sync basic profile data if missing in Firestore but present in Auth
+              if (currentUser.displayName && !publicData.displayName) {
+                 await updateDoc(userDocRef, { displayName: currentUser.displayName });
+              }
+              if (currentUser.photoURL && !publicData.photoURL) {
+                 await updateDoc(userDocRef, { photoURL: currentUser.photoURL });
+              }
               
               setUserData({ ...publicData, ...privateData });
             } else {

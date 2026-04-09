@@ -8,8 +8,43 @@ export function MobileBottomNav() {
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isForcedHidden, setIsForcedHidden] = useState(false);
+
+  // Check if we are on a route where the nav should be completely hidden
+  const isHiddenRoute = 
+    location.pathname.startsWith('/profile') || 
+    location.pathname.startsWith('/analyzer') || 
+    location.pathname.startsWith('/love-gpt') || 
+    location.pathname.startsWith('/astrology') || 
+    location.pathname.startsWith('/messages') || 
+    location.pathname.startsWith('/tools');
+
+  // Check if we are on a route where the nav should auto-hide on scroll
+  const isAutoHideRoute = 
+    location.pathname === '/' || 
+    location.pathname.startsWith('/stories');
 
   useEffect(() => {
+    const checkForcedHidden = () => {
+      setIsForcedHidden(document.body.classList.contains('hide-mobile-nav'));
+    };
+
+    // Initial check
+    checkForcedHidden();
+
+    // Listen for class changes on body
+    const observer = new MutationObserver(checkForcedHidden);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoHideRoute) {
+      setIsVisible(true);
+      return;
+    }
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -32,7 +67,7 @@ export function MobileBottomNav() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, [lastScrollY, isAutoHideRoute]);
 
   const navItems = [
     { name: 'Calculator', path: '/', icon: <Heart className="w-5 h-5 fill-current" /> },
@@ -41,6 +76,8 @@ export function MobileBottomNav() {
     { name: 'Explore', path: '/tools', icon: <LayoutGrid className="w-5 h-5 fill-current" /> },
     { name: 'Profile', path: '/profile', icon: <User className="w-5 h-5 fill-current" /> },
   ];
+
+  if (isForcedHidden || isHiddenRoute) return null;
 
   return (
     <AnimatePresence>
@@ -54,7 +91,7 @@ export function MobileBottomNav() {
         >
           <div className="flex items-center justify-around h-16 px-2">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
               return (
                 <Link
                   key={item.path}

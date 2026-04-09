@@ -100,6 +100,16 @@ export function Messages() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Hide mobile bottom nav when a chat is active
+  useEffect(() => {
+    if (activeChat) {
+      document.body.classList.add('hide-mobile-nav');
+    } else {
+      document.body.classList.remove('hide-mobile-nav');
+    }
+    return () => document.body.classList.remove('hide-mobile-nav');
+  }, [activeChat]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -514,7 +524,12 @@ export function Messages() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] bg-white dark:bg-[#0A0A0B] overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
+    <div className={cn(
+      "flex bg-white dark:bg-[#0A0A0B] overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 relative",
+      activeChat 
+        ? "h-[calc(100dvh-64px)] md:h-[calc(100vh-80px)]" 
+        : "h-[calc(100dvh-128px)] md:h-[calc(100vh-80px)]"
+    )}>
       {/* Sidebar */}
       <div className={cn(
         "w-full md:w-80 lg:w-96 border-r border-zinc-100 dark:border-zinc-900 flex flex-col transition-all",
@@ -933,20 +948,29 @@ export function Messages() {
                   </button>
                 </div>
                 <div className="flex-1 relative">
-                  <input
-                    type="text"
+                  <textarea
                     value={newMessage}
                     onChange={(e) => {
                       setNewMessage(e.target.value);
                       handleTyping();
+                      // Auto-expand
+                      e.target.style.height = 'inherit';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e as any);
+                      }
                     }}
                     placeholder="Type a message..."
-                    className="w-full pl-4 pr-12 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-pink-500/20 transition-all"
+                    rows={1}
+                    className="w-full pl-4 pr-12 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-pink-500/20 transition-all resize-none max-h-32 overflow-y-auto"
                   />
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || isSending}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-pink-500 text-white rounded-xl shadow-lg shadow-pink-500/20 hover:bg-pink-600 transition-all disabled:opacity-50 active:scale-95"
+                    className="absolute right-2 bottom-2 p-2 bg-pink-500 text-white rounded-xl shadow-lg shadow-pink-500/20 hover:bg-pink-600 transition-all disabled:opacity-50 active:scale-95"
                   >
                     {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>

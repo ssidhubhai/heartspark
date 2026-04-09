@@ -61,13 +61,45 @@ export function Profile() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit for Base64 storage
-        showToast("Image too large. Please choose an image under 1MB.", "error");
-        return;
-      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 256;
+          const MAX_HEIGHT = 256;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.7 quality
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          
+          // Check size just in case, but 256x256 jpeg should be tiny
+          if (compressedBase64.length > 1048576) {
+             showToast("Image is still too large after compression.", "error");
+             return;
+          }
+          
+          setAvatarUrl(compressedBase64);
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -507,7 +539,12 @@ export function Profile() {
     if (!auth?.currentUser || !avatarUrl.trim()) return;
     setUpdatingAvatar(true);
     try {
-      await updateProfile(auth.currentUser, { photoURL: avatarUrl.trim() });
+      // Skip updateProfile for photoURL if it's a base64 string because Firebase Auth has a strict length limit (~2048 chars).
+      // We rely on Firestore to store the avatar.
+      if (!avatarUrl.startsWith('data:image')) {
+         await updateProfile(auth.currentUser, { photoURL: avatarUrl.trim() });
+      }
+      
       await setDoc(doc(db, 'users', auth.currentUser.uid), {
         photoURL: avatarUrl.trim(),
         updatedAt: new Date()
