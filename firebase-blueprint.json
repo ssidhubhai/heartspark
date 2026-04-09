@@ -2,15 +2,29 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "User profile information",
+      "description": "User profile information (Public)",
       "type": "object",
       "properties": {
         "displayName": { "type": "string", "description": "The user's display name" },
+        "username": { "type": "string", "description": "Unique username for the user" },
         "bio": { "type": "string", "description": "The user's bio" },
+        "photoURL": { "type": "string", "description": "The user's profile picture URL" },
+        "isOnline": { "type": "boolean", "description": "Whether the user is currently online" },
+        "lastSeen": { "type": "string", "format": "date-time", "description": "When the user was last active" },
         "updatedAt": { "type": "string", "format": "date-time", "description": "When the profile was last updated" },
         "role": { "type": "string", "enum": ["user", "admin"], "description": "The user's role" }
       },
-      "required": ["displayName"]
+      "required": ["displayName", "username"]
+    },
+    "PrivateUserData": {
+      "title": "Private User Data",
+      "description": "Sensitive user information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "The user's email address" },
+        "deletionRequestedAt": { "type": "string", "format": "date-time", "description": "When account deletion was requested" }
+      },
+      "required": ["email"]
     },
     "Story": {
       "title": "Story",
@@ -77,12 +91,54 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
       },
       "required": ["userId", "query", "createdAt"]
+    },
+    "Spark": {
+      "title": "Spark",
+      "description": "A connection or chat between two users",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "UID of the initiator" },
+        "receiverId": { "type": "string", "description": "UID of the recipient" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"], "description": "Connection status" },
+        "lastMessage": { "type": "string", "description": "Content of the last message" },
+        "lastMessageAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last message" },
+        "ghostMode": { "type": "boolean", "description": "Whether Ghost Mode is active for this spark" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the spark was created" }
+      },
+      "required": ["senderId", "receiverId", "status", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A message within a spark",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "UID of the sender" },
+        "text": { "type": "string", "description": "Message content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the message was sent" },
+        "read": { "type": "boolean", "description": "Whether the message has been read" },
+        "isGhost": { "type": "boolean", "description": "Whether this is a ghost message" },
+        "editedAt": { "type": "string", "format": "date-time", "description": "When the message was last edited" }
+      },
+      "required": ["senderId", "text", "createdAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
-      "description": "User profile documents"
+      "description": "User profile documents (Public)"
+    },
+    "/users/{userId}/private/settings": {
+      "schema": "PrivateUserData",
+      "description": "Sensitive user settings"
+    },
+    "/usernames/{username}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "uid": { "type": "string" }
+        }
+      },
+      "description": "Mapping of usernames to UIDs for uniqueness"
     },
     "/stories/{storyId}": {
       "schema": "Story",
@@ -103,6 +159,14 @@
     "/riya_searches/{searchId}": {
       "schema": "RiyaSearch",
       "description": "Riya AI search history"
+    },
+    "/sparks/{sparkId}": {
+      "schema": "Spark",
+      "description": "Chat connections"
+    },
+    "/sparks/{sparkId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages in a chat"
     }
   }
 }

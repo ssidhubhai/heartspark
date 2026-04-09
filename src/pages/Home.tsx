@@ -4,7 +4,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 import { db } from '../lib/firebase';
@@ -12,9 +12,10 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { LoadingOverlay } from '../components/LoadingOverlay';
 import { generateContentWithFallback, safeParseJSON } from '../utils/ai';
 import { LiveTicker } from '../components/LiveTicker';
-import { PWAPrompt } from '../components/PWAPrompt';
-import { OnboardingTour } from '../components/OnboardingTour';
 import { ToolCarousel } from '../components/ToolCarousel';
+
+const PWAPrompt = React.lazy(() => import('../components/PWAPrompt').then(m => ({ default: m.PWAPrompt })));
+const OnboardingTour = React.lazy(() => import('../components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 
 export function Home() {
   const navigate = useNavigate();
@@ -207,9 +208,13 @@ export function Home() {
 
   return (
     <div className="space-y-24 py-12">
-      <OnboardingTour />
+      <Suspense fallback={null}>
+        <OnboardingTour />
+      </Suspense>
       <LiveTicker />
-      <PWAPrompt />
+      <Suspense fallback={null}>
+        <PWAPrompt />
+      </Suspense>
       <LoadingOverlay isVisible={isCalculating} type="calculator" />
       <LoadingOverlay isVisible={isSharing} message="Generating your result image..." />
       

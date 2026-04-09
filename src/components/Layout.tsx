@@ -10,8 +10,10 @@ import { useTheme } from '../contexts/ThemeContext';
 import { InstallPrompt } from './InstallPrompt';
 import { NotificationBell } from './NotificationBell';
 import { FloatingHearts } from './FloatingHearts';
-import { ShareModal } from './ShareModal';
 import { MobileBottomNav } from './MobileBottomNav';
+import React, { Suspense, lazy } from 'react';
+
+const ShareModal = lazy(() => import('./ShareModal').then(m => ({ default: m.ShareModal })));
 
 export function Layout({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,9 +32,10 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'Astro Vibe', path: '/astrology' },
-    { name: 'Tools', path: '/tools' },
+    { name: 'Explore', path: '/tools' },
+    { name: 'Messages', path: '/messages' },
     { name: 'Games & Quizzes', path: '/games' },
+    { name: 'Profile', path: '/profile' },
   ];
 
   const moreLinks = [
@@ -470,7 +473,9 @@ export function Layout({ children }: { children: ReactNode }) {
         </footer>
       )}
       
-      <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
+      <Suspense fallback={null}>
+        <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
+      </Suspense>
       <MobileBottomNav />
     </div>
   );

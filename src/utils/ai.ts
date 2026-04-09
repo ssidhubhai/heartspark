@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentParameters } from '@google/genai';
+import { GoogleGenAI, GenerateContentParameters, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
 // Get all available API keys from environment variables
 const getApiKeys = (): string[] => {
@@ -24,7 +24,8 @@ const getApiKeys = (): string[] => {
     }
   }
 
-  return keys;
+  // Filter out placeholders and duplicates
+  return Array.from(new Set(keys)).filter(k => k && k !== "MY_GEMINI_API_KEY" && k !== "YOUR_GEMINI_API_KEY" && !k.startsWith("REPLACE_WITH"));
 };
 
 let currentKeyIndex = 0;
@@ -48,10 +49,35 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
       // Log which key is being used (safely hiding the full key)
       console.log(`[Gemini API] Sending request using Key #${keyIndex + 1} (${maskedKey})`);
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ 
+        apiKey,
+        httpOptions: {
+          retryOptions: {
+            attempts: 1 // Fail fast internally to let our loop handle key switching
+          }
+        }
+      });
+      
+      // Add safety settings to prevent "Exceeded maximum number of retries" errors 
+      // which often happen when safety filters are triggered repeatedly.
+      const safetySettings = [
+        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, threshold: HarmBlockThreshold.BLOCK_NONE },
+      ];
+
+      const requestParams = {
+        ...params,
+        config: {
+          ...params.config,
+          safetySettings,
+        }
+      };
       
       try {
-        const response = await ai.models.generateContent(params);
+        const response = await ai.models.generateContent(requestParams);
         // Move to the NEXT key for the next request (True Round-Robin)
         currentKeyIndex = (keyIndex + 1) % keys.length;
         return response;
@@ -68,11 +94,12 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
         throw modelError; // Re-throw to be caught by the outer catch block
       }
     } catch (error: any) {
-      console.warn(`[Gemini API] Key #${keyIndex + 1} (${maskedKey}) failed:`, error.message || error);
+      const errorStr = error?.message || String(error);
+      console.warn(`[Gemini API] Key #${keyIndex + 1} (${maskedKey}) failed:`, errorStr);
       lastError = error;
       
-      // If it's a 429 (Too Many Requests) or 403 (Quota Exceeded), try the next key
-      const errorMessage = error?.message?.toLowerCase() || '';
+      // If it's a 429 (Too Many Requests), 403 (Quota Exceeded), or internal retry failure, try the next key
+      const errorMessage = errorStr.toLowerCase();
       if (
         errorMessage.includes('429') || 
         errorMessage.includes('too many requests') || 
@@ -80,8 +107,14 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
         errorMessage.includes('exhausted') ||
         errorMessage.includes('403') ||
         errorMessage.includes('503') ||
-        errorMessage.includes('unavailable')
+        errorMessage.includes('unavailable') ||
+        errorMessage.includes('retry') ||
+        errorMessage.includes('retries') ||
+        errorMessage.includes('deadline') ||
+        errorMessage.includes('timeout')
       ) {
+        // Wait a bit before trying the next key
+        await new Promise(resolve => setTimeout(resolve, 1000));
         continue; // Try next key
       }
       
@@ -141,10 +174,33 @@ export const generateContentStreamWithFallback = async function* (params: Genera
       // Log which key is being used (safely hiding the full key)
       console.log(`[Gemini API Stream] Sending request using Key #${keyIndex + 1} (${maskedKey})`);
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ 
+        apiKey,
+        httpOptions: {
+          retryOptions: {
+            attempts: 1 // Fail fast internally to let our loop handle key switching
+          }
+        }
+      });
+      
+      const safetySettings = [
+        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, threshold: HarmBlockThreshold.BLOCK_NONE },
+      ];
+
+      const requestParams = {
+        ...params,
+        config: {
+          ...params.config,
+          safetySettings,
+        }
+      };
       
       try {
-        const stream = await ai.models.generateContentStream(params);
+        const stream = await ai.models.generateContentStream(requestParams);
         // Move to the NEXT key for the next request (True Round-Robin)
         currentKeyIndex = (keyIndex + 1) % keys.length;
         for await (const chunk of stream) {
@@ -166,10 +222,11 @@ export const generateContentStreamWithFallback = async function* (params: Genera
         throw modelError;
       }
     } catch (error: any) {
-      console.warn(`[Gemini API Stream] Key #${keyIndex + 1} (${maskedKey}) failed:`, error.message || error);
+      const errorStr = error?.message || String(error);
+      console.warn(`[Gemini API Stream] Key #${keyIndex + 1} (${maskedKey}) failed:`, errorStr);
       lastError = error;
       
-      const errorMessage = error?.message?.toLowerCase() || '';
+      const errorMessage = errorStr.toLowerCase();
       if (
         errorMessage.includes('429') || 
         errorMessage.includes('too many requests') || 
@@ -177,8 +234,14 @@ export const generateContentStreamWithFallback = async function* (params: Genera
         errorMessage.includes('exhausted') ||
         errorMessage.includes('403') ||
         errorMessage.includes('503') ||
-        errorMessage.includes('unavailable')
+        errorMessage.includes('unavailable') ||
+        errorMessage.includes('retry') ||
+        errorMessage.includes('retries') ||
+        errorMessage.includes('deadline') ||
+        errorMessage.includes('timeout')
       ) {
+        // Wait a bit before trying the next key
+        await new Promise(resolve => setTimeout(resolve, 1000));
         continue; // Try next key
       }
       

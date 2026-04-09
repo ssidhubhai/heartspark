@@ -111,10 +111,12 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return hasRequiredFields(['displayName']) &&
-             hasOnlyAllowedFields(['displayName', 'bio', 'updatedAt', 'role']) &&
+      return hasRequiredFields(['displayName', 'username']) &&
+             hasOnlyAllowedFields(['displayName', 'username', 'bio', 'photoURL', 'isOnline', 'lastSeen', 'updatedAt', 'role', 'blockedUsers']) &&
              validString('displayName', 1, 100) &&
+             validString('username', 3, 20) &&
              validOptionalString('bio', 0, 500) &&
+             validOptionalString('photoURL', 0, 1000) &&
              (data.role == 'user' || data.role == 'admin' || !( 'role' in data));
     }
 
@@ -167,8 +169,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || !('role' in resource.data) || request.resource.data.role == resource.data.role || isAdmin());
-      allow delete: if isAdmin();
+      allow update: if isOwner(userId) && 
+                    hasOnlyAllowedFields(['displayName', 'bio', 'photoURL', 'isOnline', 'lastSeen', 'updatedAt', 'role', 'blockedUsers']) &&
+                    (!('role' in request.resource.data) || !('role' in resource.data) || request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin() || isOwner(userId);
+
+      match /private/settings {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.keys().hasAll(['email']) && request.resource.data.email == request.auth.token.email;
+        allow update: if isOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /usernames/{username} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
     match /stories/{storyId} {
@@ -181,7 +199,11 @@ service cloud.firestore {
     match /community_stories/{storyId} {
       allow read: if true;
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidCommunityStory(request.resource.data);
-      allow update: if isAuthenticated() && request.resource.data.userId == resource.data.userId && isValidCommunityStory(request.resource.data);
+      allow update: if isAuthenticated() && (
+        (request.resource.data.userId == resource.data.userId && isValidCommunityStory(request.resource.data)) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aiPerspective'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'reportedBy']))
+      );
       allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
 
       match /comments/{commentId} {
@@ -189,6 +211,29 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidComment(request.resource.data);
         allow update: if isAuthenticated() && request.resource.data.userId == resource.data.userId && isValidComment(request.resource.data);
         allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      }
+    }
+
+    match /sparks/{sparkId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId) &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'lastMessage', 'lastMessageAt', 'ghostMode']);
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId || isAdmin());
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (request.auth.uid == get(/databases/$(database)/documents/sparks/$(sparkId)).data.senderId || request.auth.uid == get(/databases/$(database)/documents/sparks/$(sparkId)).data.receiverId);
+        allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid && (request.auth.uid == get(/databases/$(database)/documents/sparks/$(sparkId)).data.senderId || request.auth.uid == get(/databases/$(database)/documents/sparks/$(sparkId)).data.receiverId);
+        allow update: if isAuthenticated() && (
+          (request.auth.uid == resource.data.senderId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt'])) ||
+          (request.auth.uid != resource.data.senderId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']))
+        );
+        allow delete: if isAuthenticated() && (
+          request.auth.uid == resource.data.senderId || 
+          request.auth.uid == get(/databases/$(database)/documents/sparks/$(sparkId)).data.senderId || 
+          request.auth.uid == get(/databases/$(database)/documents/sparks/$(sparkId)).data.receiverId || 
+          isAdmin()
+        );
       }
     }
 

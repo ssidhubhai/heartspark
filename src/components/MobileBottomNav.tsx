@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, MessageCircleHeart, Bot, Users, LayoutGrid } from 'lucide-react';
+import { Heart, MessageCircle, Bot, Users, LayoutGrid, User } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -37,9 +37,9 @@ export function MobileBottomNav() {
   const navItems = [
     { name: 'Calculator', path: '/', icon: <Heart className="w-5 h-5 fill-current" /> },
     { name: 'Social', path: '/stories', icon: <Users className="w-5 h-5 fill-current" /> },
-    { name: 'Astro', path: '/astrology', icon: <Bot className="w-5 h-5 fill-current" /> },
-    { name: 'Analyzer', path: '/analyzer', icon: <MessageCircleHeart className="w-5 h-5 fill-current" /> },
+    { name: 'Messages', path: '/messages', icon: <MessageCircle className="w-5 h-5 fill-current" /> },
     { name: 'Explore', path: '/tools', icon: <LayoutGrid className="w-5 h-5 fill-current" /> },
+    { name: 'Profile', path: '/profile', icon: <User className="w-5 h-5 fill-current" /> },
   ];
 
   return (

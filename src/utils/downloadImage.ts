@@ -1,6 +1,3 @@
-import * as htmlToImage from 'html-to-image';
-import { jsPDF } from 'jspdf';
-
 const addWatermark = (element: HTMLElement) => {
   const watermark = document.createElement('div');
   watermark.id = 'heartspark-watermark';
@@ -48,6 +45,9 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
   const element = document.getElementById(elementId);
   if (!element) return;
 
+  // Dynamic import to reduce bundle size
+  const htmlToImage = await import('html-to-image');
+
   // Add a small delay to ensure any animations are settled
   await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -82,6 +82,9 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
   if (!element) return;
 
   isSharingInProgress = true;
+  
+  // Dynamic import
+  const htmlToImage = await import('html-to-image');
   
   const watermark = addWatermark(element);
 
@@ -128,6 +131,10 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
 export const generatePdfBlob = async (elementId: string, isSharing = false): Promise<Blob | null> => {
   const element = document.getElementById(elementId);
   if (!element) return null;
+
+  // Dynamic imports
+  const htmlToImage = await import('html-to-image');
+  const { jsPDF } = await import('jspdf');
 
   const watermark = addWatermark(element);
 

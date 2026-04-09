@@ -1,6 +1,6 @@
 import { Logo } from '../components/Logo';
 import React, { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   collection,
   addDoc,
@@ -46,6 +46,8 @@ import {
   MoreHorizontal,
   Edit2,
   Repeat,
+  Zap,
+  Search,
 } from "lucide-react";
 import { generateContentWithFallback } from "../utils/ai";
 import { motion, AnimatePresence } from "motion/react";
@@ -66,6 +68,7 @@ interface Story {
   author: string;
   userId: string;
   createdAt: any;
+  expiresAt?: any;
   category?: string;
   likes?: number;
   likedBy?: string[];
@@ -93,6 +96,7 @@ interface Comment {
   createdAt: any;
   parentId?: string;
   replyToAuthor?: string;
+  isAI?: boolean;
 }
 
 const formatRelativeTime = (timestamp: any) => {
@@ -117,6 +121,7 @@ const formatRelativeTime = (timestamp: any) => {
 };
 
 export function CommunityStories() {
+  const navigate = useNavigate();
   const [stories, setStories] = useState<Story[]>([]);
   const [loadingStories, setLoadingStories] = useState(true);
   const [showPostModal, setShowPostModal] = useState(false);
@@ -125,6 +130,7 @@ export function CommunityStories() {
   const [postCategory, setPostCategory] = useState("Crush");
   const [showPollInput, setShowPollInput] = useState(false);
   const [pollOptions, setPollOptions] = useState(["", ""]);
+  const [isEphemeral, setIsEphemeral] = useState(false);
   const [loading, setLoading] = useState(false);
   const [moderating, setModerating] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -137,6 +143,8 @@ export function CommunityStories() {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [isPostingComment, setIsPostingComment] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   const toggleReplies = (commentId: string) => {
     setExpandedComments(prev => {
@@ -146,7 +154,7 @@ export function CommunityStories() {
       return next;
     });
   };
-  const { user, isConfigured } = useAuth();
+  const { user, userData, isConfigured } = useAuth();
   const [searchParams] = useSearchParams();
   const storyIdFromUrl = searchParams.get("id");
 
@@ -155,6 +163,41 @@ export function CommunityStories() {
 
   // Comment state per story
   const [expandedStory, setExpandedStory] = useState<string | null>(null);
+  const [sparkStatuses, setSparkStatuses] = useState<Record<string, 'none' | 'pending' | 'accepted'>>({});
+
+  useEffect(() => {
+    if (!user || !db) return;
+
+    // Listen to all sparks involving the current user to track connection statuses
+    const qSent = query(collection(db, 'sparks'), where('senderId', '==', user.uid));
+    const qReceived = query(collection(db, 'sparks'), where('receiverId', '==', user.uid));
+
+    const updateStatuses = (snapshot: any) => {
+      setSparkStatuses(prev => {
+        const next = { ...prev };
+        snapshot.docs.forEach((doc: any) => {
+          const data = doc.data();
+          const otherId = data.senderId === user.uid ? data.receiverId : data.senderId;
+          
+          // Priority: accepted > pending > none
+          if (data.status === 'accepted') {
+            next[otherId] = 'accepted';
+          } else if (data.status === 'pending' && next[otherId] !== 'accepted') {
+            next[otherId] = 'pending';
+          }
+        });
+        return next;
+      });
+    };
+
+    const unsubSent = onSnapshot(qSent, updateStatuses);
+    const unsubReceived = onSnapshot(qReceived, updateStatuses);
+
+    return () => {
+      unsubSent();
+      unsubReceived();
+    };
+  }, [user?.uid, db]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
@@ -203,6 +246,20 @@ export function CommunityStories() {
     });
   };
 
+  const filteredStories = useMemo(() => {
+    let result = [...stories];
+    
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      result = result.filter(s => 
+        (s.author || "").toLowerCase().includes(term) ||
+        (s.content || "").toLowerCase().includes(term)
+      );
+    }
+    
+    return result;
+  }, [stories, searchTerm]);
+
   // Real-time comments listener
   useEffect(() => {
     const storyId = selectedStory?.id || expandedStory;
@@ -218,11 +275,14 @@ export function CommunityStories() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        const blockedUsers = userData?.blockedUsers || [];
         const fetchedComments = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Comment[];
-        setComments(fetchedComments);
+        
+        const filteredComments = fetchedComments.filter(c => !blockedUsers.includes(c.userId));
+        setComments(filteredComments);
         setLoadingComments(false);
       },
       (error) => {
@@ -277,12 +337,29 @@ export function CommunityStories() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const storyData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Story[];
+        const now = new Date();
+        const blockedUsers = userData?.blockedUsers || [];
         
-        setStories(storyData);
+        const storyData = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Story[];
+          
+        const filteredStories = storyData.filter((story) => {
+          // Filter out blocked users
+          if (blockedUsers.includes(story.userId)) return false;
+          
+          // Filter out expired stories
+          if (story.expiresAt) {
+            const expiresAtDate = story.expiresAt.toDate ? story.expiresAt.toDate() : new Date(story.expiresAt);
+            if (expiresAtDate < now) return false;
+          }
+          
+          return true;
+        });
+        
+        setStories(filteredStories);
         setLoadingStories(false);
       },
       (error) => {
@@ -498,6 +575,12 @@ export function CommunityStories() {
         reactedUsers: [],
       };
 
+      if (isEphemeral) {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+        storyData.expiresAt = expiresAt;
+      }
+
       if (showPollInput) {
         const validOptions = pollOptions.filter((opt) => opt.trim() !== "");
         if (validOptions.length >= 2) {
@@ -519,6 +602,7 @@ export function CommunityStories() {
       setPostCategory("General");
       setShowPollInput(false);
       setPollOptions(["", ""]);
+      setIsEphemeral(false);
       setShowPostModal(false);
       showToast("Story published successfully!", "success");
     } catch (error) {
@@ -761,6 +845,122 @@ export function CommunityStories() {
     }
   };
 
+  const [isGettingAdvice, setIsGettingAdvice] = useState(false);
+  const [sparkModalStory, setSparkModalStory] = useState<Story | null>(null);
+  const [sparkMessage, setSparkMessage] = useState("");
+  const [isSendingSpark, setIsSendingSpark] = useState(false);
+
+  const handleSendSpark = (story: Story) => {
+    if (!user) {
+      showToast("Please login to spark a connection!", "info");
+      return;
+    }
+    setSparkModalStory(story);
+  };
+
+  const submitSpark = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !db || !sparkModalStory || !sparkMessage.trim()) return;
+
+    setIsSendingSpark(true);
+    try {
+      // Create a spark request in a new collection
+      await addDoc(collection(db, "sparks"), {
+        senderId: user.uid,
+        senderName: user.displayName || "Anonymous",
+        receiverId: sparkModalStory.userId,
+        storyId: sparkModalStory.id,
+        message: sparkMessage.trim(),
+        status: "pending", // pending, accepted, declined
+        createdAt: serverTimestamp(),
+      });
+
+      showToast("Spark sent! If they accept, you can chat.", "success");
+      setSparkModalStory(null);
+      setSparkMessage("");
+    } catch (error) {
+      console.error("Error sending spark:", error);
+      showToast("Failed to send spark.", "error");
+    } finally {
+      setIsSendingSpark(false);
+    }
+  };
+
+  const handleGetAIAdvice = async (story: Story) => {
+    if (!db) return;
+    setIsGettingAdvice(true);
+    try {
+      const prompt = `
+        You are an objective, empathetic AI therapist and advice giver. 
+        Read the following story and provide a helpful, unbiased perspective. 
+        If there are "red flags", point them out gently but clearly. 
+        Validate the user's feelings if appropriate.
+        Keep your response concise (under 3 paragraphs).
+        
+        Story: "${story.content}"
+      `;
+
+      const response = await generateContentWithFallback({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+
+      const advice = response.text?.trim();
+      if (!advice) throw new Error("Failed to generate advice");
+
+      // Post the advice as a comment
+      const commentData = {
+        text: advice,
+        author: "AI Therapist 🤖",
+        userId: "ai_therapist", // Special ID
+        createdAt: serverTimestamp(),
+        likes: 0,
+        likedBy: [],
+        isAI: true, // Special flag for styling
+      };
+
+      await addDoc(
+        collection(db, `community_stories/${story.id}/comments`),
+        commentData,
+      );
+
+      // Update comment count
+      const storyRef = doc(db, "community_stories", story.id);
+      await updateDoc(storyRef, {
+        commentCount: increment(1),
+      });
+
+      showToast("AI Perspective added!", "success");
+    } catch (error) {
+      console.error("Error getting AI advice:", error);
+      showToast("Failed to get AI perspective.", "error");
+    } finally {
+      setIsGettingAdvice(false);
+    }
+  };
+
+  const handlePersonalBlock = async (userIdToBlock: string) => {
+    if (!user || !db) return;
+    if (userIdToBlock === user.uid) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        const currentBlocked = userDoc.data().blockedUsers || [];
+        if (!currentBlocked.includes(userIdToBlock)) {
+          await updateDoc(userRef, {
+            blockedUsers: [...currentBlocked, userIdToBlock]
+          });
+          showToast("User blocked. You won't see their posts or comments.", "success");
+          // Refresh user data in context if needed, or just let the feed filter
+        }
+      }
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      showToast("Failed to block user.", "error");
+    }
+  };
+
   const handleBlockUser = async (authorId: string) => {
     if (authorId.startsWith("seed_")) {
       showToast("Cannot block an archived user.", "error");
@@ -993,6 +1193,16 @@ export function CommunityStories() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowSearch(!showSearch)}
+              className={cn(
+                "p-2 rounded-full transition-all",
+                showSearch ? "bg-pink-500 text-white" : "bg-white/60 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-white"
+              )}
+              title="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
             {isAdmin && (
               <>
                 <button
@@ -1020,6 +1230,39 @@ export function CommunityStories() {
             )}
           </div>
         </div>
+
+        <AnimatePresence>
+          {showSearch && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-4 overflow-hidden"
+            >
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by username or content..."
+                  className="w-full h-11 pl-11 pr-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/50 border border-transparent focus:border-pink-500/30 focus:ring-4 focus:ring-pink-500/5 outline-none transition-all text-sm"
+                  autoFocus
+                />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
+                  <Search className="w-4 h-4" />
+                </div>
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Category Pills */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -1172,6 +1415,26 @@ export function CommunityStories() {
                 </AnimatePresence>
               </div>
 
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEphemeral(!isEphemeral)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isEphemeral ? 'bg-pink-500' : 'bg-zinc-300 dark:bg-zinc-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isEphemeral ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">Ephemeral Venting</span>
+                  <span className="text-xs text-zinc-500">Post will self-destruct in 24 hours</span>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
                 <input
                   type="text"
@@ -1293,23 +1556,26 @@ export function CommunityStories() {
                 </div>
               </motion.div>
             ))
-          ) : stories.length === 0 ? (
+          ) : filteredStories.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center py-10"
+              className="flex flex-col items-center justify-center py-20 text-center px-6"
             >
-              <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-2">
-                  Be the first to share something ❤️
-                </h2>
-                <p className="text-zinc-500 dark:text-zinc-400">
-                  Your story could be exactly what someone needs to hear today.
-                </p>
+              <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-10 h-10 text-zinc-300" />
               </div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
+                {searchTerm ? "No matches found" : "No stories yet"}
+              </h3>
+              <p className="text-zinc-500 text-sm max-w-xs">
+                {searchTerm 
+                  ? `We couldn't find any stories matching "${searchTerm}". Try a different keyword.`
+                  : "Be the first to share your story with the community!"}
+              </p>
             </motion.div>
           ) : (
-            sortedStories.map((story) => (
+            filteredStories.map((story) => (
               <motion.div
                 key={story.id}
                 layout
@@ -1323,9 +1589,15 @@ export function CommunityStories() {
                 <div id={`story-${story.id}`} className="flex gap-3">
                   {/* Left Column: Avatar */}
                   <div className="shrink-0 pt-1">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/profile/${story.userId}`);
+                      }}
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 font-bold text-lg border border-pink-500/20 hover:scale-110 transition-transform"
+                    >
                       {story.author.charAt(0).toUpperCase()}
-                    </div>
+                    </button>
                   </div>
 
                   {/* Right Column: Content */}
@@ -1341,7 +1613,13 @@ export function CommunityStories() {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-0.5">
                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                        <span className="font-bold text-[14px] text-zinc-900 dark:text-white truncate">
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${story.userId}`);
+                          }}
+                          className="font-bold text-[14px] text-zinc-900 dark:text-white truncate cursor-pointer hover:text-pink-500 transition-colors"
+                        >
                           {story.author}
                         </span>
                         {story.category && (
@@ -1353,6 +1631,26 @@ export function CommunityStories() {
                           <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-500 text-[9px] rounded-full font-bold uppercase tracking-wider">
                             You
                           </span>
+                        )}
+                        {user && user.uid !== story.userId && sparkStatuses[story.userId] !== 'accepted' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (sparkStatuses[story.userId] === 'pending') {
+                                showToast("Spark request is already pending!", "success");
+                              } else {
+                                handleSendSpark(story);
+                              }
+                            }}
+                            className={cn(
+                              "ml-1 transition-all transform hover:scale-110 flex items-center gap-1",
+                              sparkStatuses[story.userId] === 'pending' ? "text-pink-500" : "text-yellow-500 hover:text-yellow-600"
+                            )}
+                            title={sparkStatuses[story.userId] === 'pending' ? "Requested" : "Spark a Connection"}
+                          >
+                            <Zap className={cn("w-3.5 h-3.5", sparkStatuses[story.userId] === 'pending' && "fill-current")} />
+                            {sparkStatuses[story.userId] === 'pending' && <span className="text-[9px] font-bold uppercase tracking-tighter">Requested</span>}
+                          </button>
                         )}
                         <span className="text-[13px] text-zinc-500 shrink-0">
                           · {formatRelativeTime(story.createdAt)}
@@ -1428,6 +1726,18 @@ export function CommunityStories() {
                             >
                               <Flag className="w-4 h-4" /> Report
                             </button>
+                            {user && user.uid !== story.userId && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePersonalBlock(story.userId);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                              >
+                                <X className="w-4 h-4" /> Block User
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1674,10 +1984,24 @@ export function CommunityStories() {
 
                 {/* Comments Section */}
                 <div className="mt-8">
-                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-pink-500" /> Comments
-                    ({selectedStory.commentCount || 0})
-                  </h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <MessageCircle className="w-5 h-5 text-pink-500" /> Comments
+                      ({selectedStory.commentCount || 0})
+                    </h3>
+                    <button
+                      onClick={() => handleGetAIAdvice(selectedStory)}
+                      disabled={isGettingAdvice}
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-full text-sm font-medium transition-all shadow-md disabled:opacity-50"
+                    >
+                      {isGettingAdvice ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <span className="text-lg">🤖</span>
+                      )}
+                      Get AI Perspective
+                    </button>
+                  </div>
 
                   {loadingComments ? (
                     <div className="flex justify-center py-8">
@@ -1700,15 +2024,21 @@ export function CommunityStories() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="space-y-4"
+                                className={`space-y-4 ${comment.isAI ? 'bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-500/20' : ''}`}
                               >
                                 <div className="flex gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs shrink-0">
-                                    {comment.author.charAt(0).toUpperCase()}
-                                  </div>
+                                  <button 
+                                    onClick={() => navigate(`/profile/${comment.userId}`)}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 hover:scale-110 transition-transform ${comment.isAI ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400' : 'bg-white/80 dark:bg-white/10 text-zinc-600 dark:text-zinc-300'}`}
+                                  >
+                                    {comment.isAI ? '🤖' : comment.author.charAt(0).toUpperCase()}
+                                  </button>
                                   <div className="flex-1">
                                     <div className="flex items-baseline gap-2 mb-1">
-                                      <span className="font-bold text-zinc-900 dark:text-white text-sm">
+                                      <span 
+                                        onClick={() => navigate(`/profile/${comment.userId}`)}
+                                        className={`font-bold text-sm cursor-pointer hover:text-pink-500 transition-colors ${comment.isAI ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-900 dark:text-white'}`}
+                                      >
                                         {comment.author}
                                       </span>
                                       <span className="text-xs text-zinc-500">
@@ -1717,7 +2047,7 @@ export function CommunityStories() {
                                           : "now"}
                                       </span>
                                     </div>
-                                    <p className="text-zinc-800 dark:text-zinc-200 text-[15px] leading-relaxed mt-1">
+                                    <p className={`text-[15px] leading-relaxed mt-1 ${comment.isAI ? 'text-indigo-900 dark:text-indigo-100' : 'text-zinc-800 dark:text-zinc-200'}`}>
                                       {comment.text}
                                     </p>
                                     <div className="flex items-center gap-3 mt-2">
@@ -1780,6 +2110,17 @@ export function CommunityStories() {
                                                 <Trash2 className="w-3.5 h-3.5" /> Delete
                                               </button>
                                             )}
+                                            {user && user.uid !== comment.userId && (
+                                              <button
+                                                onClick={() => {
+                                                  handlePersonalBlock(comment.userId);
+                                                  setActiveMenuId(null);
+                                                }}
+                                                className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                              >
+                                                <X className="w-3.5 h-3.5" /> Block User
+                                              </button>
+                                            )}
                                           </div>
                                         )}
                                       </div>
@@ -1800,12 +2141,18 @@ export function CommunityStories() {
                                           exit={{ opacity: 0, scale: 0.95 }}
                                           className="flex gap-3 ml-11"
                                         >
-                                          <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-[10px] shrink-0">
+                                          <button 
+                                            onClick={() => navigate(`/profile/${reply.userId}`)}
+                                            className="w-6 h-6 rounded-full bg-white/80 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-[10px] shrink-0 hover:scale-110 transition-transform"
+                                          >
                                             {reply.author.charAt(0).toUpperCase()}
-                                          </div>
+                                          </button>
                                           <div className="flex-1">
                                             <div className="flex items-baseline gap-2 mb-1">
-                                              <span className="font-bold text-zinc-900 dark:text-white text-xs">
+                                              <span 
+                                                onClick={() => navigate(`/profile/${reply.userId}`)}
+                                                className="font-bold text-zinc-900 dark:text-white text-xs cursor-pointer hover:text-pink-500 transition-colors"
+                                              >
                                                 {reply.author}
                                               </span>
                                               <span className="text-[10px] text-zinc-500">
@@ -1867,6 +2214,17 @@ export function CommunityStories() {
                                                         className="w-full px-3 py-1.5 text-left text-[10px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
                                                       >
                                                         <Trash2 className="w-3 h-3" /> Delete
+                                                      </button>
+                                                    )}
+                                                    {user && user.uid !== reply.userId && (
+                                                      <button
+                                                        onClick={() => {
+                                                          handlePersonalBlock(reply.userId);
+                                                          setActiveMenuId(null);
+                                                        }}
+                                                        className="w-full px-3 py-1.5 text-left text-[10px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+                                                      >
+                                                        <X className="w-3 h-3" /> Block User
                                                       </button>
                                                     )}
                                                   </div>
@@ -2000,6 +2358,63 @@ export function CommunityStories() {
                   Save Changes
                 </Button>
               </div>
+            </Card>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Spark Modal */}
+      <AnimatePresence>
+        {sparkModalStory && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
+            <Card className="w-full max-w-md bg-white dark:bg-[#121214] relative shadow-2xl p-6 border-yellow-500/20">
+              <button
+                onClick={() => setSparkModalStory(null)}
+                className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-8 h-8 text-yellow-500" />
+                </div>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Spark a Connection</h2>
+                <p className="text-sm text-zinc-500 mt-2">
+                  Send a private message request to <span className="font-bold">{sparkModalStory.author}</span>.
+                </p>
+              </div>
+
+              <form onSubmit={submitSpark} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    Your Message
+                  </label>
+                  <textarea
+                    value={sparkMessage}
+                    onChange={(e) => setSparkMessage(e.target.value)}
+                    placeholder="Hi, I really resonated with your story..."
+                    className="w-full min-h-[6rem] p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 focus:border-yellow-500 outline-none resize-none text-sm text-zinc-900 dark:text-white"
+                    required
+                    maxLength={300}
+                  />
+                  <p className="text-xs text-zinc-500 text-right mt-1">
+                    {sparkMessage.length}/300
+                  </p>
+                </div>
+                
+                <Button 
+                  type="submit"
+                  disabled={!sparkMessage.trim() || isSendingSpark}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white border-none h-12"
+                >
+                  {isSendingSpark ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>Send Spark <Zap className="w-4 h-4 ml-2" /></>
+                  )}
+                </Button>
+              </form>
             </Card>
           </div>
         )}

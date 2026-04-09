@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
-import { getFirestore, getDocFromServer, doc } from 'firebase/firestore';
+import { getFirestore, getDocFromServer, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // Import the Firebase configuration
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -9,7 +10,24 @@ import firebaseConfig from '../../firebase-applet-config.json';
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 export const googleProvider = new GoogleAuthProvider();
+
+export const requestNotificationPermission = async () => {
+  if (!messaging) return null;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const token = await getToken(messaging, {
+        vapidKey: 'YOUR_VAPID_KEY' // The user will need to provide this from Firebase Console
+      });
+      return token;
+    }
+  } catch (error) {
+    console.error("Error requesting notification permission:", error);
+  }
+  return null;
+};
 
 // Connection test
 async function testConnection() {
@@ -54,13 +72,33 @@ export const loginWithEmail = async (email: string, password: string) => {
   }
 };
 
-export const registerWithEmail = async (email: string, password: string, name: string) => {
+export const registerWithEmail = async (email: string, password: string, name: string, username: string) => {
   if (!auth) {
     throw new Error("Firebase is not configured.");
   }
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: name });
+    
+    // Create user profile in Firestore immediately
+    const userDocRef = doc(db, 'users', result.user.uid);
+    const usernameDocRef = doc(db, 'usernames', username.toLowerCase());
+    
+    await setDoc(usernameDocRef, { uid: result.user.uid });
+    await setDoc(userDocRef, {
+      displayName: name,
+      username: username.toLowerCase(),
+      email: email,
+      photoURL: null,
+      role: 'user',
+      isOnline: true,
+      lastSeen: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      bio: 'Hey there! I\'m using Heart Spark.',
+      blockedUsers: []
+    });
+
     await sendEmailVerification(result.user);
     await signOut(auth); // Force sign out so they have to verify
     return result.user;
