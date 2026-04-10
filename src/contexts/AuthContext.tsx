@@ -211,11 +211,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Update online status with throttling and state check
           let lastPresenceUpdate = 0;
           let lastOnlineState: boolean | null = null;
+          let offlineTimeout: NodeJS.Timeout | null = null;
+          let idleTimeout: NodeJS.Timeout | null = null;
 
           const updatePresence = async (online: boolean) => {
             const now = Date.now();
-            // Only update if state changed OR it's been more than 5 minutes
-            if (online === lastOnlineState && now - lastPresenceUpdate < 300000) return;
+            // Throttling: Only update if state changed OR it's been more than 2 minutes
+            // CRITICAL: Offline updates (online === false) should ALWAYS bypass throttling
+            if (online === lastOnlineState && online === true && now - lastPresenceUpdate < 120000) return;
             
             try {
               lastPresenceUpdate = now;
@@ -229,31 +232,113 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           };
 
-          updatePresence(true);
+          const setOfflineWithGrace = () => {
+            if (offlineTimeout) clearTimeout(offlineTimeout);
+            offlineTimeout = setTimeout(() => {
+              // Clean up stale localStorage presence keys
+              const now = Date.now();
+              Object.keys(localStorage).forEach(k => {
+                if (k.startsWith('presence_')) {
+                  const data = JSON.parse(localStorage.getItem(k) || '{}');
+                  if (data.timestamp && now - data.timestamp > 300000) {
+                    localStorage.removeItem(k);
+                  }
+                }
+              });
 
-          // Handle tab close/visibility change
-          const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
+              // Check if any other tab is visible before going offline
+              const otherTabsVisible = Object.keys(localStorage)
+                .filter(k => k.startsWith('presence_') && k !== `presence_${tabId}`)
+                .some(k => {
+                  const data = JSON.parse(localStorage.getItem(k) || '{}');
+                  return data.state === 'visible';
+                });
+              
+              if (!otherTabsVisible) {
+                updatePresence(false);
+              }
+            }, 30000); // Reduced to 30 second grace period
+          };
+
+          const setOnline = () => {
+            if (offlineTimeout) {
+              clearTimeout(offlineTimeout);
+              offlineTimeout = null;
+            }
+            updatePresence(true);
+            resetIdleTimer();
+          };
+
+          const resetIdleTimer = () => {
+            if (idleTimeout) clearTimeout(idleTimeout);
+            idleTimeout = setTimeout(() => {
               updatePresence(false);
+            }, 300000); // 5 minutes idle = offline
+          };
+
+          const tabId = Math.random().toString(36).substring(2, 9);
+          const updateTabPresence = (state: string) => {
+            localStorage.setItem(`presence_${tabId}`, JSON.stringify({
+              state,
+              timestamp: Date.now()
+            }));
+          };
+
+          updateTabPresence(document.visibilityState);
+
+          const handleVisibilityChange = () => {
+            updateTabPresence(document.visibilityState);
+            if (document.visibilityState === 'hidden') {
+              setOfflineWithGrace();
             } else {
-              updatePresence(true);
+              setOnline();
+            }
+          };
+
+          const handleActivity = () => {
+            if (document.visibilityState === 'visible') {
+              setOnline();
+            }
+          };
+
+          const handleBeforeUnload = () => {
+            localStorage.removeItem(`presence_${tabId}`);
+            // If this was the last active tab, try to set offline immediately
+            const otherTabs = Object.keys(localStorage).filter(k => k.startsWith('presence_'));
+            if (otherTabs.length === 0) {
+              // Use a synchronous-ish update if possible, or just let the heartbeat handle it
+              updatePresence(false);
             }
           };
 
           document.addEventListener('visibilitychange', handleVisibilityChange);
+          document.addEventListener('mousemove', handleActivity);
+          document.addEventListener('keydown', handleActivity);
+          document.addEventListener('click', handleActivity);
+          window.addEventListener('beforeunload', handleBeforeUnload);
           
-          // Periodic ping (reduced to every 5 minutes to save Firestore writes)
+          setOnline();
+
+          // Periodic ping (every 2 minutes)
           const pingInterval = setInterval(() => {
             if (document.visibilityState === 'visible') {
+              updateTabPresence('visible');
               updatePresence(true);
             }
-          }, 300000);
+          }, 120000);
 
           return () => {
             unsubUserData();
             unsubPrivateData();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('mousemove', handleActivity);
+            document.removeEventListener('keydown', handleActivity);
+            document.removeEventListener('click', handleActivity);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            localStorage.removeItem(`presence_${tabId}`);
             clearInterval(pingInterval);
+            if (offlineTimeout) clearTimeout(offlineTimeout);
+            if (idleTimeout) clearTimeout(idleTimeout);
             updatePresence(false);
           };
         }

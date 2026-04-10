@@ -67,7 +67,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           onClose();
         } catch (err: any) {
           if (err.message === "ACCOUNT_NOT_FOUND") {
-            setError("Account not found. Please check your email or create a new account.");
+            // Smart Transition: If account not found during login, offer to sign up
+            setIsLogin(false);
+            setStep(1);
+            setError("We couldn't find an account with that email. Let's create one for you!");
           } else {
             setError(err.message);
           }
@@ -94,7 +97,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setStep(3);
         showToast('Account created! Verification email sent.');
       } catch (err: any) {
-        setError(err.message);
+        if (err.message.includes('already registered') || err.message.includes('already in use')) {
+          setError("This email is already registered. Try signing in instead!");
+          // Optionally provide a button to switch to login
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -278,10 +286,25 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     key="error"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm"
+                    className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl flex flex-col gap-3 text-red-600 dark:text-red-400 text-sm"
                   >
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <span className="font-medium">{error}</span>
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 shrink-0" />
+                      <span className="font-medium">{error}</span>
+                    </div>
+                    {error.includes("already registered") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLogin(true);
+                          setStep(1);
+                          setError('');
+                        }}
+                        className="ml-8 text-xs font-black uppercase tracking-widest text-pink-500 hover:text-pink-600 transition-colors text-left"
+                      >
+                        Switch to Sign In instead
+                      </button>
+                    )}
                   </motion.div>
                 )}
 

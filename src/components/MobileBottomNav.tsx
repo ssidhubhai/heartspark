@@ -4,6 +4,8 @@ import { Heart, MessageCircle, Bot, Users, LayoutGrid, User } from 'lucide-react
 import { cn } from '../utils/cn';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { MAIN_NAV_LINKS, MORE_LINKS } from '../constants/navigation';
+
 export function MobileBottomNav() {
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(true);
@@ -68,11 +70,8 @@ export function MobileBottomNav() {
   }, [lastScrollY, isAutoHideRoute]);
 
   const navItems = [
-    { name: 'Calculator', path: '/', icon: <Heart className="w-5 h-5 fill-current" /> },
-    { name: 'Social', path: '/stories', icon: <Users className="w-5 h-5 fill-current" /> },
-    { name: 'Messages', path: '/messages', icon: <MessageCircle className="w-5 h-5 fill-current" /> },
-    { name: 'Explore', path: '/tools', icon: <LayoutGrid className="w-5 h-5 fill-current" /> },
-    { name: 'Profile', path: '/profile', icon: <User className="w-5 h-5 fill-current" /> },
+    ...MAIN_NAV_LINKS,
+    { name: 'Profile', path: '/profile', icon: <User className="w-full h-full" /> },
   ];
 
   if (isForcedHidden || isHiddenRoute) return null;
@@ -102,7 +101,7 @@ export function MobileBottomNav() {
                   )}
                 >
                   <div className={cn(
-                    "p-1.5 rounded-full transition-all duration-300",
+                    "w-6 h-6 p-1 rounded-full transition-all duration-300",
                     isActive ? "bg-pink-100 dark:bg-pink-500/20 scale-110" : "bg-transparent"
                   )}>
                     {item.icon}

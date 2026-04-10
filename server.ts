@@ -163,7 +163,8 @@ async function startServer() {
 
   if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`[SERVER] Running on http://localhost:${PORT}`);
+      console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}`);
     });
   }
 }

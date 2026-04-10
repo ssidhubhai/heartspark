@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download, Settings, ShieldCheck, Sparkles, ChevronRight } from 'lucide-react';
+import { Heart, Menu, X, Share2, Moon, Sun, LogIn, LogOut, User, Download, Settings, ShieldCheck, Sparkles, ChevronRight, MessageCircle, LayoutGrid, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo } from './Logo';
@@ -11,6 +11,7 @@ import { InstallPrompt } from './InstallPrompt';
 import { NotificationBell } from './NotificationBell';
 import { FloatingHearts } from './FloatingHearts';
 import { MobileBottomNav } from './MobileBottomNav';
+import { MAIN_NAV_LINKS, MORE_LINKS } from '../constants/navigation';
 import React, { Suspense, lazy } from 'react';
 
 const ShareModal = lazy(() => import('./ShareModal').then(m => ({ default: m.ShareModal })));
@@ -31,11 +32,11 @@ export function Layout({ children }: { children: ReactNode }) {
   }, [location.pathname]);
 
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Explore', path: '/tools' },
-    { name: 'Messages', path: '/messages' },
-    { name: 'Games & Quizzes', path: '/games' },
-    { name: 'Profile', path: '/profile' },
+    { name: 'Home', path: '/', icon: <Heart className="w-4 h-4" /> },
+    { name: 'Explore', path: '/tools', icon: <LayoutGrid className="w-4 h-4" /> },
+    { name: 'Messages', path: '/messages', icon: <MessageCircle className="w-4 h-4" /> },
+    { name: 'Stories', path: '/stories', icon: <Users className="w-4 h-4" /> },
+    { name: 'Games', path: '/games', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   const moreLinks = [
@@ -46,6 +47,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const handleShare = () => {
     setIsShareModalOpen(true);
+  };
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -89,26 +95,34 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="flex items-center space-x-1">
-                {navLinks.map((link) => (
+                {MAIN_NAV_LINKS.map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
                     className={cn(
-                      "px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all duration-300",
-                      location.pathname === link.path 
-                        ? "text-pink-600 bg-[#FFF0F5]" 
-                        : "text-zinc-600 hover:text-pink-600"
+                      "px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-300 flex items-center gap-2 relative group",
+                      isActive(link.path)
+                        ? "text-pink-600 bg-pink-500/10 shadow-[0_4px_12px_rgba(236,72,153,0.1)]" 
+                        : "text-zinc-500 hover:text-pink-600 hover:bg-zinc-50 dark:hover:bg-white/5"
                     )}
                   >
+                    <div className="w-4 h-4">{link.icon}</div>
                     {link.name}
+                    {isActive(link.path) && (
+                      <motion.div
+                        layoutId="nav-active-pill"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-pink-500 rounded-full"
+                      />
+                    )}
                   </Link>
                 ))}
 
                 {/* More Dropdown */}
                 <div className="relative group">
                   <button
-                    className="px-4 py-1.5 rounded-full text-[13px] font-semibold text-zinc-600 hover:text-pink-600 transition-all duration-300 flex items-center gap-1"
+                    className="px-4 py-2 rounded-xl text-[13px] font-bold text-zinc-500 hover:text-pink-600 hover:bg-zinc-50 dark:hover:bg-white/5 transition-all duration-300 flex items-center gap-2"
                   >
+                    <div className="w-4 h-4"><Menu className="w-full h-full" /></div>
                     More
                     <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </button>
@@ -117,17 +131,18 @@ export function Layout({ children }: { children: ReactNode }) {
                     "absolute right-0 mt-2 w-56 rounded-2xl shadow-xl py-3 border backdrop-blur-3xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right translate-y-2 group-hover:translate-y-0",
                     theme === 'dark' ? "border-white/10 bg-[#0A0A0B]/95" : "border-zinc-200 bg-white/95"
                   )}>
-                    {moreLinks.map((link) => (
+                    {MORE_LINKS.filter(l => !l.mobileOnly).map((link) => (
                       <Link
                         key={link.path}
                         to={link.path}
                         className={cn(
-                          "block px-5 py-2.5 text-sm font-medium transition-all",
-                          location.pathname === link.path 
-                            ? "text-pink-600 bg-[#FFF0F5]" 
-                            : "text-zinc-600 hover:bg-pink-50 hover:text-pink-600"
+                          "flex items-center gap-3 px-5 py-2.5 text-sm font-bold transition-all",
+                          isActive(link.path)
+                            ? "text-pink-600 bg-pink-500/5" 
+                            : "text-zinc-500 hover:bg-pink-50 dark:hover:bg-white/5 hover:text-pink-600"
                         )}
                       >
+                        <div className="w-4 h-4">{link.icon}</div>
                         {link.name}
                       </Link>
                     ))}
@@ -322,18 +337,19 @@ export function Layout({ children }: { children: ReactNode }) {
               )}
             >
               <div className="px-6 pt-4 pb-8 space-y-2">
-                {[...navLinks, ...moreLinks].map((link) => (
+                {[...MAIN_NAV_LINKS, ...MORE_LINKS].map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
-                      "block px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all",
-                      location.pathname === link.path 
+                      "flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all",
+                      isActive(link.path)
                         ? "text-pink-400 bg-pink-500/10 border border-pink-500/20" 
                         : theme === 'dark' ? "text-zinc-400 hover:bg-white/5 hover:text-white" : "text-zinc-500 hover:bg-pink-50 hover:text-pink-600"
                     )}
                   >
+                    <div className="w-5 h-5">{link.icon}</div>
                     {link.name}
                   </Link>
                 ))}

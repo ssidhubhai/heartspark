@@ -242,6 +242,15 @@ export function Messages() {
   const [showOtherProfile, setShowOtherProfile] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [lastRenderTime, setLastRenderTime] = useState(Date.now());
+
+  // Force re-render every 30 seconds to update "last seen" and "online" ghost status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastRenderTime(Date.now());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ type: 'chat' | 'message', id: string } | null>(null);
   
   const [isGhostMode, setIsGhostMode] = useState(false);
@@ -714,26 +723,47 @@ export function Messages() {
         setMessages(prev => [...prev, userMessage as Message]);
 
         // Call Gemini
-        const history = messages.map(m => ({
-          role: m.senderId === user.uid ? "user" : "model",
-          parts: [{ text: m.text }],
-        }));
+        try {
+          const ai = getAI();
+          if (!ai) throw new Error("AI Assistant not configured");
+          
+          const history = messages.map(m => ({
+            role: m.senderId === user.uid ? "user" : "model",
+            parts: [{ text: m.text }],
+          }));
 
-        const response = await getAI().models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: [...history, { role: "user", parts: [{ text }] }],
-        });
+          const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [...history, { role: "user", parts: [{ text }] }],
+          });
 
-        const aiText = response.text || "I'm sorry, I couldn't process that.";
+          const aiText = response.text || "I'm sorry, I couldn't process that.";
 
-        const aiMessage = {
-          id: (Date.now() + 1).toString(),
-          text: aiText,
-          senderId: 'ai',
-          createdAt: Timestamp.now(),
-          read: true
-        };
-        setMessages(prev => [...prev, aiMessage as Message]);
+          const aiMessage = {
+            id: (Date.now() + 1).toString(),
+            text: aiText,
+            senderId: 'ai',
+            createdAt: Timestamp.now(),
+            read: true
+          };
+          setMessages(prev => [...prev, aiMessage as Message]);
+        } catch (aiError: any) {
+          console.error("AI Assistant Error:", aiError);
+          const friendlyError = aiError.message?.includes("API key") 
+            ? "Heart Spark AI is currently resting. Please contact the lab manager to wake it up!"
+            : "I'm having a bit of a brain fog right now. Can you try saying that again?";
+          
+          showToast(friendlyError, "error");
+          
+          const errorMsg = {
+            id: (Date.now() + 1).toString(),
+            text: `⚠️ ${friendlyError}`,
+            senderId: 'ai',
+            createdAt: Timestamp.now(),
+            read: true
+          };
+          setMessages(prev => [...prev, errorMsg as Message]);
+        }
       } else {
         await addDoc(collection(db, `sparks/${activeChat.id}/messages`), {
           text,
@@ -910,7 +940,27 @@ export function Messages() {
   const formatTime = (timestamp: any) => {
     if (!timestamp) return '';
     const date = timestamp instanceof Timestamp ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    
+    const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === date.toDateString();
+    if (isYesterday) return 'yesterday';
+    
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
+  const isUserOnline = (otherUser: any) => {
+    if (!otherUser?.isOnline) return false;
+    if (!otherUser?.lastSeen) return false;
+    
+    // If last seen is more than 5 minutes ago, consider offline (ghost status)
+    const lastSeenDate = otherUser.lastSeen instanceof Timestamp ? otherUser.lastSeen.toDate() : new Date(otherUser.lastSeen);
+    const diffInMinutes = (new Date().getTime() - lastSeenDate.getTime()) / 60000;
+    return diffInMinutes < 5;
   };
 
   if (!user) {
@@ -1090,7 +1140,7 @@ export function Messages() {
                         otherName.charAt(0).toUpperCase()
                       )}
                     </div>
-                    {otherUser?.isOnline && (
+                    {isUserOnline(otherUser) && (
                       <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#0A0A0B] rounded-full" />
                     )}
                   </div>
@@ -1184,7 +1234,7 @@ export function Messages() {
                       (activeChat.otherUser?.displayName || (activeChat.senderId === user.uid ? activeChat.receiverName : activeChat.senderName) || 'U').charAt(0).toUpperCase()
                     )}
                   </div>
-                  {activeChat.otherUser?.isOnline && (
+                  {isUserOnline(activeChat.otherUser) && (
                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-[#0A0A0B] rounded-full" />
                   )}
                 </div>
@@ -1193,7 +1243,7 @@ export function Messages() {
                     {activeChat.otherUser?.displayName || (activeChat.senderId === user.uid ? activeChat.receiverName : activeChat.senderName) || 'Unknown'}
                   </h2>
                   <div className="flex items-center gap-1.5">
-                    {activeChat.otherUser?.isOnline ? (
+                    {isUserOnline(activeChat.otherUser) ? (
                       <>
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                         <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest">
