@@ -50,8 +50,6 @@ import {
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { GoogleGenAI } from "@google/genai";
 
-const AI_CHAT_ID = 'ai-assistant';
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 import { db, storage } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
@@ -61,6 +59,19 @@ import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 import { Skeleton } from '../components/Skeleton';
 import { Card } from '../components/Card';
+
+const AI_CHAT_ID = 'ai-assistant';
+let aiInstance: any = null;
+const getAI = () => {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not set. Please ensure it is configured in your environment.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 interface Message {
   id: string;
@@ -177,29 +188,6 @@ const ReactionPicker = ({ onSelect, onCancel }: { onSelect: (emoji: string) => v
 export function Messages() {
   const { user, userData, showToast, login } = useAuth();
   const navigate = useNavigate();
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[calc(100dvh-64px)] p-4 text-center space-y-6">
-        <div className="w-20 h-20 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
-          <Lock className="w-10 h-10 text-pink-500" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">Access Restricted</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-            You need to be signed in to view your messages and sparks.
-          </p>
-        </div>
-        <Button 
-          variant="custom"
-          onClick={login}
-          className="px-8 h-14 bg-pink-500 text-white font-black uppercase tracking-widest rounded-2xl"
-        >
-          Sign In to Continue
-        </Button>
-      </div>
-    );
-  }
 
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
@@ -731,7 +719,7 @@ export function Messages() {
           parts: [{ text: m.text }],
         }));
 
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
           model: "gemini-3-flash-preview",
           contents: [...history, { role: "user", parts: [{ text }] }],
         });
@@ -927,12 +915,23 @@ export function Messages() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
-        <div className="w-20 h-20 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center mb-6">
-          <Zap className="w-10 h-10 text-pink-500" />
+      <div className="flex flex-col items-center justify-center h-[calc(100dvh-64px)] p-4 text-center space-y-6">
+        <div className="w-20 h-20 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
+          <Lock className="w-10 h-10 text-pink-500" />
         </div>
-        <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-2">Login to Chat</h2>
-        <p className="text-zinc-500 max-w-xs">You need to be logged in to view your messages and sparks.</p>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">Access Restricted</h2>
+          <p className="text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+            You need to be signed in to view your messages and sparks.
+          </p>
+        </div>
+        <Button 
+          variant="custom"
+          onClick={login}
+          className="px-8 h-14 bg-pink-500 text-white font-black uppercase tracking-widest rounded-2xl"
+        >
+          Sign In to Continue
+        </Button>
       </div>
     );
   }
