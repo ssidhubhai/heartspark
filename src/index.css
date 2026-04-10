@@ -14,6 +14,12 @@
   --animate-blink: blink 1s ease-in-out infinite;
   --animate-spin-slow: spin 8s linear infinite;
   --animate-marquee: marquee 25s linear infinite;
+  --animate-bounce-slow: bounce-slow 2s ease-in-out infinite;
+  
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
   
   @keyframes marquee {
     0% { transform: translateX(0); }

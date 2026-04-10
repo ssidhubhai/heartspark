@@ -103,6 +103,7 @@
         "lastMessage": { "type": "string", "description": "Content of the last message" },
         "lastMessageAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last message" },
         "ghostMode": { "type": "boolean", "description": "Whether Ghost Mode is active for this spark" },
+        "isBestFriend": { "type": "boolean", "description": "Whether this spark is marked as a best friend" },
         "createdAt": { "type": "string", "format": "date-time", "description": "When the spark was created" }
       },
       "required": ["senderId", "receiverId", "status", "createdAt"]

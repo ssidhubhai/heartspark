@@ -2,17 +2,33 @@ import { Logo } from '../components/Logo';
 import { motion } from 'motion/react';
 import { Card } from '../components/Card';
 import { Link } from 'react-router-dom';
-import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Bot, Sparkles } from 'lucide-react';
+import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Bot, Sparkles, Mic, Clock } from 'lucide-react';
 
 export function Tools() {
   const tools = [
+    {
+      title: "Signal Analyzer",
+      description: "Decode mixed signals. Analyze texts, voice notes, or chat screenshots.",
+      icon: <Sparkles className="w-6 h-6 text-indigo-500" />,
+      path: "/tools/signal-analyzer",
+      color: "bg-indigo-100 dark:bg-indigo-900/30",
+      badge: "Viral"
+    },
+    {
+      title: "Time Capsules",
+      description: "Send secret messages in chat that only unlock when the time is right.",
+      icon: <Clock className="w-6 h-6 text-cyan-500" />,
+      path: "/messages",
+      color: "bg-cyan-100 dark:bg-cyan-900/30",
+      badge: "New"
+    },
     {
       title: "Couple Story Generator",
       description: "Let Heart Spark write a short, fun romantic story starring you and your crush.",
       icon: <BookOpen className="w-6 h-6 text-pink-500" />,
       path: "/tools/story",
       color: "bg-pink-100 dark:bg-pink-900/30",
-      badge: "New"
+      badge: undefined
     },
     {
       title: "Crush Prediction",

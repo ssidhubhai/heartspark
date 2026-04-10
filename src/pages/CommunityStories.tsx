@@ -168,9 +168,10 @@ export function CommunityStories() {
   useEffect(() => {
     if (!user || !db) return;
 
-    // Listen to all sparks involving the current user to track connection statuses
-    const qSent = query(collection(db, 'sparks'), where('senderId', '==', user.uid));
-    const qReceived = query(collection(db, 'sparks'), where('receiverId', '==', user.uid));
+    // Listen to recent sparks involving the current user to track connection statuses
+    // Limited to 100 to save reads on free tier
+    const qSent = query(collection(db, 'sparks'), where('senderId', '==', user.uid), limit(100));
+    const qReceived = query(collection(db, 'sparks'), where('receiverId', '==', user.uid), limit(100));
 
     const updateStatuses = (snapshot: any) => {
       setSparkStatuses(prev => {
@@ -270,7 +271,8 @@ export function CommunityStories() {
     setLoadingComments(true);
     const q = query(
       collection(db, `community_stories/${storyId}/comments`),
-      orderBy("createdAt", "asc"),
+      orderBy("createdAt", "desc"),
+      limit(50)
     );
     const unsubscribe = onSnapshot(
       q,
@@ -281,7 +283,7 @@ export function CommunityStories() {
           ...doc.data(),
         })) as Comment[];
         
-        const filteredComments = fetchedComments.filter(c => !blockedUsers.includes(c.userId));
+        const filteredComments = fetchedComments.filter(c => !blockedUsers.includes(c.userId)).reverse();
         setComments(filteredComments);
         setLoadingComments(false);
       },
@@ -309,27 +311,27 @@ export function CommunityStories() {
         collection(db, "community_stories"),
         where("reportCount", ">", 0),
         orderBy("reportCount", "desc"),
-        limit(50),
+        limit(20),
       );
     } else {
       if (activeSort === "🏆 Top (All Time)") {
         q = query(
           collection(db, "community_stories"),
           orderBy("likes", "desc"),
-          limit(100),
+          limit(20),
         );
       } else if (activeSort === "👤 My Posts" && user?.uid) {
         q = query(
           collection(db, "community_stories"),
           where("userId", "==", user.uid),
-          limit(100),
+          limit(20),
         );
       } else {
         // For Newest and Trending, fetch newest
         q = query(
           collection(db, "community_stories"),
           orderBy("createdAt", "desc"),
-          limit(100),
+          limit(20),
         );
       }
     }

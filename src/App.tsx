@@ -24,11 +24,11 @@ const AstrologyAI = lazy(() => import('./pages/AstrologyAI').then(m => ({ defaul
 const LoveTitles = lazy(() => import('./pages/LoveTitles').then(m => ({ default: m.LoveTitles })));
 const CoupleStory = lazy(() => import('./pages/CoupleStory').then(m => ({ default: m.CoupleStory })));
 const DailyFortune = lazy(() => import('./pages/DailyFortune').then(m => ({ default: m.DailyFortune })));
-const CrushMessageAnalyzer = lazy(() => import('./pages/CrushMessageAnalyzer').then(m => ({ default: m.CrushMessageAnalyzer })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
 const CommunityStories = lazy(() => import('./pages/CommunityStories').then(m => ({ default: m.CommunityStories })));
 const Messages = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })));
 const CrushPrediction = lazy(() => import('./pages/CrushPrediction').then(m => ({ default: m.CrushPrediction })));
+const SignalAnalyzer = lazy(() => import('./pages/SignalAnalyzer').then(m => ({ default: m.SignalAnalyzer })));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
 const TermsOfService = lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
 
@@ -77,7 +77,8 @@ export default function App() {
                   <Route path="/tools/story" element={<CoupleStory />} />
                   <Route path="/tools/fortune" element={<DailyFortune />} />
                   <Route path="/tools/prediction" element={<CrushPrediction />} />
-                  <Route path="/analyzer" element={<CrushMessageAnalyzer />} />
+                  <Route path="/tools/signal-analyzer" element={<SignalAnalyzer />} />
+                  <Route path="/analyzer" element={<SignalAnalyzer />} />
                   <Route path="/profile/:uid?" element={<Profile />} />
                   <Route path="/stories" element={<CommunityStories />} />
                   <Route path="/messages" element={<Messages />} />

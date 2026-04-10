@@ -66,7 +66,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           showToast('Welcome back!');
           onClose();
         } catch (err: any) {
-          setError(err.message);
+          if (err.message === "ACCOUNT_NOT_FOUND") {
+            setError("Account not found. Please check your email or create a new account.");
+          } else {
+            setError(err.message);
+          }
         } finally {
           setLoading(false);
         }
@@ -304,15 +308,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       className="space-y-6"
                     >
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] ml-4">Email Address</label>
+                        <label className="block text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] ml-4">
+                          {isLogin ? "Email or Username" : "Email Address"}
+                        </label>
                         <div className="relative group">
                           <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-pink-500 transition-colors" />
                           <input
-                            type="email"
+                            type={isLogin ? "text" : "email"}
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full h-14 pl-14 pr-6 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 focus:border-pink-500 focus:ring-8 focus:ring-pink-500/10 outline-none text-zinc-900 dark:text-white font-bold transition-all"
-                            placeholder="you@email.com"
+                            placeholder={isLogin ? "you@email.com or username" : "you@email.com"}
                             required
                           />
                         </div>
@@ -380,39 +386,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     </motion.div>
                   )}
 
-                  {step === 3 && !isLogin && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-6 text-center"
-                    >
-                      <div className="w-20 h-20 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <ShieldCheck className="w-10 h-10 text-pink-500" />
-                      </div>
-                      <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
-                        We've sent a verification link to <span className="font-bold text-zinc-900 dark:text-white">{email}</span>. 
-                        Please check your inbox (and spam folder) to continue.
-                      </p>
-                      <div className="flex flex-col gap-3">
-                        <Button 
-                          type="button"
-                          onClick={checkVerification}
-                          className="w-full h-14 bg-pink-500 text-white font-bold rounded-2xl"
-                        >
-                          I've Verified My Email
-                        </Button>
-                        <button 
-                          type="button"
-                          onClick={() => setStep(1)}
-                          className="text-xs font-bold text-zinc-500 hover:text-pink-500 transition-colors"
-                        >
-                          Change Email Address
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-
                   {step === 2 && !isLogin && (
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
@@ -459,6 +432,49 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         {usernameError && (
                           <p className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-widest">{usernameError}</p>
                         )}
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="text-xs font-bold text-zinc-500 hover:text-pink-500 transition-colors flex items-center gap-2 ml-4"
+                      >
+                        <ArrowRight className="w-3 h-3 rotate-180" />
+                        Back to Email
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {step === 3 && !isLogin && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6 text-center"
+                    >
+                      <div className="w-20 h-20 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <ShieldCheck className="w-10 h-10 text-pink-500" />
+                      </div>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
+                        We've sent a verification link to <span className="font-bold text-zinc-900 dark:text-white">{email}</span>. 
+                        Please check your inbox (and spam folder) to continue.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <Button 
+                          type="button"
+                          onClick={checkVerification}
+                          className="w-full h-14 bg-pink-500 text-white font-bold rounded-2xl"
+                        >
+                          I've Verified My Email
+                        </Button>
+                        <button 
+                          type="button"
+                          onClick={() => setStep(2)}
+                          className="text-xs font-bold text-zinc-500 hover:text-pink-500 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <ArrowRight className="w-3 h-3 rotate-180" />
+                          Edit Profile Details
+                        </button>
                       </div>
                     </motion.div>
                   )}
@@ -513,7 +529,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   Continue with Google
                 </button>
 
-                <div className="mt-8 text-center">
+                <div className="mt-12 text-center flex flex-col items-center gap-4">
+                  <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">
+                    {isForgotPassword ? "Remember your password?" : (isLogin ? "New to the laboratory?" : "Already a member?")}
+                  </p>
                   <button
                     type="button"
                     onClick={() => {
@@ -523,11 +542,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       setError('');
                       setSuccessMsg('');
                     }}
-                    className="text-xs font-bold text-zinc-500 hover:text-pink-500 transition-colors"
+                    className="px-8 py-3 rounded-xl border-2 border-zinc-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-white hover:border-pink-500 hover:text-pink-500 transition-all"
                   >
                     {isForgotPassword 
                       ? "Back to Sign In" 
-                      : (isLogin ? "Don't have an account? Join the lab" : "Already have an account? Sign in")}
+                      : (isLogin ? "Join the lab" : "Sign in to account")}
                   </button>
                 </div>
               </div>

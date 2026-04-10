@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { updateProfile } from 'firebase/auth';
-import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, arrayRemove, limit, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, arrayRemove, limit, addDoc, serverTimestamp, writeBatch, getAggregateFromServer, count, sum } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { auth, db, storage } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
 import { generateContentWithFallback } from '../utils/ai';
@@ -35,9 +36,33 @@ import {
 } from 'lucide-react';
 
 export function Profile() {
-  const { user, isConfigured, showToast, requestAccountDeletion, cancelAccountDeletion, userData } = useAuth();
+  const { user, isConfigured, showToast, requestAccountDeletion, cancelAccountDeletion, userData, loading: authLoading, login } = useAuth();
   const { uid } = useParams();
   const navigate = useNavigate();
+
+  if (!uid && !user && !authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100dvh-64px)] p-4 text-center space-y-6">
+        <div className="w-20 h-20 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
+          <User className="w-10 h-10 text-pink-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">Your Profile</h2>
+          <p className="text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+            Sign in to view your profile, manage your sparks, and customize your experience.
+          </p>
+        </div>
+        <Button 
+          variant="custom"
+          onClick={login}
+          className="px-8 h-14 bg-pink-500 text-white font-black uppercase tracking-widest rounded-2xl"
+        >
+          Sign In to View Profile
+        </Button>
+      </div>
+    );
+  }
+
   const [targetUid, setTargetUid] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -249,13 +274,15 @@ export function Profile() {
       if (!targetUid || !db) return;
       try {
         const q = query(collection(db, 'community_stories'), where('userId', '==', targetUid));
-        const querySnapshot = await getDocs(q);
-        const storiesCount = querySnapshot.size;
-        let totalSparks = 0;
-        querySnapshot.forEach((doc) => {
-          totalSparks += (doc.data().likes || 0);
+        const snapshot = await getAggregateFromServer(q, {
+          storiesCount: count(),
+          totalSparks: sum('likes')
         });
-        setStats({ stories: storiesCount, sparks: totalSparks });
+        
+        setStats({ 
+          stories: snapshot.data().storiesCount, 
+          sparks: snapshot.data().totalSparks 
+        });
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
@@ -280,7 +307,8 @@ export function Profile() {
     if (activeTab === 'SPARKS') {
       const q = query(
         collection(db, 'sparks'),
-        where(sparkType === 'received' ? 'receiverId' : 'senderId', '==', targetUid)
+        where(sparkType === 'received' ? 'receiverId' : 'senderId', '==', targetUid),
+        limit(50)
       );
       
       unsubscribe = onSnapshot(q, (snapshot) => {
@@ -303,12 +331,14 @@ export function Profile() {
       if (activeTab === 'POSTS') {
         q = query(
           collection(db, 'community_stories'), 
-          where('userId', '==', targetUid)
+          where('userId', '==', targetUid),
+          limit(50)
         );
       } else if (activeTab === 'LIKED') {
         q = query(
           collection(db, 'community_stories'), 
-          where('likedBy', 'array-contains', targetUid)
+          where('likedBy', 'array-contains', targetUid),
+          limit(50)
         );
       } else {
         setStories([]);
@@ -337,11 +367,11 @@ export function Profile() {
     if (targetUid === user?.uid) {
       const pendingQ = query(
         collection(db, 'sparks'),
-        where('receiverId', '==', targetUid),
-        where('status', '==', 'pending')
+        where('receiverId', '==', targetUid)
       );
       const unsubscribePending = onSnapshot(pendingQ, (snapshot) => {
-        setPendingSparksCount(snapshot.size);
+        const pendingCount = snapshot.docs.filter(doc => doc.data().status === 'pending').length;
+        setPendingSparksCount(pendingCount);
       });
 
       return () => {
@@ -539,17 +569,24 @@ export function Profile() {
     if (!auth?.currentUser || !avatarUrl.trim()) return;
     setUpdatingAvatar(true);
     try {
-      // Skip updateProfile for photoURL if it's a base64 string because Firebase Auth has a strict length limit (~2048 chars).
-      // We rely on Firestore to store the avatar.
-      if (!avatarUrl.startsWith('data:image')) {
-         await updateProfile(auth.currentUser, { photoURL: avatarUrl.trim() });
+      let finalAvatarUrl = avatarUrl.trim();
+
+      // If it's a base64 string, upload it to Firebase Storage
+      if (finalAvatarUrl.startsWith('data:image')) {
+        const storageRef = ref(storage, `avatars/${auth.currentUser.uid}_${Date.now()}.jpg`);
+        await uploadString(storageRef, finalAvatarUrl, 'data_url');
+        finalAvatarUrl = await getDownloadURL(storageRef);
       }
+
+      // Now we can safely update Firebase Auth because it's a short URL
+      await updateProfile(auth.currentUser, { photoURL: finalAvatarUrl });
       
       await setDoc(doc(db, 'users', auth.currentUser.uid), {
-        photoURL: avatarUrl.trim(),
+        photoURL: finalAvatarUrl,
         updatedAt: new Date()
       }, { merge: true });
-      setCurrentPhotoURL(avatarUrl.trim());
+      
+      setCurrentPhotoURL(finalAvatarUrl);
       setShowAvatarModal(false);
       showToast('Avatar updated successfully!');
     } catch (error) {

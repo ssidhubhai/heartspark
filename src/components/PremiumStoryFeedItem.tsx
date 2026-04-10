@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Edit2, Trash2, Send, CornerDownRight, Loader2, X, Zap, Flag } from 'lucide-react';
-import { Timestamp, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, increment, deleteDoc, getDoc, where, arrayUnion } from 'firebase/firestore';
+import { Timestamp, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, increment, deleteDoc, getDoc, where, arrayUnion, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
@@ -75,46 +75,67 @@ export function PremiumStoryFeedItem({ story: initialStory, onLike, onComment, o
   const [checkingCompatibility, setCheckingCompatibility] = useState(false);
 
   useEffect(() => {
-    if (!user || !db || !story.id) return;
+    if (!user || !db || !story.id || user.uid === story.userId) return;
     
-    // Check for spark on THIS story
-    const qStory = query(
-      collection(db, "sparks"),
-      where("senderId", "==", user.uid),
-      where("storyId", "==", story.id)
-    );
-    const unsubStory = onSnapshot(qStory, (snapshot) => {
-      setHasSparked(!snapshot.empty);
-    });
+    let isMounted = true;
 
-    // Check for general connection status between these users
-    const qFriend = query(
-      collection(db, "sparks"),
-      where("senderId", "in", [user.uid, story.userId]),
-      where("receiverId", "in", [user.uid, story.userId])
-    );
-    const unsubFriend = onSnapshot(qFriend, (snapshot) => {
-      if (snapshot.empty) {
-        setSparkStatus('none');
-      } else {
-        const sparks = snapshot.docs.map(doc => doc.data());
-        const accepted = sparks.find(s => s.status === 'accepted');
-        if (accepted) {
-          setSparkStatus('accepted');
+    const checkSparkStatus = async () => {
+      try {
+        // Check for spark on THIS story
+        const qStory = query(
+          collection(db, "sparks"),
+          where("senderId", "==", user.uid),
+          where("storyId", "==", story.id),
+          limit(1)
+        );
+        const storySnap = await getDocs(qStory);
+        if (isMounted) setHasSparked(!storySnap.empty);
+
+        // Check for general connection status (sender = me, receiver = them)
+        const qFriend1 = query(
+          collection(db, "sparks"),
+          where("senderId", "==", user.uid),
+          where("receiverId", "==", story.userId),
+          limit(1)
+        );
+        // Check for general connection status (sender = them, receiver = me)
+        const qFriend2 = query(
+          collection(db, "sparks"),
+          where("senderId", "==", story.userId),
+          where("receiverId", "==", user.uid),
+          limit(1)
+        );
+
+        const [snap1, snap2] = await Promise.all([getDocs(qFriend1), getDocs(qFriend2)]);
+        
+        if (!isMounted) return;
+
+        const sparks = [...snap1.docs.map(d => d.data()), ...snap2.docs.map(d => d.data())];
+        
+        if (sparks.length === 0) {
+          setSparkStatus('none');
         } else {
-          const pending = sparks.find(s => s.status === 'pending');
-          if (pending) {
-            setSparkStatus('pending');
+          const accepted = sparks.find(s => s.status === 'accepted');
+          if (accepted) {
+            setSparkStatus('accepted');
           } else {
-            setSparkStatus('none');
+            const pending = sparks.find(s => s.status === 'pending');
+            if (pending) {
+              setSparkStatus('pending');
+            } else {
+              setSparkStatus('none');
+            }
           }
         }
+      } catch (error) {
+        console.error("Error checking spark status:", error);
       }
-    });
+    };
+
+    checkSparkStatus();
 
     return () => {
-      unsubStory();
-      unsubFriend();
+      isMounted = false;
     };
   }, [user?.uid, story.id, story.userId]);
 
@@ -245,14 +266,15 @@ export function PremiumStoryFeedItem({ story: initialStory, onLike, onComment, o
       setLoadingComments(true);
       const q = query(
         collection(db, `community_stories/${story.id}/comments`),
-        orderBy('createdAt', 'asc')
+        orderBy('createdAt', 'desc'),
+        limit(50)
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedComments = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Comment[];
-        setComments(fetchedComments);
+        setComments(fetchedComments.reverse());
         setLoadingComments(false);
       });
       return () => unsubscribe();

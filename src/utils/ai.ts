@@ -4,28 +4,37 @@ import { GoogleGenAI, GenerateContentParameters, HarmCategory, HarmBlockThreshol
 const getApiKeys = (): string[] => {
   const keys: string[] = [];
   
-  // Check for comma-separated keys
-  const keysString = (import.meta as any).env.VITE_GEMINI_API_KEYS || process.env.GEMINI_API_KEYS;
-  if (keysString) {
-    keys.push(...keysString.split(',').map((k: string) => k.trim()).filter(Boolean));
+  // Check for single key (Primary source)
+  // In Vite, process.env.GEMINI_API_KEY is replaced by a string literal via vite.config.ts
+  try {
+    const singleKey = process.env.GEMINI_API_KEY;
+    if (singleKey) keys.push(singleKey);
+  } catch (e) {
+    // process might not be defined in some environments
   }
 
-  // Check for single key
-  const singleKey = (import.meta as any).env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-  if (singleKey && !keys.includes(singleKey)) {
-    keys.push(singleKey);
+  // Check for VITE_ prefixed key
+  const viteKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+  if (viteKey && !keys.push(viteKey)) {
+    keys.push(viteKey);
   }
 
-  // Check for numbered keys (e.g., VITE_GEMINI_API_KEY_1, VITE_GEMINI_API_KEY_2)
-  for (let i = 1; i <= 10; i++) {
-    const key = (import.meta as any).env[`VITE_GEMINI_API_KEY_${i}`] || process.env[`GEMINI_API_KEY_${i}`];
-    if (key && !keys.includes(key)) {
-      keys.push(key);
+  // Check for comma-separated keys if they exist
+  try {
+    const keysString = (import.meta as any).env.VITE_GEMINI_API_KEYS || (process.env as any).GEMINI_API_KEYS;
+    if (keysString && typeof keysString === 'string') {
+      keys.push(...keysString.split(',').map((k: string) => k.trim()).filter(Boolean));
     }
-  }
+  } catch (e) {}
 
   // Filter out placeholders and duplicates
-  return Array.from(new Set(keys)).filter(k => k && k !== "MY_GEMINI_API_KEY" && k !== "YOUR_GEMINI_API_KEY" && !k.startsWith("REPLACE_WITH"));
+  return Array.from(new Set(keys)).filter(k => 
+    k && 
+    typeof k === 'string' &&
+    k !== "MY_GEMINI_API_KEY" && 
+    k !== "YOUR_GEMINI_API_KEY" && 
+    !k.startsWith("REPLACE_WITH")
+  );
 };
 
 let currentKeyIndex = 0;
@@ -34,7 +43,7 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
   const keys = getApiKeys();
   
   if (keys.length === 0) {
-    throw new Error("No Gemini API keys found. Please set VITE_GEMINI_API_KEY in your .env file.");
+    throw new Error("Gemini API key not found. Please ensure GEMINI_API_KEY is set in your environment or .env file.");
   }
 
   let lastError: any;
@@ -85,8 +94,8 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
         // If the primary model is overloaded (503), try the fallback model
         const errorMessage = modelError?.message?.toLowerCase() || '';
         if (errorMessage.includes('503') || errorMessage.includes('unavailable') || errorMessage.includes('high demand')) {
-          console.warn(`[Gemini API] Primary model overloaded on Key #${keyIndex + 1}, trying fallback model gemini-2.5-flash...`);
-          const fallbackParams = { ...params, model: 'gemini-2.5-flash' };
+          console.warn(`[Gemini API] Primary model overloaded on Key #${keyIndex + 1}, trying fallback model gemini-3-flash-preview...`);
+          const fallbackParams = { ...params, model: 'gemini-3-flash-preview' };
           const fallbackResponse = await ai.models.generateContent(fallbackParams);
           currentKeyIndex = (keyIndex + 1) % keys.length;
           return fallbackResponse;
@@ -95,7 +104,7 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
       }
     } catch (error: any) {
       const errorStr = error?.message || String(error);
-      console.warn(`[Gemini API] Key #${keyIndex + 1} (${maskedKey}) failed:`, errorStr);
+      console.warn(`[Gemini API] Key #${keyIndex + 1} failed:`, errorStr);
       lastError = error;
       
       // If it's a 429 (Too Many Requests), 403 (Quota Exceeded), or internal retry failure, try the next key
@@ -159,7 +168,7 @@ export const generateContentStreamWithFallback = async function* (params: Genera
   const keys = getApiKeys();
   
   if (keys.length === 0) {
-    throw new Error("No Gemini API keys found. Please set VITE_GEMINI_API_KEY in your .env file.");
+    throw new Error("Gemini API key not found. Please ensure GEMINI_API_KEY is set in your environment or .env file.");
   }
 
   let lastError: any;
@@ -210,8 +219,8 @@ export const generateContentStreamWithFallback = async function* (params: Genera
       } catch (modelError: any) {
         const errorMessage = modelError?.message?.toLowerCase() || '';
         if (errorMessage.includes('503') || errorMessage.includes('unavailable') || errorMessage.includes('high demand')) {
-          console.warn(`[Gemini API Stream] Primary model overloaded on Key #${keyIndex + 1}, trying fallback model gemini-2.5-flash...`);
-          const fallbackParams = { ...params, model: 'gemini-2.5-flash' };
+          console.warn(`[Gemini API Stream] Primary model overloaded on Key #${keyIndex + 1}, trying fallback model gemini-3-flash-preview...`);
+          const fallbackParams = { ...params, model: 'gemini-3-flash-preview' };
           const fallbackStream = await ai.models.generateContentStream(fallbackParams);
           currentKeyIndex = (keyIndex + 1) % keys.length;
           for await (const chunk of fallbackStream) {
@@ -223,7 +232,7 @@ export const generateContentStreamWithFallback = async function* (params: Genera
       }
     } catch (error: any) {
       const errorStr = error?.message || String(error);
-      console.warn(`[Gemini API Stream] Key #${keyIndex + 1} (${maskedKey}) failed:`, errorStr);
+      console.warn(`[Gemini API Stream] Key #${keyIndex + 1} failed:`, errorStr);
       lastError = error;
       
       const errorMessage = errorStr.toLowerCase();

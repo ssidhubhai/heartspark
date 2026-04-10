@@ -52,7 +52,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className={cn(
       "flex flex-col font-sans relative overflow-hidden transition-colors duration-300",
       theme === 'dark' ? "bg-[#050505] text-white" : "bg-[#FFFBFC] text-zinc-900",
-      (location.pathname === '/love-gpt' || location.pathname === '/astrology') ? "h-[100dvh]" : "min-h-screen"
+      (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname.startsWith('/messages')) ? "h-[100dvh]" : "min-h-screen"
     )}>
       {/* Background Effects */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -401,9 +401,9 @@ export function Layout({ children }: { children: ReactNode }) {
          location.pathname.startsWith('/love-gpt') || 
          location.pathname.startsWith('/astrology') || 
          location.pathname.startsWith('/tools')) ? "pb-0 md:pb-0" : "pb-32 md:pb-0",
-        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/messages') ? "flex-1 overflow-hidden" : "flex-grow",
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname.startsWith('/messages')) ? "flex-1 overflow-hidden h-[calc(100dvh-64px)] flex flex-col" : "flex-grow",
         location.pathname === '/' ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : 
-        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories' || location.pathname === '/messages') ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories' || location.pathname.startsWith('/messages')) ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
       )}>
         <AnimatePresence mode="wait">
           <motion.div
@@ -412,7 +412,7 @@ export function Layout({ children }: { children: ReactNode }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="h-full"
+            className={cn("h-full", location.pathname.startsWith('/messages') && "flex-1 flex flex-col min-h-0")}
           >
             {children}
           </motion.div>

@@ -46,8 +46,9 @@ export function PrivacyPolicy() {
             </p>
             <ul className="list-disc pl-6 space-y-3 text-lg">
               <li><strong className="text-zinc-900 dark:text-white">Account Information:</strong> If you create an account via Google or Email, we collect your email address, name, and profile picture provided by the authentication service.</li>
+              <li><strong className="text-zinc-900 dark:text-white">Messaging Data:</strong> Messages, reactions, and Time Capsules are securely stored to enable real-time communication between users.</li>
+              <li><strong className="text-zinc-900 dark:text-white">AI Interactions:</strong> Conversations with the Heart Spark AI assistant are processed to provide helpful responses. We do not use these conversations for advertising.</li>
               <li><strong className="text-zinc-900 dark:text-white">Usage Data:</strong> We collect anonymous analytics data regarding how you interact with our tools to improve user experience.</li>
-              <li><strong className="text-zinc-900 dark:text-white">User-Generated Content:</strong> Stories, comments, and reactions posted to the Community Stories board are stored in our database.</li>
             </ul>
           </section>
 

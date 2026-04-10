@@ -12,12 +12,10 @@ export function MobileBottomNav() {
 
   // Check if we are on a route where the nav should be completely hidden
   const isHiddenRoute = 
-    location.pathname.startsWith('/profile') || 
     location.pathname.startsWith('/analyzer') || 
     location.pathname.startsWith('/love-gpt') || 
     location.pathname.startsWith('/astrology') || 
-    location.pathname.startsWith('/messages') || 
-    location.pathname.startsWith('/tools');
+    (location.pathname.startsWith('/tools/') && location.pathname !== '/tools');
 
   // Check if we are on a route where the nav should auto-hide on scroll
   const isAutoHideRoute = 

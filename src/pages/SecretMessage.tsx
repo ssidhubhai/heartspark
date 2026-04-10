@@ -17,9 +17,26 @@ export function SecretMessage() {
   const [vibe, setVibe] = useState('sweet');
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [history, setHistory] = useState<string[]>([]);
+
+  const loadingMessages = [
+    "Mixing emotions...",
+    "Adding a dash of charm...",
+    "Whispering to the stars...",
+    "Consulting the love lab...",
+    "Polishing the words...",
+    "Sealing with a spark..."
+  ];
 
   const generateMessage = async () => {
     setIsGenerating(true);
+    setLoadingStep(0);
+    
+    const interval = setInterval(() => {
+      setLoadingStep(prev => (prev + 1) % loadingMessages.length);
+    }, 800);
+
     try {
       const prompt = `You are Heart Spark, a creative and romantic message generator.
       Generate a short, anonymous secret message to send to a crush. 
@@ -32,12 +49,15 @@ export function SecretMessage() {
         contents: prompt
       });
       const result = response.text || "You've been on my mind a lot lately.";
-      setMessage(result.replace(/["']/g, '').trim());
+      const cleanedMessage = result.replace(/["']/g, '').trim();
+      setMessage(cleanedMessage);
+      setHistory(prev => [cleanedMessage, ...prev].slice(0, 5));
       setCopied(false);
     } catch (error) {
       console.error("Failed to generate message:", error);
       setMessage("You've been on my mind a lot lately.");
     } finally {
+      clearInterval(interval);
       setIsGenerating(false);
     }
   };
@@ -99,10 +119,23 @@ export function SecretMessage() {
           >
             {isGenerating ? (
               <span className="flex items-center gap-2">
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                <motion.div 
+                  animate={{ rotate: 360 }} 
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                >
                   <Sparkles className="w-5 h-5" />
                 </motion.div>
-                ✨ Crafting message...
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={loadingStep}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="font-bold"
+                  >
+                    {loadingMessages[loadingStep]}
+                  </motion.span>
+                </AnimatePresence>
               </span>
             ) : (
               <span className="flex items-center gap-2">
@@ -133,19 +166,46 @@ export function SecretMessage() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-pink-100 dark:border-zinc-800" data-html2canvas-ignore>
-              <Button onClick={copyToClipboard} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none" variant={copied ? "secondary" : "custom"}>
+              <Button onClick={copyToClipboard} className="flex-1 min-w-[140px] bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white border-none h-12 rounded-xl font-bold" variant="custom">
                 <Copy className="w-5 h-5 mr-2" /> {copied ? "Copied!" : "Copy Text"}
               </Button>
-              <Button variant="custom" onClick={handleShare} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none">
+              <Button variant="custom" onClick={handleShare} className="flex-1 min-w-[140px] bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none h-12 rounded-xl font-bold shadow-lg shadow-pink-500/20">
                 <Send className="w-5 h-5 mr-2" /> Share Image
               </Button>
-              <Button variant="outline" onClick={handleDownload} className="flex-1 min-w-[140px] border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/30">
+              <Button variant="custom" onClick={handleDownload} className="flex-1 min-w-[140px] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-none h-12 rounded-xl font-bold">
                 <Download className="w-5 h-5 mr-2" /> Download
               </Button>
             </div>
           </Card>
         </motion.div>
       </AnimatePresence>
+
+      {history.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest text-center">Recent Generations</h3>
+          <div className="space-y-2">
+            {history.map((h, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-sm rounded-xl border border-pink-100/50 dark:border-pink-900/20 flex items-center justify-between gap-4 group"
+              >
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate italic">"{h}"</p>
+                <button 
+                  onClick={() => {
+                    setMessage(h);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="shrink-0 p-2 text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="text-center text-sm text-zinc-500 dark:text-zinc-400 mt-8 bg-white/50 dark:bg-zinc-900/50 p-4 rounded-xl border border-pink-100 dark:border-pink-900/30">
         <p>💡 <strong>Tip:</strong> Send this anonymously using NGL, Tellonym, or just text it from an unknown number!</p>

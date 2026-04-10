@@ -653,6 +653,8 @@ export function Home() {
           </div>
         </Card>
       </section>
+
+
     </div>
   );
 }

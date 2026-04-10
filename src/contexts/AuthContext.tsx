@@ -4,13 +4,13 @@ import { auth, logout, db, requestNotificationPermission } from '../lib/firebase
 import { AuthModal } from '../components/AuthModal';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, writeBatch } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 interface Toast {
   id: string;
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info';
 }
 
 interface AuthContextType {
@@ -20,7 +20,7 @@ interface AuthContextType {
   login: () => void;
   logout: () => Promise<void>;
   isConfigured: boolean;
-  showToast: (message: string, type?: 'success' | 'error') => void;
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   refreshUserData: () => Promise<void>;
   requestAccountDeletion: () => Promise<void>;
   cancelAccountDeletion: () => Promise<void>;
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [toasts, setToasts] = useState<Toast[]>([]);
   const isConfigured = !!auth;
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -69,6 +69,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    const handleOpenModal = () => setIsModalOpen(true);
+    window.addEventListener('open-auth-modal', handleOpenModal);
+    return () => window.removeEventListener('open-auth-modal', handleOpenModal);
+  }, []);
+
+  useEffect(() => {
     if (!auth) {
       setLoading(false);
       return;
@@ -84,54 +90,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Sync user profile to Firestore
           const userDocRef = doc(db, 'users', currentUser.uid);
+          const privateDocRef = doc(db, 'users', currentUser.uid, 'private', 'settings');
           
+          let currentPublicData: any = null;
+          let currentPrivateData: any = null;
+
+          const updateCombinedUserData = () => {
+            if (currentPublicData && currentPrivateData) {
+              setUserData({ ...currentPublicData, ...currentPrivateData });
+            }
+          };
+
+          // Set up real-time listener for private data (rarely changes)
+          const unsubPrivateData = onSnapshot(privateDocRef, async (privateSnap) => {
+            currentPrivateData = privateSnap.exists() ? privateSnap.data() : {};
+            
+            // Handle account deletion cancellation
+            if (currentPrivateData.deletionRequestedAt) {
+              const requestedAt = currentPrivateData.deletionRequestedAt.toDate();
+              const now = new Date();
+              const daysDiff = (now.getTime() - requestedAt.getTime()) / (1000 * 60 * 60 * 24);
+              
+              if (daysDiff < 30) {
+                // Cancel deletion if logged in within 30 days
+                await updateDoc(privateDocRef, {
+                  deletionRequestedAt: null
+                });
+                showToast("Welcome back! Your account deletion request has been cancelled.", "success");
+              } else {
+                // Account should be deleted.
+                // Perform cleanup
+                try {
+                  const batch = writeBatch(db);
+                  if (currentPublicData?.username) {
+                    batch.delete(doc(db, 'usernames', currentPublicData.username));
+                  }
+                  batch.delete(privateDocRef);
+                  batch.delete(userDocRef);
+                  await batch.commit();
+                } catch (e) {
+                  console.error("Cleanup error:", e);
+                }
+                
+                await logout();
+                showToast("This account has been permanently deleted.", "error");
+                return;
+              }
+            }
+
+            // Request notification permission and save token
+            const token = await requestNotificationPermission();
+            if (token && token !== currentPrivateData.fcmToken) {
+              await updateDoc(privateDocRef, { fcmToken: token });
+            }
+
+            updateCombinedUserData();
+          });
+
           // Set up real-time listener for user data
           const unsubUserData = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
               const publicData = docSnap.data();
+              currentPublicData = publicData;
               
-              // Fetch private data
-              const privateDocRef = doc(db, 'users', currentUser.uid, 'private', 'settings');
-              const privateSnap = await getDoc(privateDocRef);
-              const privateData = privateSnap.exists() ? privateSnap.data() : {};
-
-              // Handle account deletion cancellation
-              if (privateData.deletionRequestedAt) {
-                const requestedAt = privateData.deletionRequestedAt.toDate();
-                const now = new Date();
-                const daysDiff = (now.getTime() - requestedAt.getTime()) / (1000 * 60 * 60 * 24);
-                
-                if (daysDiff < 30) {
-                  // Cancel deletion if logged in within 30 days
-                  await updateDoc(privateDocRef, {
-                    deletionRequestedAt: null
-                  });
-                  showToast("Welcome back! Your account deletion request has been cancelled.", "success");
-                } else {
-                  // Account should be deleted.
-                  // Perform cleanup
-                  try {
-                    const batch = writeBatch(db);
-                    batch.delete(doc(db, 'usernames', publicData.username));
-                    batch.delete(privateDocRef);
-                    batch.delete(userDocRef);
-                    await batch.commit();
-                  } catch (e) {
-                    console.error("Cleanup error:", e);
-                  }
-                  
-                  await logout();
-                  showToast("This account has been permanently deleted.", "error");
-                  return;
-                }
-              }
-
-              // Request notification permission and save token
-              const token = await requestNotificationPermission();
-              if (token && token !== privateData.fcmToken) {
-                await updateDoc(privateDocRef, { fcmToken: token });
-              }
-
               // Update online status and last seen
               if (!publicData.isOnline) {
                 await updateDoc(userDocRef, {
@@ -148,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                  await updateDoc(userDocRef, { photoURL: currentUser.photoURL });
               }
               
-              setUserData({ ...publicData, ...privateData });
+              updateCombinedUserData();
             } else {
               // Create new user if doesn't exist
               const baseUsername = (currentUser.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -187,9 +208,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           });
 
-          // Update online status
+          // Update online status with throttling and state check
+          let lastPresenceUpdate = 0;
+          let lastOnlineState: boolean | null = null;
+
           const updatePresence = async (online: boolean) => {
+            const now = Date.now();
+            // Only update if state changed OR it's been more than 5 minutes
+            if (online === lastOnlineState && now - lastPresenceUpdate < 300000) return;
+            
             try {
+              lastPresenceUpdate = now;
+              lastOnlineState = online;
               await updateDoc(userDocRef, {
                 isOnline: online,
                 lastSeen: serverTimestamp()
@@ -211,10 +241,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
 
           document.addEventListener('visibilitychange', handleVisibilityChange);
+          
+          // Periodic ping (reduced to every 5 minutes to save Firestore writes)
+          const pingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+              updatePresence(true);
+            }
+          }, 300000);
 
           return () => {
             unsubUserData();
+            unsubPrivateData();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            clearInterval(pingInterval);
             updatePresence(false);
           };
         }
@@ -301,12 +340,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
               className={cn(
                 "pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl min-w-[300px]",
-                toast.type === 'success' 
-                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" 
-                  : "bg-red-500/10 border-red-500/20 text-red-500"
+                toast.type === 'success' && "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
+                toast.type === 'error' && "bg-red-500/10 border-red-500/20 text-red-500",
+                toast.type === 'info' && "bg-blue-500/10 border-blue-500/20 text-blue-500"
               )}
             >
-              {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : 
+               toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> :
+               <ShieldCheck className="w-5 h-5" />}
               <p className="text-sm font-black uppercase tracking-widest flex-1">{toast.message}</p>
               <button 
                 onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
