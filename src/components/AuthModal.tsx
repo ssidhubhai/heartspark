@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Mail, Lock, User, AlertCircle, Eye, EyeOff, CheckCircle2, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from './Button';
-import { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword } from '../lib/firebase';
+import { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword, getFriendlyErrorMessage } from '../lib/firebase';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Logo } from './Logo';
 import { cn } from '../utils/cn';
@@ -72,7 +72,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             setStep(1);
             setError("We couldn't find an account with that email. Let's create one for you!");
           } else {
-            setError(err.message);
+            setError(getFriendlyErrorMessage(err));
           }
         } finally {
           setLoading(false);
@@ -101,7 +101,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           setError("This email is already registered. Try signing in instead!");
           // Optionally provide a button to switch to login
         } else {
-          setError(err.message);
+          setError(getFriendlyErrorMessage(err));
         }
       } finally {
         setLoading(false);
@@ -140,7 +140,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           await resetPassword(email);
           setSuccessMsg('Password reset link sent to your email.');
         } catch (err: any) {
-          setError(err.message);
+          setError(getFriendlyErrorMessage(err));
         } finally {
           setLoading(false);
         }
@@ -167,7 +167,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection or disable ad blockers.');
       } else {
-        setError(err.message || 'Failed to login with Google.');
+        setError(getFriendlyErrorMessage(err));
       }
     } finally {
       setLoading(false);
@@ -252,7 +252,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </button>
 
             <div className="p-8 sm:p-12">
-              <div className="flex flex-col items-center text-center mb-10">
+              <div className="flex flex-col items-center text-center mb-8">
                 <Logo size="lg" className="mb-6" />
                 <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-2 uppercase tracking-tight">
                   {isForgotPassword ? 'Reset Password' : (isLogin ? 'Welcome Back' : (step === 1 ? 'Join The Lab' : step === 2 ? 'Complete Profile' : 'Verify Email'))}
@@ -263,6 +263,32 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     : (isLogin ? 'Sign in to access your digital destiny.' : (step === 1 ? 'Start your journey with us today.' : step === 2 ? 'Tell us a bit more about yourself.' : `We've sent a link to ${email}`)) }
                 </p>
               </div>
+
+              {/* Tab Switcher */}
+              {!isForgotPassword && step === 1 && (
+                <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl mb-8">
+                  <button
+                    type="button"
+                    onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }}
+                    className={cn(
+                      "flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl transition-all",
+                      isLogin ? "bg-white dark:bg-zinc-900 text-pink-500 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    )}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}
+                    className={cn(
+                      "flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl transition-all",
+                      !isLogin ? "bg-white dark:bg-zinc-900 text-pink-500 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    )}
+                  >
+                    Create Account
+                  </button>
+                </div>
+              )}
 
               {/* Step Indicator */}
               {!isLogin && !isForgotPassword && (
@@ -515,18 +541,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </form>
 
 
-              <div className="mt-10">
-                <div className="relative flex items-center justify-center mb-8">
+              <div className="mt-8">
+                <div className="relative flex items-center justify-center mb-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-zinc-100 dark:border-zinc-800"></div>
                   </div>
-                  <span className="relative px-4 bg-white dark:bg-zinc-900 text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Social Connect</span>
+                  <span className="relative px-4 bg-white dark:bg-zinc-900 text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Or continue with</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  className="w-full h-14 flex items-center justify-center gap-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all group"
+                  className="w-full h-14 flex items-center justify-center gap-4 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-pink-500/30 transition-all group"
                   disabled={loading}
                 >
                   <div className="w-6 h-6 flex items-center justify-center bg-white rounded-lg shadow-sm group-hover:scale-110 transition-transform">
@@ -549,29 +575,24 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       />
                     </svg>
                   </div>
-                  Continue with Google
+                  Google
                 </button>
 
-                <div className="mt-12 text-center flex flex-col items-center gap-4">
-                  <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">
-                    {isForgotPassword ? "Remember your password?" : (isLogin ? "New to the laboratory?" : "Already a member?")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      setIsForgotPassword(false);
-                      setStep(1);
-                      setError('');
-                      setSuccessMsg('');
-                    }}
-                    className="px-8 py-3 rounded-xl border-2 border-zinc-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-white hover:border-pink-500 hover:text-pink-500 transition-all"
-                  >
-                    {isForgotPassword 
-                      ? "Back to Sign In" 
-                      : (isLogin ? "Join the lab" : "Sign in to account")}
-                  </button>
-                </div>
+                {isForgotPassword && (
+                  <div className="mt-8 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(false);
+                        setError('');
+                        setSuccessMsg('');
+                      }}
+                      className="text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-pink-500 transition-colors"
+                    >
+                      Back to Sign In
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

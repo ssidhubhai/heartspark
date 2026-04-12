@@ -69,6 +69,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    const handleShowToast = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      showToast(customEvent.detail.message, customEvent.detail.type);
+    };
+    window.addEventListener('show-toast', handleShowToast);
+    return () => window.removeEventListener('show-toast', handleShowToast);
+  }, []);
+
+  useEffect(() => {
     const handleOpenModal = () => setIsModalOpen(true);
     window.addEventListener('open-auth-modal', handleOpenModal);
     return () => window.removeEventListener('open-auth-modal', handleOpenModal);
@@ -239,8 +248,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const now = Date.now();
               Object.keys(localStorage).forEach(k => {
                 if (k.startsWith('presence_')) {
-                  const data = JSON.parse(localStorage.getItem(k) || '{}');
-                  if (data.timestamp && now - data.timestamp > 300000) {
+                  try {
+                    const data = JSON.parse(localStorage.getItem(k) || '{}');
+                    if (data.timestamp && now - data.timestamp > 300000) {
+                      localStorage.removeItem(k);
+                    }
+                  } catch (e) {
+                    // Remove corrupted or legacy data
                     localStorage.removeItem(k);
                   }
                 }
@@ -250,8 +264,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const otherTabsVisible = Object.keys(localStorage)
                 .filter(k => k.startsWith('presence_') && k !== `presence_${tabId}`)
                 .some(k => {
-                  const data = JSON.parse(localStorage.getItem(k) || '{}');
-                  return data.state === 'visible';
+                  try {
+                    const data = JSON.parse(localStorage.getItem(k) || '{}');
+                    return data.state === 'visible';
+                  } catch (e) {
+                    return false;
+                  }
                 });
               
               if (!otherTabsVisible) {

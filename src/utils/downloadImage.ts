@@ -1,3 +1,9 @@
+import * as htmlToImage from 'html-to-image';
+
+const dispatchToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
+};
+
 const addWatermark = (element: HTMLElement) => {
   const watermark = document.createElement('div');
   watermark.id = 'heartspark-watermark';
@@ -45,9 +51,6 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
   const element = document.getElementById(elementId);
   if (!element) return;
 
-  // Dynamic import to reduce bundle size
-  const htmlToImage = await import('html-to-image');
-
   // Add a small delay to ensure any animations are settled
   await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -60,9 +63,10 @@ export const downloadAsImage = async (elementId: string, filename: string) => {
     link.download = `${filename}.png`;
     link.href = dataUrl;
     link.click();
+    dispatchToast('Image downloaded successfully!', 'success');
   } catch (error) {
     console.error('Error downloading image:', error);
-    throw error; // Let the caller handle it
+    dispatchToast('Failed to download image.', 'error');
   } finally {
     if (element.contains(watermark)) {
       element.removeChild(watermark);
@@ -74,7 +78,7 @@ let isSharingInProgress = false;
 
 export const shareAsImage = async (elementId: string, title: string, text: string) => {
   if (isSharingInProgress) {
-    console.warn('A share operation is already in progress.');
+    dispatchToast('A share operation is already in progress.', 'info');
     return;
   }
   
@@ -82,9 +86,6 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
   if (!element) return;
 
   isSharingInProgress = true;
-  
-  // Dynamic import
-  const htmlToImage = await import('html-to-image');
   
   const watermark = addWatermark(element);
 
@@ -99,27 +100,49 @@ export const shareAsImage = async (elementId: string, title: string, text: strin
     const file = new File([blob], 'heartspark-result.png', { type: 'image/png' });
     const shareText = text + "\n\nCheck it out at: " + window.location.href;
 
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title,
-        text: shareText,
-        files: [file],
-      });
-    } else if (navigator.share) {
-      await navigator.share({
-        title,
-        text: shareText,
-        url: window.location.href,
-      });
+    if (navigator.share) {
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title,
+            text: shareText,
+            files: [file],
+          });
+        } else {
+          await navigator.share({
+            title,
+            text: shareText,
+            url: window.location.href,
+          });
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          return; // User cancelled
+        }
+        // Fallback to text only if file share failed
+        if (err.name === 'NotAllowedError' || err.name === 'DataError') {
+          try {
+            await navigator.share({
+              title,
+              text: shareText,
+              url: window.location.href,
+            });
+          } catch (fallbackErr: any) {
+            if (fallbackErr.name === 'AbortError') return;
+            await navigator.clipboard.writeText(shareText);
+            dispatchToast('Result copied to clipboard!', 'success');
+          }
+        } else {
+          throw err;
+        }
+      }
     } else {
       await navigator.clipboard.writeText(shareText);
-      console.log('Result copied to clipboard');
+      dispatchToast('Result copied to clipboard!', 'success');
     }
   } catch (error: any) {
     console.error('Error sharing image:', error);
-    if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
-      throw error;
-    }
+    dispatchToast('Failed to share. Try downloading instead.', 'error');
   } finally {
     isSharingInProgress = false;
     if (element.contains(watermark)) {
@@ -132,8 +155,6 @@ export const generatePdfBlob = async (elementId: string, isSharing = false): Pro
   const element = document.getElementById(elementId);
   if (!element) return null;
 
-  // Dynamic imports
-  const htmlToImage = await import('html-to-image');
   const { jsPDF } = await import('jspdf');
 
   const watermark = addWatermark(element);
@@ -163,22 +184,28 @@ export const generatePdfBlob = async (elementId: string, isSharing = false): Pro
 };
 
 export const downloadAsPdf = async (elementId: string, filename: string) => {
-  const blob = await generatePdfBlob(elementId);
-  if (!blob) {
-    throw new Error('Failed to generate PDF.');
+  try {
+    const blob = await generatePdfBlob(elementId);
+    if (!blob) {
+      throw new Error('Failed to generate PDF.');
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    dispatchToast('PDF downloaded successfully!', 'success');
+  } catch (error) {
+    console.error(error);
+    dispatchToast('Failed to download PDF.', 'error');
   }
-  
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${filename}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
 };
 
 export const shareAsPdf = async (elementId: string, title: string, text: string) => {
   if (isSharingInProgress) {
-    console.warn('A share operation is already in progress.');
+    dispatchToast('A share operation is already in progress.', 'info');
     return;
   }
   
@@ -186,6 +213,7 @@ export const shareAsPdf = async (elementId: string, title: string, text: string)
   if (!element) return;
 
   isSharingInProgress = true;
+  dispatchToast('Preparing PDF to share...', 'info');
   
   try {
     const blob = await generatePdfBlob(elementId, true);
@@ -196,27 +224,48 @@ export const shareAsPdf = async (elementId: string, title: string, text: string)
     const file = new File([blob], 'heartspark-result.pdf', { type: 'application/pdf' });
     const shareText = text + "\n\nCheck it out at: " + window.location.href;
 
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title,
-        text: shareText,
-        files: [file],
-      });
-    } else if (navigator.share) {
-      await navigator.share({
-        title,
-        text: shareText,
-        url: window.location.href,
-      });
+    if (navigator.share) {
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title,
+            text: shareText,
+            files: [file],
+          });
+        } else {
+          await navigator.share({
+            title,
+            text: shareText,
+            url: window.location.href,
+          });
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          return;
+        }
+        if (err.name === 'NotAllowedError' || err.name === 'DataError') {
+          try {
+            await navigator.share({
+              title,
+              text: shareText,
+              url: window.location.href,
+            });
+          } catch (fallbackErr: any) {
+            if (fallbackErr.name === 'AbortError') return;
+            await navigator.clipboard.writeText(shareText);
+            dispatchToast('Result copied to clipboard!', 'success');
+          }
+        } else {
+          throw err;
+        }
+      }
     } else {
       await navigator.clipboard.writeText(shareText);
-      console.log('Result copied to clipboard');
+      dispatchToast('Result copied to clipboard!', 'success');
     }
   } catch (error: any) {
     console.error('Error sharing PDF:', error);
-    if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
-      throw error;
-    }
+    dispatchToast('Failed to share PDF. Try downloading instead.', 'error');
   } finally {
     isSharingInProgress = false;
   }

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Mic, Image as ImageIcon, MessageSquare, Sparkles, Upload, X, Play, Square, Loader2, AlertCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { generateContentWithFallback } from '../utils/ai';
+import { generateContentWithFallback, safeParseJSON } from '../utils/ai';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
 
@@ -194,9 +194,8 @@ export function SignalAnalyzer() {
       });
       
       const responseText = response.text;
-      const jsonMatch = responseText?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        setResult(JSON.parse(jsonMatch[0]));
+      if (responseText) {
+        setResult(safeParseJSON(responseText));
       } else {
         throw new Error("Invalid response format");
       }

@@ -115,7 +115,7 @@ export const loginWithEmail = async (emailOrUsername: string, password: string) 
     if (error.message === "ACCOUNT_NOT_FOUND" || error.code === 'auth/user-not-found') {
       throw new Error("ACCOUNT_NOT_FOUND");
     } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-      throw new Error("The password you entered is incorrect. Please try again or reset your password.");
+      throw new Error("Invalid email or password.");
     } else if (error.code === 'auth/too-many-requests') {
       throw new Error("Too many failed attempts. For your security, please wait a few minutes before trying again.");
     } else if (error.code === 'auth/user-disabled') {
@@ -209,6 +209,28 @@ export enum OperationType {
   GET = 'get',
   WRITE = 'write',
 }
+
+export const getFriendlyErrorMessage = (error: any): string => {
+  const code = error.code || error.message;
+  
+  if (code === 'auth/wrong-password' || code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+    return 'Invalid email or password.';
+  }
+  if (code === 'auth/email-already-in-use') {
+    return 'This email is already registered.';
+  }
+  if (code === 'auth/weak-password') {
+    return 'Password should be at least 6 characters.';
+  }
+  if (code === 'auth/invalid-email') {
+    return 'Invalid email address.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many attempts. Please try again later.';
+  }
+  
+  return 'An unexpected error occurred. Please try again.';
+};
 
 export interface FirestoreErrorInfo {
   error: string;

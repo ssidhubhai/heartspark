@@ -56,7 +56,14 @@ export function AstrologyAI() {
 
   useEffect(() => {
     const saved = localStorage.getItem('astrology_profiles');
-    if (saved) setSavedProfiles(JSON.parse(saved));
+    if (saved) {
+      try {
+        setSavedProfiles(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse profiles', e);
+        localStorage.removeItem('astrology_profiles');
+      }
+    }
   }, []);
 
   const saveProfile = () => {

@@ -10,6 +10,7 @@ import { Analytics } from './components/Analytics';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load pages for better performance
@@ -74,14 +75,14 @@ export default function App() {
                   <Route path="/tools/ai-advice" element={<AIAdvice />} />
                   <Route path="/astrology" element={<AstrologyAI />} />
                   <Route path="/tools/titles" element={<LoveTitles />} />
-                  <Route path="/tools/story" element={<CoupleStory />} />
+                  <Route path="/tools/story" element={<ProtectedRoute><CoupleStory /></ProtectedRoute>} />
                   <Route path="/tools/fortune" element={<DailyFortune />} />
-                  <Route path="/tools/prediction" element={<CrushPrediction />} />
-                  <Route path="/tools/signal-analyzer" element={<SignalAnalyzer />} />
-                  <Route path="/analyzer" element={<SignalAnalyzer />} />
-                  <Route path="/profile/:uid?" element={<Profile />} />
-                  <Route path="/stories" element={<CommunityStories />} />
-                  <Route path="/messages" element={<Messages />} />
+                  <Route path="/tools/prediction" element={<ProtectedRoute><CrushPrediction /></ProtectedRoute>} />
+                  <Route path="/tools/signal-analyzer" element={<ProtectedRoute><SignalAnalyzer /></ProtectedRoute>} />
+                  <Route path="/analyzer" element={<ProtectedRoute><SignalAnalyzer /></ProtectedRoute>} />
+                  <Route path="/profile/:uid?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/stories" element={<ProtectedRoute><CommunityStories /></ProtectedRoute>} />
+                  <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
                   {/* Add placeholders for other tools */}

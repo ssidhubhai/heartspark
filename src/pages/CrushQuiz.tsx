@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Share2, RefreshCw, CheckCircle2, Wand2, Loader2, Sparkles, Download } from 'lucide-react';
-import { generateContentWithFallback } from '../utils/ai';
+import { generateContentWithFallback, safeParseJSON } from '../utils/ai';
 import Markdown from 'react-markdown';
 import { downloadAsImage, shareAsImage } from '../utils/downloadImage';
 
@@ -126,7 +126,7 @@ export function CrushQuiz() {
         }
       });
 
-      const result = JSON.parse(response.text || '{}');
+      const result = safeParseJSON(response.text || '{}');
       setCustomResult(result);
     } catch (error) {
       console.error('Error generating result:', error);
@@ -169,7 +169,7 @@ export function CrushQuiz() {
         }
       });
 
-      const generatedQuestions = JSON.parse(response.text || '[]');
+      const generatedQuestions = safeParseJSON(response.text || '[]');
       if (generatedQuestions.length > 0) {
         setCustomQuestions(generatedQuestions);
         setQuizMode('custom_playing');
