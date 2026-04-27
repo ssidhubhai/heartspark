@@ -1,0 +1,5 @@
+{
+  "name": "HeartSpark",
+  "description": "Check your crush compatibility, read anonymous student confessions, and get your Astro vibe.",
+  "requestFramePermissions": ["camera"]
+}

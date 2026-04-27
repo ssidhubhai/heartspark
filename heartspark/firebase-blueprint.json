@@ -1,0 +1,173 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information (Public)",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "The user's display name" },
+        "username": { "type": "string", "description": "Unique username for the user" },
+        "bio": { "type": "string", "description": "The user's bio" },
+        "photoURL": { "type": "string", "description": "The user's profile picture URL" },
+        "isOnline": { "type": "boolean", "description": "Whether the user is currently online" },
+        "lastSeen": { "type": "string", "format": "date-time", "description": "When the user was last active" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the profile was last updated" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user's role" }
+      },
+      "required": ["displayName", "username"]
+    },
+    "PrivateUserData": {
+      "title": "Private User Data",
+      "description": "Sensitive user information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "The user's email address" },
+        "deletionRequestedAt": { "type": "string", "format": "date-time", "description": "When account deletion was requested" }
+      },
+      "required": ["email"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A story created by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the creator" },
+        "content": { "type": "string", "description": "The story text" },
+        "title": { "type": "string", "description": "The story title" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "likes": { "type": "integer", "description": "Number of likes" },
+        "likedBy": { "type": "array", "items": { "type": "string" }, "description": "List of user UIDs who liked the story" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "CommunityStory": {
+      "title": "Community Story",
+      "description": "A story shared with the community",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the creator" },
+        "authorName": { "type": "string", "description": "The name of the author" },
+        "content": { "type": "string", "description": "The story text" },
+        "title": { "type": "string", "description": "The story title" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "likes": { "type": "integer", "description": "Number of likes" },
+        "likedBy": { "type": "array", "items": { "type": "string" }, "description": "List of user UIDs who liked the story" },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Tags for the story" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a community story",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the commenter" },
+        "authorName": { "type": "string", "description": "The name of the commenter" },
+        "content": { "type": "string", "description": "The comment text" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the recipient" },
+        "type": { "type": "string", "description": "The type of notification" },
+        "message": { "type": "string", "description": "The notification message" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "read": { "type": "boolean", "description": "Whether the notification has been read" }
+      },
+      "required": ["userId", "type", "message", "createdAt"]
+    },
+    "RiyaSearch": {
+      "title": "Riya Search",
+      "description": "A search query performed by Riya AI",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who performed the search" },
+        "query": { "type": "string", "description": "The search query" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["userId", "query", "createdAt"]
+    },
+    "Spark": {
+      "title": "Spark",
+      "description": "A connection or chat between two users",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "UID of the initiator" },
+        "receiverId": { "type": "string", "description": "UID of the recipient" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"], "description": "Connection status" },
+        "lastMessage": { "type": "string", "description": "Content of the last message" },
+        "lastMessageAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last message" },
+        "ghostMode": { "type": "boolean", "description": "Whether Ghost Mode is active for this spark" },
+        "isBestFriend": { "type": "boolean", "description": "Whether this spark is marked as a best friend" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the spark was created" }
+      },
+      "required": ["senderId", "receiverId", "status", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A message within a spark",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "UID of the sender" },
+        "text": { "type": "string", "description": "Message content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the message was sent" },
+        "read": { "type": "boolean", "description": "Whether the message has been read" },
+        "isGhost": { "type": "boolean", "description": "Whether this is a ghost message" },
+        "editedAt": { "type": "string", "format": "date-time", "description": "When the message was last edited" }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents (Public)"
+    },
+    "/users/{userId}/private/settings": {
+      "schema": "PrivateUserData",
+      "description": "Sensitive user settings"
+    },
+    "/usernames/{username}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "uid": { "type": "string" }
+        }
+      },
+      "description": "Mapping of usernames to UIDs for uniqueness"
+    },
+    "/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Individual user stories"
+    },
+    "/community_stories/{storyId}": {
+      "schema": "CommunityStory",
+      "description": "Stories shared with the community"
+    },
+    "/community_stories/{storyId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments on community stories"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications"
+    },
+    "/riya_searches/{searchId}": {
+      "schema": "RiyaSearch",
+      "description": "Riya AI search history"
+    },
+    "/sparks/{sparkId}": {
+      "schema": "Spark",
+      "description": "Chat connections"
+    },
+    "/sparks/{sparkId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages in a chat"
+    }
+  }
+}
