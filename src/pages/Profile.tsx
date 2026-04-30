@@ -274,15 +274,33 @@ export function Profile() {
       if (!targetUid || !db) return;
       try {
         const q = query(collection(db, 'community_stories'), where('userId', '==', targetUid));
-        const snapshot = await getAggregateFromServer(q, {
-          storiesCount: count(),
-          totalSparks: sum('likes')
-        });
-        
-        setStats({ 
-          stories: snapshot.data().storiesCount, 
-          sparks: snapshot.data().totalSparks 
-        });
+        try {
+          const snapshot = await getAggregateFromServer(q, {
+            storiesCount: count(),
+            totalSparks: sum('likes')
+          });
+          
+          setStats({ 
+            stories: snapshot.data().storiesCount, 
+            sparks: snapshot.data().totalSparks 
+          });
+        } catch (aggError: any) {
+          if (aggError.message && aggError.message.includes('requires an index')) {
+            console.log("Aggregate index missing, falling back to client-side summation.");
+            const { getDocs } = await import('firebase/firestore');
+            const docsSnap = await getDocs(q);
+            let totalSparks = 0;
+            docsSnap.forEach(doc => {
+              totalSparks += (doc.data().likes || 0);
+            });
+            setStats({
+              stories: docsSnap.size,
+              sparks: totalSparks
+            });
+          } else {
+            throw aggError;
+          }
+        }
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
@@ -671,8 +689,27 @@ export function Profile() {
     );
   }
 
+  if (loadingProfile) {
+    return (
+      <div className="max-w-2xl mx-auto w-full bg-white dark:bg-[#0A0A0A] min-h-screen border-x border-zinc-100 dark:border-zinc-900 shadow-sm pb-24 md:pb-8 animate-pulse">
+        <div className="h-32 md:h-48 w-full bg-zinc-200 dark:bg-zinc-800" />
+        <div className="px-4 pb-4">
+          <div className="flex justify-between items-end -mt-12 md:-mt-16 mb-4">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white dark:border-[#0A0A0A] bg-zinc-300 dark:bg-zinc-700" />
+            <div className="w-24 h-10 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+          </div>
+          <div className="space-y-3">
+            <div className="h-8 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
+            <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
+            <div className="h-16 w-full max-w-md bg-zinc-200 dark:bg-zinc-800 rounded-md mt-4" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-2xl mx-auto w-full bg-white dark:bg-[#0A0A0A] min-h-screen border-x border-zinc-100 dark:border-zinc-900 shadow-sm pb-20">
+    <div className="max-w-2xl mx-auto w-full bg-white dark:bg-[#0A0A0A] min-h-screen border-x border-zinc-100 dark:border-zinc-900 shadow-sm pb-24 md:pb-8">
       {/* Cover Banner */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}

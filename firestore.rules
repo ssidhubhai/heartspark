@@ -112,7 +112,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return hasRequiredFields(['displayName', 'username']) &&
-             hasOnlyAllowedFields(['displayName', 'username', 'bio', 'photoURL', 'isOnline', 'lastSeen', 'updatedAt', 'role', 'blockedUsers']) &&
+             hasOnlyAllowedFields(['displayName', 'username', 'bio', 'photoURL', 'isOnline', 'lastSeen', 'createdAt', 'updatedAt', 'role', 'blockedUsers']) &&
              validString('displayName', 1, 100) &&
              validString('username', 3, 20) &&
              validOptionalString('bio', 0, 500) &&
@@ -175,7 +175,7 @@ service cloud.firestore {
 
       match /private/settings {
         allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.keys().hasAll(['email']) && request.resource.data.email == request.auth.token.email;
+        allow create: if isOwner(userId) && (!('email' in request.resource.data) || request.resource.data.email is string);
         allow update: if isOwner(userId) || isAdmin();
         allow delete: if isOwner(userId) || isAdmin();
       }

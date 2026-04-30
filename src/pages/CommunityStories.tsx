@@ -1311,14 +1311,14 @@ export function CommunityStories() {
       {user ? (
         <button
           onClick={() => setShowPostModal(true)}
-          className="fixed bottom-8 right-8 md:bottom-12 md:right-12 w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40 border-none"
+          className="fixed bottom-24 right-4 md:bottom-12 md:right-12 w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40 border-none"
           aria-label="Post a Story"
         >
           <Plus className="w-8 h-8" />
         </button>
       ) : (
-        <div className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 text-center z-40 shadow-lg flex items-center justify-center gap-4">
-          <p className="font-medium">
+        <div className="fixed bottom-16 md:bottom-0 left-0 w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4 text-center z-40 shadow-[0_-4px_20px_rgba(236,72,153,0.3)] flex items-center justify-center gap-4">
+          <p className="font-medium text-sm md:text-base">
             Login to share your own stories and react!
           </p>
         </div>

@@ -312,6 +312,9 @@ export function Messages() {
         .map(doc => ({ id: doc.id, ...doc.data() } as Chat))
         .filter(chat => chat.status === 'accepted');
       updateChats(chats1, 'sender');
+    }, (error) => {
+      console.error("Error fetching chats (sender):", error);
+      setLoadingChats(false);
     });
 
     const unsub2 = onSnapshot(q2, (snap2) => {
@@ -319,6 +322,9 @@ export function Messages() {
         .map(doc => ({ id: doc.id, ...doc.data() } as Chat))
         .filter(chat => chat.status === 'accepted');
       updateChats(chats2, 'receiver');
+    }, (error) => {
+      console.error("Error fetching chats (receiver):", error);
+      setLoadingChats(false);
     });
 
     const updateChats = (newChats: Chat[], type: 'sender' | 'receiver') => {
@@ -503,6 +509,9 @@ export function Messages() {
           }
         }
       });
+    }, (error) => {
+      console.error("Error fetching messages:", error);
+      setLoadingMessages(false);
     });
 
     // Listen for typing indicator
@@ -513,6 +522,8 @@ export function Messages() {
         const otherId = activeChat.senderId === user?.uid ? activeChat.receiverId : activeChat.senderId;
         setIsOtherTyping(!!typingStatus[otherId]);
       }
+    }, (error) => {
+       console.error("Error fetching typing status:", error);
     });
 
     return () => {
@@ -1042,7 +1053,7 @@ export function Messages() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto scrollbar-hide pb-20 md:pb-0">
           {searchMode === 'users' ? (
             <div className="p-2">
               {searching ? (
@@ -1761,7 +1772,7 @@ export function Messages() {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white dark:bg-[#0A0A0B] border-t border-zinc-100 dark:border-zinc-900 relative shrink-0">
+            <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-[#0A0A0B] border-t border-zinc-100 dark:border-zinc-900 relative shrink-0">
               {replyingTo && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}

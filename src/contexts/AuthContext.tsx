@@ -91,13 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        if (!currentUser.emailVerified && currentUser.providerData.some(p => p.providerId === 'password')) {
-          setUser(null);
-          setUserData(null);
-        } else {
-          setUser(currentUser);
-          
-          // Sync user profile to Firestore
+        setUser(currentUser);
+        
+        // Sync user profile to Firestore
           const userDocRef = doc(db, 'users', currentUser.uid);
           const privateDocRef = doc(db, 'users', currentUser.uid, 'private', 'settings');
           
@@ -107,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const updateCombinedUserData = () => {
             if (currentPublicData && currentPrivateData) {
               setUserData({ ...currentPublicData, ...currentPrivateData });
+              setLoading(false);
             }
           };
 
@@ -154,6 +151,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             updateCombinedUserData();
+          }, (err) => {
+            console.error("Error fetching private data:", err);
+            currentPrivateData = {};
+            updateCombinedUserData();
+            setLoading(false);
           });
 
           // Set up real-time listener for user data
@@ -187,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const newPublicData = {
                 displayName: currentUser.displayName || 'New User',
                 username: uniqueUsername,
-                photoURL: currentUser.photoURL,
+                photoURL: currentUser.photoURL || '',
                 role: 'user',
                 isOnline: true,
                 lastSeen: serverTimestamp(),
@@ -198,7 +200,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
 
               const newPrivateData = {
-                email: currentUser.email,
                 deletionRequestedAt: null
               };
               
@@ -211,10 +212,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await setDoc(doc(db, 'users', currentUser.uid, 'private', 'settings'), newPrivateData);
                 
                 setUserData({ ...newPublicData, ...newPrivateData });
+                setLoading(false);
               } catch (err) {
                 console.error("Error creating user profile:", err);
+                showToast("Failed to initialize profile. Please refresh.", "error");
+                // Allow them in with fallback data so they aren't stuck loading forever
+                setUserData({ ...newPublicData, ...newPrivateData });
+                setLoading(false);
               }
             }
+          }, (err) => {
+            console.error("Error fetching user data:", err);
+            currentPublicData = { displayName: currentUser.displayName, username: 'user', photoURL: currentUser.photoURL };
+            updateCombinedUserData();
+            setLoading(false);
           });
 
           // Update online status with throttling and state check
@@ -359,12 +370,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (idleTimeout) clearTimeout(idleTimeout);
             updatePresence(false);
           };
-        }
       } else {
         setUser(null);
         setUserData(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -386,11 +396,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const requestAccountDeletion = async () => {
     if (!user || !db) return;
-    
-    if (!user.emailVerified) {
-      showToast("Please verify your email before requesting account deletion.", "error");
-      return;
-    }
 
     try {
       await updateDoc(doc(db, 'users', user.uid, 'private', 'settings'), {

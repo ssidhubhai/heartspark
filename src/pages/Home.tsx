@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight, Zap, Coffee, Ghost, Flame, User } from 'lucide-react';
+import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight, Zap, Coffee, Ghost, Flame, User, Loader2 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,6 +13,8 @@ import { LoadingOverlay } from '../components/LoadingOverlay';
 import { generateContentWithFallback, safeParseJSON } from '../utils/ai';
 import { LiveTicker } from '../components/LiveTicker';
 import { ToolCarousel } from '../components/ToolCarousel';
+
+import { SEO } from '../components/SEO';
 
 const PWAPrompt = React.lazy(() => import('../components/PWAPrompt').then(m => ({ default: m.PWAPrompt })));
 const OnboardingTour = React.lazy(() => import('../components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
@@ -49,6 +51,32 @@ export function Home() {
       }
       localStorage.setItem('last_visit', today);
     }
+  }, []);
+
+  const [aiIntro, setAiIntro] = useState("");
+  const [loadingAiIntro, setLoadingAiIntro] = useState(true);
+
+  useEffect(() => {
+    const fetchAiIntro = async () => {
+      setLoadingAiIntro(true);
+      try {
+        const prompt = `You are Heart Spark, a witty, Gen-Z styled love calculator and relationship app. Write a short, friendly, 2-3 sentence welcome message for the home page. Include emojis, keep it lighthearted about love, compatibility, and connection, and end with a call to action to try one of the features. Return plain text only.`;
+        const response = await generateContentWithFallback({
+          model: 'gemini-3-flash-preview',
+          contents: prompt
+        });
+        if (response.text) {
+          setAiIntro(response.text);
+        } else {
+          setAiIntro("Ready to find your perfect match? 💕 Discover your cosmic compatibility, read viral community stories, or vibe check your crushing texts. Start exploring now!");
+        }
+      } catch (err) {
+        setAiIntro("Ready to find your perfect match? 💕 Discover your cosmic compatibility, read viral community stories, or vibe check your crushing texts. Start exploring now!");
+      } finally {
+        setLoadingAiIntro(false);
+      }
+    };
+    fetchAiIntro();
   }, []);
 
   const getDefaultMessage = (score: number) => {
@@ -207,7 +235,14 @@ export function Home() {
   ];
 
   return (
-    <div className="space-y-24 py-12">
+    <>
+      <SEO 
+        title="Love Calculator & Astrological Insights" 
+        description="Check your crush compatibility, read anonymous student confessions, and get your Astro vibe. HeartSpark is pure vibes! ❤️" 
+        canonicalUrl="https://heartspark-five.vercel.app/"
+      />
+      <div className="space-y-24 py-12">
+
       <Suspense fallback={null}>
         <OnboardingTour />
       </Suspense>
@@ -286,14 +321,21 @@ export function Home() {
             </span>
           </motion.h1>
           
-          <motion.p 
-            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium pt-4"
+          <motion.div 
+            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium pt-4 min-h-[60px] flex items-center justify-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Explore viral crush games, test your compatibility, and find out if they're the one. ✨
-          </motion.p>
+            {loadingAiIntro ? (
+              <div className="flex items-center gap-2 text-pink-400/50">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-sm font-black uppercase tracking-widest animate-pulse">Summoning cosmic vibes...</span>
+              </div>
+            ) : (
+              <p>{aiIntro}</p>
+            )}
+          </motion.div>
         </div>
 
 
@@ -654,7 +696,7 @@ export function Home() {
         </Card>
       </section>
 
-
     </div>
+    </>
   );
 }

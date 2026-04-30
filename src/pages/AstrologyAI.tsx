@@ -7,6 +7,7 @@ import { generateContentWithFallback, generateContentStreamWithFallback } from '
 import { calculatePlacements, AstrologicalPlacements } from '../utils/astrology';
 import Markdown from 'react-markdown';
 import { LoadingOverlay } from '../components/LoadingOverlay';
+import { SEO } from '../components/SEO';
 
 interface Message {
   role: 'user' | 'model';
@@ -402,7 +403,14 @@ export function AstrologyAI() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto h-full px-0 md:px-4 lg:px-8 flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
+    <>
+      <SEO 
+        title="Astro Vibe Match & Compatibility" 
+        description="Are your zodiacs actually compatible? Get a deep AI cosmic consultation for your relationship." 
+        canonicalUrl="https://heartspark-five.vercel.app/astrology"
+      />
+      <div className="max-w-7xl mx-auto h-full px-0 md:px-4 lg:px-8 flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
+
       <LoadingOverlay 
         isVisible={loading && !activeThreadId} 
         type="astro"
@@ -756,7 +764,7 @@ export function AstrologyAI() {
             </div>
 
             {/* Floating Pill Input Area */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 pt-10 pb-6 px-4 z-20">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 pt-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] px-4 z-20">
               <div className="max-w-[800px] mx-auto relative">
                 <form onSubmit={handleSend} className="relative flex items-end gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 p-2 pl-4 focus-within:ring-2 focus-within:ring-pink-500/20 focus-within:border-pink-500/50 transition-all shadow-lg shadow-zinc-200/50 dark:shadow-none">
                   <textarea
@@ -793,5 +801,6 @@ export function AstrologyAI() {
         )}
       </div>
     </div>
+    </>
   );
 }

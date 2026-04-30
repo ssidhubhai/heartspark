@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://heartspaek-five.vercel.app/sitemap.xml
+Sitemap: https://heartspark-five.vercel.app/sitemap.xml
