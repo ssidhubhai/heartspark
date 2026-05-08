@@ -199,9 +199,9 @@ export function SignalAnalyzer() {
       } else {
         throw new Error("Invalid response format");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analysis error:", error);
-      showToast("Failed to analyze. Please try again.", "error");
+      showToast(error.message || "Failed to analyze. Please try again.", "error");
     } finally {
       setIsAnalyzing(false);
     }

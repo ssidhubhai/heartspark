@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Card } from '../components/Card';
 import { Link } from 'react-router-dom';
 import { Star, Wand2, BookOpen, Flame, MessageSquareHeart, Brain, Bot, Sparkles, Mic, Clock } from 'lucide-react';
+import { SEO } from '../components/SEO';
 
 export function Tools() {
   const tools = [
@@ -58,6 +59,12 @@ export function Tools() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
+      <SEO 
+        title="Dating & Relationship Tools" 
+        description="Explore HeartSpark's collection of powerful AI relationship tools: Signal Analyzer, Story Generator, Text Translator, and more. Transform your dating life." 
+        canonicalUrl="https://heartspark-five.vercel.app/tools"
+        keywords="dating tools, AI relationship advice, text analyzer, love calculator, dating games"
+      />
       <div className="text-center space-y-6 flex flex-col items-center">
         <Logo size="lg" />
         <div className="space-y-2">

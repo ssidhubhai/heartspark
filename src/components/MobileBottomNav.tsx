@@ -3,11 +3,41 @@ import { Link, useLocation } from 'react-router-dom';
 import { Heart, MessageCircle, Bot, Users, LayoutGrid, User } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '../contexts/AuthContext';
 
 import { MAIN_NAV_LINKS, MORE_LINKS } from '../constants/navigation';
 
+const navContainerVariants: any = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.25, 1, 0.5, 1], // Custom springy ease
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    }
+  },
+  exit: {
+    opacity: 0,
+    y: 50,
+    transition: { duration: 0.3 }
+  }
+};
+
+const navItemVariants: any = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 }
+  }
+};
+
 export function MobileBottomNav() {
   const location = useLocation();
+  const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isForcedHidden, setIsForcedHidden] = useState(false);
@@ -21,8 +51,7 @@ export function MobileBottomNav() {
 
   // Check if we are on a route where the nav should auto-hide on scroll
   const isAutoHideRoute = 
-    location.pathname === '/' || 
-    location.pathname.startsWith('/stories');
+    location.pathname === '/';
 
   useEffect(() => {
     const checkForcedHidden = () => {
@@ -80,39 +109,52 @@ export function MobileBottomNav() {
     <AnimatePresence>
       {isVisible && (
         <motion.div 
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          exit={{ y: 100 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
+          variants={navContainerVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
           className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-t border-pink-100 dark:border-zinc-800 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
         >
           <div className="flex items-center justify-around h-16 px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+              const isProtected = ['/profile', '/messages', '/analyzer', '/tools/story'].some(p => item.path.startsWith(p));
+              
+              const handleClick = (e: React.MouseEvent) => {
+                if (isProtected && !user) {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                }
+              };
+
               return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200",
-                    isActive 
-                      ? "text-pink-600 dark:text-pink-400" 
-                      : "text-zinc-500 dark:text-zinc-400 hover:text-pink-500 dark:hover:text-pink-300"
-                  )}
-                >
-                  <div className={cn(
-                    "w-6 h-6 p-1 rounded-full transition-all duration-300",
-                    isActive ? "bg-pink-100 dark:bg-pink-500/20 scale-110" : "bg-transparent"
-                  )}>
-                    {item.icon}
-                  </div>
-                  <span className={cn(
-                    "text-[10px] font-medium transition-all duration-200",
-                    isActive ? "font-bold" : ""
-                  )}>
-                    {item.name}
-                  </span>
-                </Link>
+                <motion.div key={item.path} variants={navItemVariants} className="w-full h-full flex flex-col items-center justify-center">
+                  <Link
+                    to={item.path}
+                    onClick={handleClick}
+                    className={cn(
+                      "flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-300",
+                      isActive 
+                        ? "text-pink-600 dark:text-pink-400 font-bold scale-105" 
+                        : "text-zinc-500 dark:text-zinc-400 hover:text-pink-500 dark:hover:text-pink-300 hover:scale-105"
+                    )}
+                  >
+                    <motion.div 
+                      whileTap={{ scale: 0.8 }}
+                      className={cn(
+                      "w-6 h-6 p-1 rounded-full transition-all duration-300",
+                      isActive ? "bg-pink-100 dark:bg-pink-500/20 scale-110 shadow-sm" : "bg-transparent"
+                    )}>
+                      {item.icon}
+                    </motion.div>
+                    <span className={cn(
+                      "text-[10px] uppercase tracking-wider transition-all duration-200",
+                      isActive ? "font-black" : "font-semibold"
+                    )}>
+                      {item.name}
+                    </span>
+                  </Link>
+                </motion.div>
               );
             })}
           </div>

@@ -9,8 +9,8 @@ import { cn } from '../utils/cn';
 import { generateContentWithFallback } from '../utils/ai';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { PremiumStoryFeedItem } from '../components/PremiumStoryFeedItem';
 import { motion, AnimatePresence } from 'motion/react';
+import { SEO } from '../components/SEO';
 import { 
   User, 
   AlertCircle, 
@@ -70,7 +70,7 @@ export function Profile() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState('POSTS');
+  const [activeTab, setActiveTab] = useState('SPARKS');
 
   const avatarPresets = [
     'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix',
@@ -129,19 +129,17 @@ export function Profile() {
       reader.readAsDataURL(file);
     }
   };
-  const [stats, setStats] = useState({ stories: 0, sparks: 0 });
+  const [stats, setStats] = useState({ sparks: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
-  const [stories, setStories] = useState<any[]>([]);
-  const [loadingStories, setLoadingStories] = useState(false);
+  const [loadingSparks, setLoadingSparks] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showPostEditModal, setShowPostEditModal] = useState(false);
-  const [editingPost, setEditingPost] = useState<any>(null);
-  const [postEditContent, setPostEditContent] = useState('');
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [editLoveStatus, setEditLoveStatus] = useState('Single');
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [userBio, setUserBio] = useState('');
+  const [userLoveStatus, setUserLoveStatus] = useState('Single');
   const [userUsername, setUserUsername] = useState('');
   const [currentDisplayName, setCurrentDisplayName] = useState('');
   const [currentPhotoURL, setCurrentPhotoURL] = useState('');
@@ -222,6 +220,8 @@ export function Profile() {
         setProfileData(userData);
         setUserBio(userData.bio || '');
         setEditBio(userData.bio || '');
+        setUserLoveStatus(userData.loveStatus || 'Single');
+        setEditLoveStatus(userData.loveStatus || 'Single');
         setUserUsername(userData.username || '');
         setEditUsername(userData.username || '');
         setCurrentDisplayName(userData.displayName || '');
@@ -252,6 +252,8 @@ export function Profile() {
           setProfileData(data);
           setUserBio(data.bio || '');
           setEditBio(data.bio || '');
+          setUserLoveStatus(data.loveStatus || 'Single');
+          setEditLoveStatus(data.loveStatus || 'Single');
           setUserUsername(data.username || '');
           setEditUsername(data.username || '');
           setCurrentDisplayName(data.displayName || '');
@@ -273,15 +275,13 @@ export function Profile() {
     const fetchStats = async () => {
       if (!targetUid || !db) return;
       try {
-        const q = query(collection(db, 'community_stories'), where('userId', '==', targetUid));
+        const q = query(collection(db, 'sparks'), where('receiverId', '==', targetUid));
         try {
           const snapshot = await getAggregateFromServer(q, {
-            storiesCount: count(),
             totalSparks: sum('likes')
           });
           
           setStats({ 
-            stories: snapshot.data().storiesCount, 
             sparks: snapshot.data().totalSparks 
           });
         } catch (aggError: any) {
@@ -294,7 +294,6 @@ export function Profile() {
               totalSparks += (doc.data().likes || 0);
             });
             setStats({
-              stories: docsSnap.size,
               sparks: totalSparks
             });
           } else {
@@ -319,7 +318,7 @@ export function Profile() {
   useEffect(() => {
     if (!targetUid || !db) return;
 
-    setLoadingStories(true);
+    setLoadingSparks(true);
     let unsubscribe: () => void;
 
     if (activeTab === 'SPARKS') {
@@ -339,45 +338,10 @@ export function Profile() {
           return timeB - timeA;
         });
         setSparks(fetchedSparks);
-        setLoadingStories(false);
+        setLoadingSparks(false);
       }, (error) => {
         console.error("Error fetching sparks:", error);
-        setLoadingStories(false);
-      });
-    } else {
-      let q;
-      if (activeTab === 'POSTS') {
-        q = query(
-          collection(db, 'community_stories'), 
-          where('userId', '==', targetUid),
-          limit(50)
-        );
-      } else if (activeTab === 'LIKED') {
-        q = query(
-          collection(db, 'community_stories'), 
-          where('likedBy', 'array-contains', targetUid),
-          limit(50)
-        );
-      } else {
-        setStories([]);
-        setLoadingStories(false);
-        return;
-      }
-
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedStories = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...(doc.data() as any)
-        })).sort((a: any, b: any) => {
-          const timeA = a.createdAt?.toMillis?.() || 0;
-          const timeB = b.createdAt?.toMillis?.() || 0;
-          return timeB - timeA;
-        });
-        setStories(fetchedStories);
-        setLoadingStories(false);
-      }, (error) => {
-        console.error("Error fetching stories:", error);
-        setLoadingStories(false);
+        setLoadingSparks(false);
       });
     }
 
@@ -567,10 +531,12 @@ export function Profile() {
         displayName: editDisplayName,
         username: newUsername,
         bio: editBio,
+        loveStatus: editLoveStatus,
         updatedAt: new Date()
       }, { merge: true });
       
       setUserBio(editBio);
+      setUserLoveStatus(editLoveStatus);
       setUserUsername(newUsername);
       setCurrentDisplayName(editDisplayName);
       setShowEditModal(false);
@@ -612,34 +578,6 @@ export function Profile() {
       showToast('Failed to update avatar', 'error');
     } finally {
       setUpdatingAvatar(false);
-    }
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    if (!db) return;
-    try {
-      await deleteDoc(doc(db, 'community_stories', postId));
-      setStats(prev => ({ ...prev, stories: Math.max(0, prev.stories - 1) }));
-      showToast('Post deleted successfully!');
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      showToast('Failed to delete post', 'error');
-    }
-  };
-
-  const handleEditPost = async () => {
-    if (!db || !editingPost) return;
-    try {
-      await updateDoc(doc(db, 'community_stories', editingPost.id), {
-        content: postEditContent,
-        updatedAt: new Date()
-      });
-      setShowPostEditModal(false);
-      setEditingPost(null);
-      showToast('Post updated successfully!');
-    } catch (error) {
-      console.error("Error updating post:", error);
-      showToast('Failed to update post', 'error');
     }
   };
 
@@ -710,6 +648,11 @@ export function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto w-full bg-white dark:bg-[#0A0A0A] min-h-screen border-x border-zinc-100 dark:border-zinc-900 shadow-sm pb-24 md:pb-8">
+      <SEO 
+        title={`${currentDisplayName || userUsername || 'Profile'}`}
+        description={`Check out ${currentDisplayName || userUsername || 'this'}'s profile on HeartSpark. View their sparks and more connections.`} 
+        canonicalUrl={`https://heartspark-five.vercel.app/profile/${targetUid || user.uid}`}
+      />
       {/* Cover Banner */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -760,12 +703,6 @@ export function Profile() {
           >
             <div className="text-center">
               <div className="text-lg md:text-xl font-black text-zinc-900 dark:text-white leading-none">
-                {loadingStats ? '...' : stats.stories}
-              </div>
-              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mt-1">Stories</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg md:text-xl font-black text-zinc-900 dark:text-white leading-none">
                 {loadingStats ? '...' : stats.sparks >= 1000 ? `${(stats.sparks / 1000).toFixed(1)}K` : stats.sparks}
               </div>
               <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mt-1">Sparks</div>
@@ -783,9 +720,17 @@ export function Profile() {
           <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
             {currentDisplayName || 'Anonymous User'}
           </h1>
-          <p className="text-sm text-zinc-500 font-medium">
-            @{userUsername || 'user'}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-zinc-500 font-medium">
+              @{userUsername || 'user'}
+            </p>
+            {userLoveStatus && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-[10px] font-bold uppercase tracking-wider">
+                <Heart className="w-3 h-3" />
+                {userLoveStatus}
+              </span>
+            )}
+          </div>
           <div className="pt-2 max-w-md">
             <p className="text-[15px] text-zinc-700 dark:text-zinc-300 leading-snug">
               {userBio || 'No bio yet. Click Edit Profile to add one! ✨'}
@@ -885,8 +830,6 @@ export function Profile() {
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-900 mt-4">
         <div className="flex">
           {[
-            { id: 'POSTS', icon: Grid },
-            { id: 'LIKED', icon: Heart },
             { id: 'SPARKS', icon: Zap },
             { id: 'SETTINGS', icon: Shield },
           ].map((tab) => (
@@ -916,7 +859,7 @@ export function Profile() {
 
       {/* Feed Area */}
       <div className="min-h-[400px]">
-        {loadingStories ? (
+        {loadingSparks ? (
           <div className="flex flex-col items-center justify-center p-12">
             <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
             <p className="text-sm text-zinc-500 mt-4 font-bold uppercase tracking-widest">Loading Feed...</p>
@@ -1111,51 +1054,19 @@ export function Profile() {
               )}
             </div>
           </div>
-        ) : stories.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center mb-4">
-              <Grid className="w-8 h-8 text-zinc-300" />
-            </div>
-            <h3 className="text-lg font-bold text-zinc-400">
-              No {activeTab.toLowerCase()} yet
-            </h3>
-            <p className="text-sm text-zinc-500 mt-2 max-w-xs">
-              {activeTab === 'POSTS' 
-                ? "Your shared stories and memories will appear here for everyone to see."
-                : "Stories you've liked will appear here for you to revisit."}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-100 dark:divide-zinc-900">
-            {stories.map((story) => (
-              <PremiumStoryFeedItem 
-                key={story.id} 
-                story={story} 
-                onLike={(id) => console.log('Like', id)}
-                onComment={(id) => console.log('Comment', id)}
-                onShare={(id) => console.log('Share', id)}
-                onEdit={(s) => {
-                  setEditingPost(s);
-                  setPostEditContent(s.content);
-                  setShowPostEditModal(true);
-                }}
-                onDelete={(id) => handleDeletePost(id)}
-                isOwner={story.userId === user.uid}
-              />
-            ))}
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Modals */}
       <AnimatePresence>
         {showDeleteAccountConfirm && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[300] flex overflow-y-auto p-4 sm:p-6">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteAccountConfirm(false)} />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-sm bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl border border-zinc-100 dark:border-zinc-900"
+              className="m-auto w-full max-w-sm bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl relative border border-zinc-100 dark:border-zinc-900"
             >
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-8 h-8 text-red-500" />
@@ -1202,8 +1113,15 @@ export function Profile() {
       </AnimatePresence>
 
       {showEditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card className="w-full max-w-md relative shadow-2xl border-0 rounded-3xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex overflow-y-auto p-4 sm:p-6">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="m-auto w-full max-w-md relative"
+          >
+          <Card className="w-full shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-black text-zinc-900 dark:text-white">Edit Profile</h2>
@@ -1245,6 +1163,21 @@ export function Profile() {
                     className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm resize-none"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1">Love Status</label>
+                  <select
+                    value={editLoveStatus}
+                    onChange={(e) => setEditLoveStatus(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm"
+                  >
+                    <option value="Single">Single</option>
+                    <option value="In a Relationship">In a Relationship</option>
+                    <option value="It's Complicated">It's Complicated</option>
+                    <option value="Crushing">Crushing</option>
+                    <option value="Just Looking">Just Looking</option>
+                    <option value="Taken">Taken</option>
+                  </select>
+                </div>
                 <Button 
                   onClick={handleUpdateProfile} 
                   disabled={updatingProfile || !editDisplayName.trim()} 
@@ -1256,53 +1189,20 @@ export function Profile() {
               </div>
             </div>
           </Card>
-        </div>
-      )}
-
-      {showPostEditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card className="w-full max-w-md relative shadow-2xl border-0 rounded-3xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-black text-zinc-900 dark:text-white">Edit Post</h2>
-                <button onClick={() => setShowPostEditModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-                  <X className="w-5 h-5 text-zinc-500" />
-                </button>
-              </div>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1">Content</label>
-                  <textarea
-                    value={postEditContent}
-                    onChange={(e) => setPostEditContent(e.target.value)}
-                    placeholder="What's on your mind?"
-                    rows={6}
-                    className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all text-sm resize-none"
-                  />
-                </div>
-                <Button 
-                  onClick={handleEditPost} 
-                  disabled={!postEditContent.trim()} 
-                  variant="custom"
-                  className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl border-0 shadow-lg shadow-pink-500/20 transition-all disabled:opacity-50"
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          </Card>
+          </motion.div>
         </div>
       )}
 
       {showAvatarModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex overflow-y-auto p-4 sm:p-6">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAvatarModal(false)} />
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="w-full max-w-md"
+            className="m-auto w-full max-w-md relative"
           >
-            <Card className="relative shadow-2xl border-0 rounded-3xl overflow-hidden">
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-black text-zinc-900 dark:text-white">Update Avatar</h2>

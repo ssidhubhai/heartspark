@@ -40,7 +40,7 @@ export function ShareModal({ isOpen, onClose }: ShareModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-sm bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-pink-100 dark:border-pink-900/30 p-6"
+            className="relative w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-pink-100 dark:border-pink-900/30 p-6"
           >
             <button
               onClick={onClose}

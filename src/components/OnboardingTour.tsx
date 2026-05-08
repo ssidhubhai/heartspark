@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Heart, MessageSquare, Sparkles, X, ChevronRight, ChevronLeft, Bot } from 'lucide-react';
 import { Button } from './Button';
 
@@ -18,8 +18,8 @@ const steps: Step[] = [
     color: "from-pink-500 to-rose-500"
   },
   {
-    title: "Anonymous Student Confessions",
-    description: "Spill the tea or read the latest gossip! Share your stories anonymously in our community section. Ghosted? Toxic? Wholesome? We want to hear it all.",
+    title: "Message Analyzer",
+    description: "Decode those mixed signals! Fast-forward past reading between the lines and let our AI translate exactly what they really mean.",
     icon: <MessageSquare className="w-12 h-12 text-purple-500" />,
     color: "from-purple-500 to-indigo-500"
   },
@@ -75,7 +75,7 @@ export function OnboardingTour() {
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl relative"
+          className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-[2.5rem] max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl relative"
         >
           {/* Close Button */}
           <button 

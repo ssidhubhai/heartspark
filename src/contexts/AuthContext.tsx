@@ -447,7 +447,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
               className={cn(
-                "pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl min-w-[300px]",
+                "pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[300px] sm:max-w-md",
                 toast.type === 'success' && "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
                 toast.type === 'error' && "bg-red-500/10 border-red-500/20 text-red-500",
                 toast.type === 'info' && "bg-blue-500/10 border-blue-500/20 text-blue-500"

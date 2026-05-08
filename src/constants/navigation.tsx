@@ -13,7 +13,6 @@ export const MAIN_NAV_LINKS: NavLink[] = [
   { name: 'Home', path: '/', icon: <Heart className="w-full h-full" /> },
   { name: 'Explore', path: '/tools', icon: <LayoutGrid className="w-full h-full" /> },
   { name: 'Messages', path: '/messages', icon: <MessageCircle className="w-full h-full" /> },
-  { name: 'Stories', path: '/stories', icon: <Users className="w-full h-full" /> },
   { name: 'Games', path: '/games', icon: <Gamepad2 className="w-full h-full" /> },
 ];
 

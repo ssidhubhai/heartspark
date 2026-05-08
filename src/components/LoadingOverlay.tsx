@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Heart, Sparkles, Bot, Brain, Star, BookHeart } from 'lucide-react';
 
 interface LoadingOverlayProps {

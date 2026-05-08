@@ -132,7 +132,7 @@ export const generateContentWithFallback = async (params: GenerateContentParamet
     }
   }
 
-  throw new Error(`All available API keys failed. Last error: ${lastError?.message || 'Unknown error'}`);
+  throw new Error(`AI service is temporarily unavailable. Please try again in a moment. (Error: ${lastError?.message || 'Unknown'})`);
 };
 
 /**
@@ -258,5 +258,5 @@ export const generateContentStreamWithFallback = async function* (params: Genera
     }
   }
 
-  throw new Error(`All available API keys failed. Last error: ${lastError?.message || 'Unknown error'}`);
+  throw new Error(`AI service is temporarily unavailable. Please try again in a moment. (Error: ${lastError?.message || 'Unknown'})`);
 };

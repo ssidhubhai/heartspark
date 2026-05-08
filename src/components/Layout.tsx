@@ -35,14 +35,12 @@ export function Layout({ children }: { children: ReactNode }) {
     { name: 'Home', path: '/', icon: <Heart className="w-4 h-4" /> },
     { name: 'Explore', path: '/tools', icon: <LayoutGrid className="w-4 h-4" /> },
     { name: 'Messages', path: '/messages', icon: <MessageCircle className="w-4 h-4" /> },
-    { name: 'Stories', path: '/stories', icon: <Users className="w-4 h-4" /> },
     { name: 'Games', path: '/games', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   const moreLinks = [
     { name: 'Crush Message Analyzer', path: '/analyzer' },
     { name: 'Story Maker', path: '/tools/story' },
-    { name: 'Community Stories', path: '/stories' },
   ];
 
   const handleShare = () => {
@@ -95,10 +93,18 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="flex items-center space-x-1">
-                {MAIN_NAV_LINKS.map((link) => (
+                {MAIN_NAV_LINKS.map((link) => {
+                  const isProtected = ['/profile', '/messages', '/analyzer', '/tools/story'].some(p => link.path.startsWith(p));
+                  return (
                   <Link
                     key={link.path}
                     to={link.path}
+                    onClick={(e) => {
+                      if (isProtected && !user) {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                      }
+                    }}
                     className={cn(
                       "px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-300 flex items-center gap-2 relative group",
                       isActive(link.path)
@@ -115,7 +121,8 @@ export function Layout({ children }: { children: ReactNode }) {
                       />
                     )}
                   </Link>
-                ))}
+                  )
+                })}
 
                 {/* More Dropdown */}
                 <div className="relative group">
@@ -131,10 +138,18 @@ export function Layout({ children }: { children: ReactNode }) {
                     "absolute right-0 mt-2 w-56 rounded-2xl shadow-xl py-3 border backdrop-blur-3xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right translate-y-2 group-hover:translate-y-0",
                     theme === 'dark' ? "border-white/10 bg-[#0A0A0B]/95" : "border-zinc-200 bg-white/95"
                   )}>
-                    {MORE_LINKS.filter(l => !l.mobileOnly).map((link) => (
+                    {MORE_LINKS.filter(l => !l.mobileOnly).map((link) => {
+                      const isProtected = ['/profile', '/messages', '/analyzer', '/tools/story'].some(p => link.path.startsWith(p));
+                      return (
                       <Link
                         key={link.path}
                         to={link.path}
+                        onClick={(e) => {
+                          if (isProtected && !user) {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                          }
+                        }}
                         className={cn(
                           "flex items-center gap-3 px-5 py-2.5 text-sm font-bold transition-all",
                           isActive(link.path)
@@ -145,7 +160,8 @@ export function Layout({ children }: { children: ReactNode }) {
                         <div className="w-4 h-4">{link.icon}</div>
                         {link.name}
                       </Link>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -337,11 +353,19 @@ export function Layout({ children }: { children: ReactNode }) {
               )}
             >
               <div className="px-6 pt-4 pb-8 space-y-2">
-                {[...MAIN_NAV_LINKS, ...MORE_LINKS].map((link) => (
+                {[...MAIN_NAV_LINKS, ...MORE_LINKS].map((link) => {
+                  const isProtected = ['/profile', '/messages', '/analyzer', '/tools/story'].some(p => link.path.startsWith(p));
+                  return (
                   <Link
                     key={link.path}
                     to={link.path}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={(e) => {
+                      setIsMenuOpen(false);
+                      if (isProtected && !user) {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                      }
+                    }}
                     className={cn(
                       "flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all",
                       isActive(link.path)
@@ -352,7 +376,8 @@ export function Layout({ children }: { children: ReactNode }) {
                     <div className="w-5 h-5">{link.icon}</div>
                     {link.name}
                   </Link>
-                ))}
+                  )
+                })}
                 <button
                   onClick={handleShare}
                   className={cn(
@@ -419,16 +444,20 @@ export function Layout({ children }: { children: ReactNode }) {
          location.pathname.startsWith('/tools')) ? "pb-0 md:pb-0" : "pb-32 md:pb-0",
         (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname.startsWith('/messages')) ? "flex-1 overflow-hidden h-[calc(100dvh-64px)] flex flex-col" : "flex-grow",
         location.pathname === '/' ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : 
-        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname === '/stories' || location.pathname.startsWith('/messages')) ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
+        (location.pathname === '/love-gpt' || location.pathname === '/astrology' || location.pathname.startsWith('/messages')) ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
       )}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className={cn("h-full", location.pathname.startsWith('/messages') && "flex-1 flex flex-col min-h-0")}
+            initial={{ opacity: 0, y: 15, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.99 }}
+            transition={{ 
+              duration: 0.4, 
+              ease: [0.25, 1, 0.5, 1],
+              opacity: { duration: 0.2 }
+            }}
+            className={cn("h-full origin-top", location.pathname.startsWith('/messages') && "flex-1 flex flex-col min-h-0")}
           >
             {children}
           </motion.div>

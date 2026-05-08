@@ -27,7 +27,10 @@ import {
   Upload,
   Timer,
   Calendar,
-  Key
+  Key,
+  Bold,
+  Italic,
+  Strikethrough
 } from 'lucide-react';
 import { 
   collection, 
@@ -45,7 +48,8 @@ import {
   Timestamp,
   setDoc,
   deleteDoc,
-  writeBatch
+  writeBatch,
+  arrayUnion
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { GoogleGenAI } from "@google/genai";
@@ -80,6 +84,9 @@ interface Message {
   createdAt: any;
   read?: boolean;
   isGhost?: boolean;
+  isDeleted?: boolean;
+  deletedBy?: string[];
+  imageUrl?: string;
   type?: 'text' | 'capsule';
   capsuleData?: {
     condition: 'date' | 'password';
@@ -111,7 +118,11 @@ interface Chat {
   storyContent?: string;
   ghostMode?: boolean;
   isBestFriend?: boolean;
+  typing?: Record<string, boolean>;
   status: 'pending' | 'accepted' | 'rejected';
+  isArchived?: boolean;
+  isHidden?: boolean;
+  isLocked?: boolean;
   otherUser?: {
     uid: string;
     displayName: string;
@@ -158,31 +169,126 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
   );
 };
 
-const ReactionPicker = ({ onSelect, onCancel }: { onSelect: (emoji: string) => void, onCancel: () => void }) => {
+const MessageContextMenuPicker = ({ 
+  onSelectReaction, 
+  onCancel,
+  onReply,
+  onCopy,
+  onEdit,
+  onDelete,
+  canEdit,
+  canDelete,
+  alignTop,
+  rect
+}: { 
+  onSelectReaction: (emoji: string) => void, 
+  onCancel: () => void,
+  onReply: () => void,
+  onCopy: () => void,
+  onEdit?: () => void,
+  onDelete?: () => void,
+  canEdit: boolean,
+  canDelete: boolean,
+  alignTop?: boolean,
+  rect?: DOMRect
+}) => {
   const emojis = ['❤️', '🔥', '😂', '😮', '😢', '👍', '✨', '💯'];
+  
+  const styleStr: React.CSSProperties = rect ? {
+    position: 'fixed',
+    left: `${Math.max(16, rect.left)}px`,
+    top: alignTop ? `${rect.bottom + 8}px` : `${rect.top - 8}px`,
+    transform: alignTop ? 'none' : 'translateY(-100%)'
+  } : {};
   
   return (
     <>
       <div className="fixed inset-0 z-[450]" onClick={onCancel} />
       <motion.div 
-        initial={{ opacity: 0, scale: 0.5, y: 10 }}
+        initial={{ opacity: 0, scale: 0.5, y: alignTop ? -10 : 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="absolute bottom-full mb-2 left-0 bg-white dark:bg-zinc-900 rounded-full shadow-2xl border border-zinc-100 dark:border-zinc-800 p-1.5 flex gap-1 z-[451]"
+        style={styleStr}
+        className={cn(
+          "bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-100 dark:border-zinc-800 p-2 flex flex-col gap-2 z-[451] min-w-[200px]",
+          !rect && "absolute left-0",
+          !rect && (alignTop ? "top-full mt-2" : "bottom-full mb-2")
+        )}
       >
-        {emojis.map((emoji) => (
-          <motion.button
-            key={emoji}
-            whileHover={{ scale: 1.3 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => onSelect(emoji)}
-            className="w-8 h-8 flex items-center justify-center text-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+        <div className="grid grid-cols-4 gap-1 p-1">
+          {emojis.map((emoji) => (
+            <motion.button
+              key={emoji}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => { e.stopPropagation(); onSelectReaction(emoji); onCancel(); }}
+              className="w-10 h-10 flex items-center justify-center text-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+            >
+              {emoji}
+            </motion.button>
+          ))}
+        </div>
+        
+        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 font-sans" />
+        
+        <div className="flex flex-col">
+          <button 
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onReply(); onCancel(); }}
+            className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
           >
-            {emoji}
-          </motion.button>
-        ))}
+            <MessageSquare className="w-4 h-4" /> Reply
+          </button>
+          
+          <button 
+            type="button"
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                onCopy();
+                onCancel(); 
+            }}
+            className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
+          >
+            <CheckCheck className="w-4 h-4" /> Copy Text
+          </button>
+
+          {canEdit && onEdit && (
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(); onCancel(); }}
+              className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
+            >
+              <Edit2 className="w-4 h-4" /> Edit
+            </button>
+          )}
+
+          {canDelete && onDelete && (
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(); onCancel(); }}
+              className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl"
+            >
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
+          )}
+        </div>
       </motion.div>
     </>
   );
+};
+
+const formatMessageText = (text: string) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|~~.*?~~)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    } else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    } else if (part.startsWith('~~') && part.endsWith('~~') && part.length > 4) {
+      return <del key={i}>{part.slice(2, -2)}</del>;
+    }
+    return <span key={i}>{part}</span>;
+  });
 };
 
 export function Messages() {
@@ -195,6 +301,8 @@ export function Messages() {
   const [newMessage, setNewMessage] = useState('');
   const [loadingChats, setLoadingChats] = useState(true);
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
+  const [showHideSetupModal, setShowHideSetupModal] = useState<{chatId: string} | null>(null);
+  const [hideCodeSetup, setHideCodeSetup] = useState('');
   const [isUploadingBg, setIsUploadingBg] = useState(false);
 
   const chatBackground = userData?.chatBackground || { type: 'pattern', value: 'default' };
@@ -235,7 +343,7 @@ export function Messages() {
   const [chatSearchTerm, setChatSearchTerm] = useState('');
   const [isSearchingChat, setIsSearchingChat] = useState(false);
   const [searchMode, setSearchMode] = useState<'chats' | 'users'>('chats');
-  const [filterMode, setFilterMode] = useState<'all' | 'best_friends'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'best_friends' | 'archived'>('all');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
@@ -265,10 +373,14 @@ export function Messages() {
   const [capsuleHint, setCapsuleHint] = useState('');
   const [unlockingCapsuleId, setUnlockingCapsuleId] = useState<string | null>(null);
   const [unlockPasswordInput, setUnlockPasswordInput] = useState('');
+  
+  // AI Personality State
+  const [aiPersonality, setAiPersonality] = useState<'playful' | 'professional' | 'empathetic'>('playful');
   const [editingCapsuleId, setEditingCapsuleId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
+  const [reactionPicker, setReactionPicker] = useState<{ msg: Message, alignTop: boolean, rect?: DOMRect } | null>(null);
   const [contextMenu, setContextMenu] = useState<{chatId: string, x: number, y: number} | null>(null);
+  const [textSelection, setTextSelection] = useState<{ start: number, end: number, x: number, y: number } | null>(null);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -484,7 +596,8 @@ export function Messages() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)).reverse();
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)).reverse()
+        .filter(m => !m.deletedBy?.includes(user?.uid) && !m.isDeleted);
       setMessages(msgs);
       setLoadingMessages(false);
       
@@ -515,16 +628,19 @@ export function Messages() {
     });
 
     // Listen for typing indicator
-    const unsubTyping = onSnapshot(doc(db, 'sparks', activeChat.id), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const typingStatus = data.typingStatus || {};
-        const otherId = activeChat.senderId === user?.uid ? activeChat.receiverId : activeChat.senderId;
-        setIsOtherTyping(!!typingStatus[otherId]);
-      }
-    }, (error) => {
-       console.error("Error fetching typing status:", error);
-    });
+    let unsubTyping: () => void = () => {};
+    if (activeChat.id !== AI_CHAT_ID) {
+      unsubTyping = onSnapshot(doc(db, 'sparks', activeChat.id), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const typingStatus = data.typingStatus || {};
+          const otherId = activeChat.senderId === user?.uid ? activeChat.receiverId : activeChat.senderId;
+          setIsOtherTyping(!!typingStatus[otherId]);
+        }
+      }, (error) => {
+         console.error("Error fetching typing status:", error);
+      });
+    }
 
     return () => {
       unsubscribe();
@@ -535,7 +651,7 @@ export function Messages() {
   const lastTypingTimeRef = useRef<number>(0);
 
   const handleTyping = () => {
-    if (!activeChat || !user || !db) return;
+    if (!activeChat || !user || !db || activeChat.id === AI_CHAT_ID) return;
 
     const now = Date.now();
     // Throttle typing updates to once every 2 seconds to save writes
@@ -704,6 +820,42 @@ export function Messages() {
     setReactionPickerMessageId(null);
   };
 
+  const applyFormat = (formatStart: string, formatEnd: string) => {
+    const textarea = document.getElementById('message-input') as HTMLTextAreaElement;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = newMessage.substring(start, end);
+    const before = newMessage.substring(0, start);
+    const after = newMessage.substring(end);
+    const newText = before + formatStart + selectedText + formatEnd + after;
+    setNewMessage(newText);
+    setTextSelection(null);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + formatStart.length, end + formatStart.length);
+    }, 0);
+  };
+
+  const handleTextSelect = () => {
+    const textarea = document.getElementById('message-input') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    if (textarea.selectionStart !== textarea.selectionEnd) {
+      // Get caret coordinates
+      const rect = textarea.getBoundingClientRect();
+      // Using a simple approximation to show menu above textarea
+      setTextSelection({
+        start: textarea.selectionStart,
+        end: textarea.selectionEnd,
+        x: rect.left + rect.width / 2,
+        y: rect.top
+      });
+    } else {
+      setTextSelection(null);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !activeChat || !newMessage.trim() || isSending) return;
@@ -735,9 +887,17 @@ export function Messages() {
 
         // Call Gemini
         try {
+          setIsOtherTyping(true);
           const ai = getAI();
           if (!ai) throw new Error("AI Assistant not configured");
           
+          let systemInstruction = "You are a playful, witty, and fun AI assistant. Use emojis and be upbeat.";
+          if (aiPersonality === 'professional') {
+            systemInstruction = "You are a professional, highly capable, and concise AI assistant. Provide clear, direct, and factual answers without unnecessary emojis.";
+          } else if (aiPersonality === 'empathetic') {
+            systemInstruction = "You are a highly empathetic, warm, and supportive AI assistant. Listen carefully and offer emotional support and kind words.";
+          }
+
           const history = messages.map(m => ({
             role: m.senderId === user.uid ? "user" : "model",
             parts: [{ text: m.text }],
@@ -746,6 +906,9 @@ export function Messages() {
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: [...history, { role: "user", parts: [{ text }] }],
+            config: {
+              systemInstruction: systemInstruction,
+            }
           });
 
           const aiText = response.text || "I'm sorry, I couldn't process that.";
@@ -774,6 +937,8 @@ export function Messages() {
             read: true
           };
           setMessages(prev => [...prev, errorMsg as Message]);
+        } finally {
+          setIsOtherTyping(false);
         }
       } else {
         await addDoc(collection(db, `sparks/${activeChat.id}/messages`), {
@@ -812,10 +977,34 @@ export function Messages() {
     }
   };
 
+  const isSearchMatchingHideCode = userData?.hiddenChatsCode && searchTerm === userData.hiddenChatsCode;
+
+  const hasVisibleArchivedChats = chats.some(c => {
+    if (isSearchMatchingHideCode) {
+      return c.isArchived && c.isHidden;
+    }
+    return c.isArchived && !c.isHidden;
+  });
+
   const filteredChats = chats.filter(c => {
+    if (isSearchMatchingHideCode) {
+      return c.isHidden;
+    }
+    
+    if (c.isHidden) return false;
+
     const otherName = (c.senderId === user?.uid ? c.receiverName : c.senderName) || 'Unknown';
     const matchesSearch = otherName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterMode === 'all' || (filterMode === 'best_friends' && c.isBestFriend);
+    
+    let matchesFilter = false;
+    if (filterMode === 'archived') {
+      matchesFilter = !!c.isArchived;
+    } else if (filterMode === 'best_friends') {
+      matchesFilter = !!c.isBestFriend && !c.isArchived;
+    } else {
+      matchesFilter = !c.isArchived;
+    }
+    
     return matchesSearch && matchesFilter;
   });
 
@@ -904,8 +1093,9 @@ export function Messages() {
       if (forEveryone) {
         await deleteDoc(doc(db, `sparks/${activeChat.id}/messages`, messageId));
       } else {
-        // Local delete only (simulated by deleting for all as requested by user's "delete from me" intent)
-        await deleteDoc(doc(db, `sparks/${activeChat.id}/messages`, messageId));
+        await updateDoc(doc(db, `sparks/${activeChat.id}/messages`, messageId), {
+          deletedBy: arrayUnion(user.uid)
+        });
       }
       showToast("Message deleted", "success");
     } catch (error) {
@@ -918,6 +1108,11 @@ export function Messages() {
 
   const toggleGhostMode = async () => {
     if (!activeChat || !db) return;
+    if (activeChat.id === AI_CHAT_ID) {
+      showToast("Ghost Mode is not available for AI Assistant", "info");
+      return;
+    }
+    
     try {
       const newStatus = !activeChat.ghostMode;
       await updateDoc(doc(db, 'sparks', activeChat.id), {
@@ -1122,8 +1317,34 @@ export function Messages() {
               <p className="text-zinc-500 text-sm">No chats yet. Spark some connections in the community!</p>
             </div>
           ) : (
-            filteredChats.map((chat, idx) => {
-              const otherUser = chat.otherUser;
+            <>
+              {filterMode === 'archived' && (
+                <button 
+                  onClick={() => setFilterMode('all')}
+                  className="w-full p-4 flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border-b border-zinc-100 dark:border-zinc-800"
+                >
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                  </div>
+                  <div className="font-bold text-sm">Back to Main Chats</div>
+                </button>
+              )}
+              {filterMode === 'all' && hasVisibleArchivedChats && (
+                <button 
+                  onClick={() => setFilterMode('archived')}
+                  className="w-full p-4 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors border-b border-zinc-50 dark:border-zinc-900/50"
+                >
+                  <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-bold text-zinc-900 dark:text-white text-sm">Archived Chats</p>
+                    <p className="text-xs text-zinc-500">{chats.filter(c => c.isArchived).length} archived</p>
+                  </div>
+                </button>
+              )}
+              {filteredChats.map((chat, idx) => {
+                const otherUser = chat.otherUser;
               const otherName = otherUser?.displayName || (chat.senderId === user.uid ? chat.receiverName : chat.senderName) || 'Unknown';
               const isActive = activeChat?.id === chat.id;
               
@@ -1169,10 +1390,33 @@ export function Messages() {
                   </div>
                 </motion.button>
               );
-            })
+            })}
+            </>
           )}
         </div>
       </div>
+
+      {/* Message Context Menu Picker */}
+      {reactionPicker && reactionPicker.msg && (
+        <MessageContextMenuPicker 
+          onSelectReaction={(emoji) => handleReaction(reactionPicker.msg.id, emoji)}
+          onCancel={() => setReactionPicker(null)}
+          onReply={() => setReplyingTo(reactionPicker.msg)}
+          onCopy={() => {
+            navigator.clipboard.writeText(reactionPicker.msg.text);
+            showToast("Copied to clipboard", "success");
+          }}
+          onEdit={reactionPicker.msg.senderId === user?.uid && !reactionPicker.msg.isGhost ? () => {
+            setEditingMessageId(reactionPicker.msg.id);
+            setEditingText(reactionPicker.msg.text);
+          } : undefined}
+          onDelete={() => setShowDeleteConfirm({ type: 'message', id: reactionPicker.msg.id })}
+          canEdit={reactionPicker.msg.senderId === user?.uid && !reactionPicker.msg.isGhost}
+          canDelete={true}
+          alignTop={reactionPicker.alignTop}
+          rect={reactionPicker.rect}
+        />
+      )}
 
       {/* Context Menu */}
       <AnimatePresence>
@@ -1208,13 +1452,41 @@ export function Messages() {
               </button>
               <button 
                 className="w-full px-4 py-2 text-left text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
-                onClick={() => {
-                  navigate('/tools/signal-analyzer');
+                onClick={async () => {
+                  const chat = chats.find(c => c.id === contextMenu.chatId);
+                  if (chat && db) {
+                    await updateDoc(doc(db, "sparks", chat.id), {
+                      isArchived: !chat.isArchived
+                    });
+                  }
                   setContextMenu(null);
                 }}
               >
-                <Sparkles className="w-4 h-4 text-indigo-500" />
-                Analyze Vibe
+                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                {chats.find(c => c.id === contextMenu.chatId)?.isArchived ? "Unarchive" : "Archive"}
+              </button>
+              <button 
+                className="w-full px-4 py-2 text-left text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-2"
+                onClick={async () => {
+                  const chat = chats.find(c => c.id === contextMenu.chatId);
+                  if (chat && db && user) {
+                    if (!chat.isHidden && !userData?.hiddenChatsCode) {
+                      setShowHideSetupModal({ chatId: chat.id });
+                    } else {
+                      await updateDoc(doc(db, "sparks", chat.id), {
+                        isHidden: !chat.isHidden
+                      });
+                      if (!chat.isHidden) {
+                         showToast("Chat hidden! Find it by searching your passcode later.", "success");
+                         if (activeChat?.id === chat.id) setActiveChat(null);
+                      }
+                    }
+                  }
+                  setContextMenu(null);
+                }}
+              >
+                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                {chats.find(c => c.id === contextMenu.chatId)?.isHidden ? "Unhide Chat" : "Hide Chat"}
               </button>
             </motion.div>
           </>
@@ -1270,124 +1542,152 @@ export function Messages() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className={cn(
-                  "flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-xl px-3 py-1.5 transition-all",
-                  isSearchingChat ? "w-48 opacity-100" : "w-0 opacity-0 overflow-hidden"
-                )}>
-                  <Search className="w-4 h-4 text-zinc-400 mr-2 shrink-0" />
-                  <input 
-                    type="text"
-                    placeholder="Search messages..."
-                    value={chatSearchTerm}
-                    onChange={(e) => setChatSearchTerm(e.target.value)}
-                    className="bg-transparent border-none outline-none text-xs w-full"
-                  />
-                </div>
-                <button 
-                  onClick={() => {
-                    setIsSearchingChat(!isSearchingChat);
-                    if (isSearchingChat) setChatSearchTerm('');
-                  }}
-                  className={cn(
-                    "p-2 rounded-full transition-all",
-                    isSearchingChat ? "bg-pink-500 text-white" : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  )}
-                  title="Search messages"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setShowCapsuleVault(true)}
-                  className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all relative"
-                  title="Time Capsule Vault"
-                >
-                  <Lock className="w-5 h-5" />
-                  {messages.filter(m => m.type === 'capsule' && !m.capsuleData?.isUnlocked).length > 0 && (
-                    <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white dark:border-[#0A0A0B]" />
-                  )}
-                </button>
-                <button 
-                  onClick={() => {
-                    const newValue = !isGhostMode;
-                    setIsGhostMode(newValue);
-                    showToast(newValue ? "Ghost Mode ON: Messages will disappear" : "Ghost Mode OFF", newValue ? "success" : "info");
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
-                    isGhostMode 
-                      ? "bg-purple-500/10 text-purple-500 border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]" 
-                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                  )}
-                  title="Toggle Ghost Mode (Disappearing Messages)"
-                >
-                  <Ghost className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{isGhostMode ? "Ghost On" : "Ghost Off"}</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    // Format the last 50 messages for analysis
-                    const transcript = messages.slice(-50).map(m => {
-                      const sender = m.senderId === user.uid ? "Me" : (activeChat.otherUser?.displayName || "Them");
-                      return `${sender}: ${m.text}`;
-                    }).join('\n');
-                    
-                    navigate('/tools/signal-analyzer', { 
-                      state: { 
-                        chatTranscript: transcript,
-                        otherUserName: activeChat.otherUser?.displayName || "Them"
-                      } 
-                    });
-                  }}
-                  className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-all"
-                  title="Analyze Vibe"
-                >
-                  <Sparkles className="w-5 h-5" />
-                </button>
-                <div className="relative group">
-                  <button 
-                    className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all"
+                {activeChat.id === AI_CHAT_ID ? (
+                  <select
+                    value={aiPersonality}
+                    onChange={(e) => setAiPersonality(e.target.value as any)}
+                    className="bg-zinc-100 dark:bg-zinc-900 border-none outline-none text-xs rounded-xl px-3 py-1.5 text-zinc-700 dark:text-zinc-300 mr-2"
                   >
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                    <option value="playful">Playful 😊</option>
+                    <option value="professional">Professional 💼</option>
+                    <option value="empathetic">Empathetic 💙</option>
+                  </select>
+                ) : (
+                  <>
+                    <div className={cn(
+                      "flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-xl px-3 py-1.5 transition-all",
+                      isSearchingChat ? "w-48 opacity-100" : "w-0 opacity-0 overflow-hidden"
+                    )}>
+                      <Search className="w-4 h-4 text-zinc-400 mr-2 shrink-0" />
+                      <input 
+                        type="text"
+                        placeholder="Search messages..."
+                        value={chatSearchTerm}
+                        onChange={(e) => setChatSearchTerm(e.target.value)}
+                        className="bg-transparent border-none outline-none text-xs w-full"
+                      />
+                    </div>
                     <button 
-                      onClick={() => setShowBackgroundModal(true)}
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                      onClick={() => {
+                        setIsSearchingChat(!isSearchingChat);
+                        if (isSearchingChat) setChatSearchTerm('');
+                      }}
+                      className={cn(
+                        "p-2 rounded-full transition-all",
+                        isSearchingChat ? "bg-pink-500 text-white" : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      )}
+                      title="Search messages"
                     >
-                      <Palette className="w-4 h-4 text-pink-500" />
-                      Chat Background
+                      <Search className="w-5 h-5" />
                     </button>
                     <button 
-                      onClick={() => setShowOtherProfile(true)}
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                      onClick={() => setShowCapsuleVault(true)}
+                      className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all relative"
+                      title="Time Capsule Vault"
                     >
-                      View Profile
+                      <Lock className="w-5 h-5" />
+                      {messages.filter(m => m.type === 'capsule' && !m.capsuleData?.isUnlocked).length > 0 && (
+                        <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white dark:border-[#0A0A0B]" />
+                      )}
                     </button>
                     <button 
-                      onClick={handleBlockUser}
-                      className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
+                      onClick={() => {
+                        const newValue = !isGhostMode;
+                        setIsGhostMode(newValue);
+                        showToast(newValue ? "Ghost Mode ON: Messages will disappear" : "Ghost Mode OFF", newValue ? "success" : "info");
+                      }}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                        isGhostMode 
+                          ? "bg-purple-500/10 text-purple-500 border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]" 
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                      )}
+                      title="Toggle Ghost Mode (Disappearing Messages)"
                     >
-                      Block User
+                      <Ghost className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{isGhostMode ? "Ghost On" : "Ghost Off"}</span>
                     </button>
-                    <button 
-                      onClick={() => setShowDeleteConfirm({ type: 'chat', id: activeChat.id })}
-                      className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
-                    >
-                      Remove Friend
-                    </button>
-                    <button 
-                      onClick={() => setShowDeleteConfirm({ type: 'message', id: 'clear_all' })}
-                      className="w-full px-4 py-3 text-left text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
-                    >
-                      Clear Chat History
-                    </button>
-                  </div>
-                </div>
+                    <div className="relative group">
+                      <button 
+                        className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                        <button 
+                          onClick={() => setShowBackgroundModal(true)}
+                          className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                        >
+                          <Palette className="w-4 h-4 text-pink-500" />
+                          Chat Background
+                        </button>
+                        <button 
+                          onClick={() => setShowOtherProfile(true)}
+                          className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                        >
+                          View Profile
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (db) await updateDoc(doc(db, "sparks", activeChat.id), { isArchived: !activeChat.isArchived });
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                        >
+                           <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                          {activeChat.isArchived ? "Unarchive" : "Archive"}
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (db && user) {
+                              if (!activeChat.isHidden && !userData?.hiddenChatsCode) {
+                                setShowHideSetupModal({ chatId: activeChat.id });
+                              } else {
+                                await updateDoc(doc(db, "sparks", activeChat.id), { isHidden: !activeChat.isHidden });
+                                if (!activeChat.isHidden) {
+                                   showToast("Chat hidden! Find it by searching your passcode later.", "success");
+                                   setActiveChat(null);
+                                }
+                              }
+                            }
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
+                        >
+                           <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                          {activeChat.isHidden ? "Unhide Chat" : "Hide Chat"}
+                        </button>
+                        <button 
+                          onClick={handleBlockUser}
+                          className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
+                        >
+                          Block User
+                        </button>
+                        <button 
+                          onClick={() => setShowDeleteConfirm({ type: 'chat', id: activeChat.id })}
+                          className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
+                        >
+                          Remove Friend
+                        </button>
+                        <button 
+                          onClick={() => setShowDeleteConfirm({ type: 'message', id: 'clear_all' })}
+                          className="w-full px-4 py-3 text-left text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                        >
+                          Clear Chat History
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide relative z-0 min-h-0" style={getBackgroundStyle()}>
+            <div 
+              onScroll={() => {
+                if (reactionPicker) setReactionPicker(null);
+                if (editingCapsuleId) setEditingCapsuleId(null);
+              }}
+              className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide relative z-0 min-h-0" style={getBackgroundStyle()}
+            >
               {/* Background Overlay for Readability */}
               {chatBackground.type !== 'pattern' && (
                 <div className="absolute inset-0 bg-white/40 dark:bg-black/40 pointer-events-none z-[-1]" />
@@ -1420,16 +1720,24 @@ export function Messages() {
                   ))}
                 </div>
               ) : (
-                filteredMessages.map((msg, i) => {
-                  const isMe = msg.senderId === user.uid;
-                  const showTime = i === 0 || (msg.createdAt?.toMillis() - messages[i-1].createdAt?.toMillis() > 300000);
-                  
-                  return (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 15, scale: 0.95, originX: isMe ? 1 : 0, originY: 1 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.8 }}
-                      drag="x"
+                <AnimatePresence initial={false}>
+                  {filteredMessages.map((msg, i) => {
+                    const isMe = msg.senderId === user.uid;
+                    const showTime = i === 0 || (msg.createdAt?.toMillis() - messages[i-1].createdAt?.toMillis() > 300000);
+                    
+                    const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
+                    const nextMsg = i < filteredMessages.length - 1 ? filteredMessages[i + 1] : null;
+                    
+                    const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId || (msg.createdAt?.toMillis() - prevMsg.createdAt?.toMillis() > 60000);
+                    const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId || (nextMsg.createdAt?.toMillis() - msg.createdAt?.toMillis() > 60000);
+                    
+                    return (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 15, scale: 0.95, originX: isMe ? 1 : 0, originY: 1 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9, marginBottom: -40 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.8 }}
+                        drag="x"
                       dragConstraints={{ left: isMe ? -50 : 0, right: isMe ? 0 : 50 }}
                       dragElastic={0.1}
                       onDragEnd={(_, info) => {
@@ -1438,7 +1746,7 @@ export function Messages() {
                         }
                       }}
                       key={msg.id} 
-                      className="space-y-1 relative z-10"
+                      className={cn("relative z-10", isFirstInGroup && !showTime ? "mt-4" : "mt-1")}
                     >
                       {showTime && (
                         <div className="flex justify-center my-6">
@@ -1452,74 +1760,43 @@ export function Messages() {
                         isMe ? "justify-end" : "justify-start"
                       )}>
                         <div className="relative flex items-center gap-2 max-w-[85%] sm:max-w-[75%]">
-                          {isMe && !editingMessageId && (
-                            <div className="flex flex-col gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-                              <button 
-                                onClick={() => {
-                                  setEditingMessageId(msg.id);
-                                  setEditingText(msg.text);
-                                }}
-                                className="p-1.5 text-zinc-400 hover:text-pink-500 hover:bg-white dark:hover:bg-zinc-800 rounded-full shadow-sm transition-all"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button 
-                                onClick={() => setReplyingTo(msg)}
-                                className="p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-white dark:hover:bg-zinc-800 rounded-full shadow-sm transition-all"
-                                title="Reply"
-                              >
-                                <Send className="w-3.5 h-3.5 rotate-180" />
-                              </button>
-                              <button 
-                                onClick={() => setShowDeleteConfirm({ type: 'message', id: msg.id })}
-                                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-800 rounded-full shadow-sm transition-all"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
-                          
-                          {!isMe && (
-                            <div className="flex flex-col gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity order-last">
-                              <button 
-                                onClick={() => setReplyingTo(msg)}
-                                className="p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-white dark:hover:bg-zinc-800 rounded-full shadow-sm transition-all"
-                                title="Reply"
-                              >
-                                <Send className="w-3.5 h-3.5" />
-                              </button>
-                              <button 
-                                onClick={() => setReactionPickerMessageId(msg.id)}
-                                className="p-1.5 text-zinc-400 hover:text-pink-500 hover:bg-white dark:hover:bg-zinc-800 rounded-full shadow-sm transition-all"
-                                title="React"
-                              >
-                                <Smile className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
-
                           <div 
-                            onClick={() => {
-                              if (reactionPickerMessageId === msg.id) {
-                                setReactionPickerMessageId(null);
+                            onClick={(e) => {
+                              if (reactionPicker?.msg.id === msg.id) {
+                                setReactionPicker(null);
                               } else {
-                                setReactionPickerMessageId(msg.id);
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const alignTop = rect.top < 200;
+                                setReactionPicker({ msg, alignTop, rect });
                               }
                             }}
                             onContextMenu={(e) => {
-                              e.preventDefault();
-                              setReactionPickerMessageId(msg.id);
+                               e.preventDefault();
+                               const rect = e.currentTarget.getBoundingClientRect();
+                               const alignTop = rect.top < 200;
+                               setReactionPicker({ msg, alignTop, rect });
                             }}
                             className={cn(
-                              "px-4 py-3 rounded-[20px] text-[15px] leading-relaxed shadow-sm relative cursor-pointer active:scale-[0.98] transition-transform",
+                              "px-5 py-3 text-[15px] leading-relaxed shadow-sm relative cursor-pointer active:scale-[0.98] transition-[transform,border-radius] duration-200",
                               isMe 
-                                ? (msg.isGhost ? "bg-purple-600 text-white rounded-br-sm shadow-[0_4px_20px_rgba(147,51,234,0.25)] border border-purple-400/50" : "bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-br-sm shadow-[0_4px_15px_rgba(236,72,153,0.2)]")
-                                : (msg.isGhost ? "bg-zinc-800 text-purple-100 rounded-bl-sm border border-purple-500/30" : "bg-white dark:bg-[#18181B] text-zinc-800 dark:text-zinc-200 border border-zinc-100 dark:border-zinc-800/50 rounded-bl-sm shadow-[0_2px_10px_rgba(0,0,0,0.02)]"),
+                                ? cn(
+                                    msg.isGhost ? "bg-purple-600 text-white shadow-[0_4px_20px_rgba(147,51,234,0.25)] border border-purple-400/50" : "bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/20 border border-pink-400/20",
+                                    "rounded-[24px]",
+                                    isFirstInGroup ? "rounded-tr-[24px]" : "rounded-tr-[8px]",
+                                    isLastInGroup ? "rounded-br-[24px]" : "rounded-br-[8px]"
+                                  )
+                                : cn(
+                                    msg.isGhost ? "bg-zinc-800 text-purple-100 border border-purple-500/30" : "bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] text-zinc-800 dark:text-zinc-200",
+                                    "rounded-[24px]",
+                                    isFirstInGroup ? "rounded-tl-[24px]" : "rounded-tl-[8px]",
+                                    isLastInGroup ? "rounded-bl-[24px]" : "rounded-bl-[8px]"
+                                  ),
                               activeChat.isBestFriend && isMe && !msg.isGhost && "shadow-[0_0_25px_rgba(236,72,153,0.35)] border border-pink-400/50",
                               activeChat.isBestFriend && !isMe && !msg.isGhost && "shadow-[0_0_25px_rgba(234,179,8,0.15)] border border-yellow-400/30"
                             )}
                           >
-                            {msg.replyTo && (
+                              <>
+                                {msg.replyTo && (
                               <div className={cn(
                                 "mb-2 p-2 rounded-lg border-l-2 text-xs bg-black/5 dark:bg-white/5",
                                 isMe ? "border-white/50 text-white/80" : "border-pink-500 text-zinc-500"
@@ -1676,7 +1953,7 @@ export function Messages() {
                                   </form>
                                 ) : (
                                   <>
-                                    {msg.text}
+                                    {msg.text !== 'Sent an image' && formatMessageText(msg.text)}
                                     {(msg as any).editedAt && (
                                       <span className="ml-2 text-[8px] opacity-50 italic">(edited)</span>
                                     )}
@@ -1711,26 +1988,42 @@ export function Messages() {
                                 </form>
                               ) : (
                                 <>
-                                  {msg.text}
+                                  {msg.imageUrl && (
+                                    <div className="mb-2 max-w-[240px] rounded-lg overflow-hidden border border-white/10 shadow-sm">
+                                      <img src={msg.imageUrl} alt="attachment" className="w-full h-auto object-cover brightness-90 hover:brightness-100 transition-all cursor-pointer" onClick={() => window.open(msg.imageUrl, '_blank')} />
+                                    </div>
+                                  )}
+                                  {msg.text !== 'Sent an image' && formatMessageText(msg.text)}
                                   {(msg as any).editedAt && (
                                     <span className="ml-2 text-[8px] opacity-50 italic">(edited)</span>
                                   )}
                                 </>
                               )
                             )}
+                          </>
                             <div className={cn(
                               "flex items-center justify-end gap-1 mt-1",
-                              isMe ? "text-pink-100" : "text-zinc-400"
+                              isMe ? "text-pink-100/70" : "text-zinc-400"
                             )}>
-                              <span className="text-[8px] font-bold opacity-70">
+                              <span className="text-[9px] font-medium tracking-wide">
                                 {formatTime(msg.createdAt)}
                               </span>
                               {isMe && (
-                                msg.read ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />
+                                <motion.div
+                                  initial={{ scale: 0.8 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                >
+                                  {msg.read ? (
+                                    <CheckCheck className="w-3.5 h-3.5 text-blue-300 dark:text-blue-400" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5 text-pink-200/50" />
+                                  )}
+                                </motion.div>
                               )}
                             </div>
 
-                            {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                            {!msg.isDeleted && msg.reactions && Object.keys(msg.reactions).length > 0 && (
                               <div className={cn(
                                 "absolute -bottom-2 flex flex-wrap gap-1",
                                 isMe ? "right-0" : "left-0"
@@ -1756,17 +2049,37 @@ export function Messages() {
                               </div>
                             )}
                           </div>
-                          {reactionPickerMessageId === msg.id && (
-                            <ReactionPicker 
-                              onSelect={(emoji) => handleReaction(msg.id, emoji)}
-                              onCancel={() => setReactionPickerMessageId(null)}
-                            />
-                          )}
                         </div>
                       </div>
                     </motion.div>
                   );
-                })
+                })}
+                </AnimatePresence>
+              )}
+              {isOtherTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="flex items-center gap-2 justify-start relative z-10 mt-2"
+                >
+                  <div className="bg-white dark:bg-[#18181B] border border-zinc-100 dark:border-zinc-800/50 rounded-r-[20px] rounded-tl-[20px] rounded-bl-[6px] p-4 shadow-sm flex items-center justify-center gap-1.5 w-16 h-10 ml-2">
+                    <motion.div
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
+                      className="w-1.5 h-1.5 bg-zinc-400 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
+                      className="w-1.5 h-1.5 bg-zinc-400 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
+                      className="w-1.5 h-1.5 bg-zinc-400 rounded-full"
+                    />
+                  </div>
+                </motion.div>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -1803,6 +2116,22 @@ export function Messages() {
                   />
                 </div>
               )}
+              
+              {textSelection && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute z-[100] bg-zinc-900 border border-zinc-800 shadow-2xl rounded-xl flex items-center p-1"
+                  style={{ 
+                    left: `${Math.max(16, textSelection.x - 70)}px`, 
+                    top: `-48px`
+                  }}
+                >
+                  <button type="button" onClick={(e) => { e.preventDefault(); applyFormat('**', '**'); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
+                  <button type="button" onClick={(e) => { e.preventDefault(); applyFormat('*', '*'); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
+                  <button type="button" onClick={(e) => { e.preventDefault(); applyFormat('~~', '~~'); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors" title="Strikethrough"><Strikethrough className="w-4 h-4" /></button>
+                </motion.div>
+              )}
               <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                 <div className={cn(
                   "flex-1 flex items-end gap-2 bg-zinc-100 dark:bg-zinc-900 p-2 rounded-3xl border transition-all",
@@ -1811,6 +2140,52 @@ export function Messages() {
                     : "border-transparent focus-within:border-pink-500 focus-within:ring-2 focus-within:ring-pink-500/20"
                 )}>
                   <div className="flex gap-1 shrink-0 pb-1 pl-1">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      id="image-upload" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !activeChat || !user) return;
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          try {
+                            setIsSending(true);
+                            const base64 = reader.result as string;
+                            const storageRef = ref(storage, `chats/${activeChat.id}/${Date.now()}_${file.name}`);
+                            await uploadString(storageRef, base64, 'data_url');
+                            const url = await getDownloadURL(storageRef);
+
+                            await addDoc(collection(db, `sparks/${activeChat.id}/messages`), {
+                              text: 'Sent an image',
+                              imageUrl: url,
+                              senderId: user.uid,
+                              createdAt: serverTimestamp(),
+                              read: false
+                            });
+                            if (activeChat.id !== AI_CHAT_ID) {
+                              await updateDoc(doc(db, "sparks", activeChat.id), {
+                                lastMessage: "Sent an image",
+                                lastMessageAt: serverTimestamp()
+                              });
+                            }
+                          } catch (err) {
+                            console.error(err);
+                          } finally {
+                            setIsSending(false);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <label 
+                      htmlFor="image-upload" 
+                      className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors rounded-xl cursor-pointer"
+                      title="Attach Image"
+                    >
+                      <ImageIcon className="w-5 h-5" />
+                    </label>
                     <button 
                       type="button" 
                       onClick={() => setShowCapsuleModal(true)}
@@ -1832,14 +2207,19 @@ export function Messages() {
                   </div>
                   <div className="flex-1 relative">
                     <textarea
+                      id="message-input"
                       value={newMessage}
                       onChange={(e) => {
                         setNewMessage(e.target.value);
                         handleTyping();
+                        handleTextSelect();
                         // Auto-expand
                         e.target.style.height = 'inherit';
                         e.target.style.height = `${e.target.scrollHeight}px`;
                       }}
+                      onSelect={handleTextSelect}
+                      onClick={handleTextSelect}
+                      onKeyUp={handleTextSelect}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -1886,7 +2266,7 @@ export function Messages() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-800"
+              className="bg-white dark:bg-zinc-900 w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2.5rem] shadow-2xl border border-zinc-100 dark:border-zinc-800"
             >
               <div className="p-8 space-y-6">
                 <div className="flex items-center justify-between">
@@ -2040,6 +2420,71 @@ export function Messages() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showHideSetupModal && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-sm bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl border border-zinc-100 dark:border-zinc-900"
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                </div>
+              </div>
+              <h3 className="text-xl font-black text-center text-zinc-900 dark:text-white mb-2">
+                Set Hide Code
+              </h3>
+              <p className="text-zinc-500 text-sm text-center mb-6">
+                Enter a passcode to hide this chat. You can find hidden chats later by entering this code in the search bar.
+              </p>
+              
+              <div className="space-y-4">
+                <input
+                  type="password"
+                  placeholder="Enter passcode (e.g., 1234)"
+                  value={hideCodeSetup}
+                  onChange={(e) => setHideCodeSetup(e.target.value)}
+                  className="w-full p-4 bg-zinc-100 items-center justify-center text-center tracking-[0.5em] text-lg font-mono dark:bg-zinc-900/50 outline-none rounded-xl border border-zinc-200 dark:border-zinc-800 focus:border-red-500 dark:focus:border-red-500 font-bold dark:text-white"
+                />
+                
+                <div className="flex gap-3">
+                  <Button 
+                    variant="custom"
+                    onClick={() => { setShowHideSetupModal(null); setHideCodeSetup(''); }}
+                    className="flex-1 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-white font-bold rounded-xl h-12"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="custom"
+                    onClick={async () => {
+                      if (hideCodeSetup.length < 4) {
+                        showToast("Passcode must be at least 4 characters", "error");
+                        return;
+                      }
+                      if (db && user) {
+                        await updateDoc(doc(db, 'users', user.uid), { hiddenChatsCode: hideCodeSetup });
+                        await updateDoc(doc(db, "sparks", showHideSetupModal.chatId), { isHidden: true });
+                        showToast("Chat hidden! Find it by searching your passcode later.", "success");
+                        if (activeChat?.id === showHideSetupModal.chatId) setActiveChat(null);
+                        setShowHideSetupModal(null);
+                        setHideCodeSetup('');
+                      }
+                    }}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl h-12 shadow-lg shadow-red-500/20"
+                  >
+                    Hide Chat
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
@@ -2048,7 +2493,7 @@ export function Messages() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-sm bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl border border-zinc-100 dark:border-zinc-900"
+              className="w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl border border-zinc-100 dark:border-zinc-900"
             >
               <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-2">
                 {showDeleteConfirm.type === 'chat' ? 'Remove Friend?' : 
@@ -2116,7 +2561,7 @@ export function Messages() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-sm bg-white dark:bg-[#0A0A0B] rounded-3xl overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-900"
+              className="w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white dark:bg-[#0A0A0B] rounded-3xl overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-900"
             >
               <div className="h-24 bg-gradient-to-r from-pink-500 to-purple-500" />
               <div className="px-6 pb-8 text-center -mt-12">
@@ -2173,7 +2618,7 @@ export function Messages() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-md bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl border border-zinc-100 dark:border-zinc-900"
+              className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white dark:bg-[#0A0A0B] rounded-3xl p-6 shadow-2xl border border-zinc-100 dark:border-zinc-900"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -2305,7 +2750,7 @@ export function Messages() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-md bg-white dark:bg-[#0A0A0B] rounded-3xl overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-900"
+              className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white dark:bg-[#0A0A0B] rounded-3xl overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-900"
             >
               <div className="p-6 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between">
                 <div className="flex items-center gap-3">

@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight, Zap, Coffee, Ghost, Flame, User, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Heart, Sparkles, MessageCircleHeart, Gamepad2, Star, Bot, Share2, RefreshCw, Download, BookHeart, ArrowRight, Zap, User, Loader2 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -68,10 +68,10 @@ export function Home() {
         if (response.text) {
           setAiIntro(response.text);
         } else {
-          setAiIntro("Ready to find your perfect match? 💕 Discover your cosmic compatibility, read viral community stories, or vibe check your crushing texts. Start exploring now!");
+          setAiIntro("Ready to find your perfect match? 💕 Discover your cosmic compatibility, play fun games, or vibe check your crushing texts. Start exploring now!");
         }
       } catch (err) {
-        setAiIntro("Ready to find your perfect match? 💕 Discover your cosmic compatibility, read viral community stories, or vibe check your crushing texts. Start exploring now!");
+        setAiIntro("Ready to find your perfect match? 💕 Discover your cosmic compatibility, play fun games, or vibe check your crushing texts. Start exploring now!");
       } finally {
         setLoadingAiIntro(false);
       }
@@ -226,10 +226,10 @@ export function Home() {
       color: "from-pink-500 to-rose-500"
     },
     {
-      title: "Viral Stories",
-      description: "Anonymous tea from the community. Share your toxic traits, wholesome moments, or ghosting horror stories.",
+      title: "Story Maker",
+      description: "Create AI-powered romantic, funny, or dramatic stories about your couple. Let your imagination run wild.",
       icon: <BookHeart className="w-6 h-6 text-rose-500" />,
-      path: "/stories",
+      path: "/tools/story",
       color: "from-rose-500 to-orange-500"
     }
   ];
@@ -237,9 +237,10 @@ export function Home() {
   return (
     <>
       <SEO 
-        title="Love Calculator & Astrological Insights" 
-        description="Check your crush compatibility, read anonymous student confessions, and get your Astro vibe. HeartSpark is pure vibes! ❤️" 
+        title="Love Calculator, Text Analyzer & Astrology" 
+        description="Decode text messages, check your zodiac compatibility, and calculate your ultimate love match. HeartSpark is your AI-powered wingman for modern romance." 
         canonicalUrl="https://heartspark-five.vercel.app/"
+        keywords="love calculator, text analyzer, zodiac compatibility, relationship AI, dating tools, decode mixed signals"
       />
       <div className="space-y-24 py-12">
 
@@ -389,8 +390,8 @@ export function Home() {
             </div>
             
             <form onSubmit={calculateLove} className="space-y-8">
-              <div className="flex flex-col md:flex-row items-center gap-4 relative">
-                <div className="w-full space-y-2">
+              <div className="flex flex-col md:flex-row items-center relative z-0">
+                <div className="w-full space-y-2 relative z-0">
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-4">Your Name</label>
                   <input
                     type="text"
@@ -402,11 +403,11 @@ export function Home() {
                   />
                 </div>
                 
-                <div className="flex-shrink-0 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-pink-500 border-4 border-white dark:border-zinc-900 text-white shadow-lg md:mt-6">
+                <div className="flex-shrink-0 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-pink-500 border-4 border-white dark:border-zinc-900 text-white shadow-lg -my-3 md:my-0 md:-mx-4 md:mt-6">
                   <Heart className="w-5 h-5 fill-current" />
                 </div>
 
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-2 relative z-0">
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-4">Crush's Name</label>
                   <input
                     type="text"
@@ -617,59 +618,7 @@ export function Home() {
         <ToolCarousel features={features} />
       </section>
 
-      {/* TRENDING TEA TEASER */}
-      <section className="px-4 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-pink-500/10 flex items-center justify-center">
-              <Coffee className="w-5 h-5 text-pink-500" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Trending Tea</h2>
-          </div>
-          <Link to="/stories" className="text-sm font-bold text-pink-500 hover:text-pink-600 transition-colors flex items-center gap-1">
-            View All <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6 rounded-3xl border-zinc-100 dark:border-white/5 bg-white dark:bg-zinc-900/50 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Ghost className="w-12 h-12 text-zinc-500" />
-            </div>
-            <p className="text-sm font-medium text-slate-600 dark:text-zinc-400 italic mb-4">
-              "He left me on read for 3 days then liked my story... what is the vibe? 💀"
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs">💅</div>
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Anonymous</span>
-              </div>
-              <div className="flex items-center gap-3 text-zinc-400">
-                <div className="flex items-center gap-1 text-[10px] font-bold"><Heart className="w-3 h-3" /> 1.2k</div>
-                <div className="flex items-center gap-1 text-[10px] font-bold"><MessageCircleHeart className="w-3 h-3" /> 42</div>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-6 rounded-3xl border-zinc-100 dark:border-white/5 bg-white dark:bg-zinc-900/50 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Flame className="w-12 h-12 text-rose-500" />
-            </div>
-            <p className="text-sm font-medium text-slate-600 dark:text-zinc-400 italic mb-4">
-              "My toxic trait is thinking I can fix a Scorpio man. Wish me luck. 🔥"
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs">🤡</div>
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Anonymous</span>
-              </div>
-              <div className="flex items-center gap-3 text-zinc-400">
-                <div className="flex items-center gap-1 text-[10px] font-bold"><Heart className="w-3 h-3" /> 856</div>
-                <div className="flex items-center gap-1 text-[10px] font-bold"><MessageCircleHeart className="w-3 h-3" /> 18</div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
+      {/* TRENDING TEA TEASER (Removed) */}
 
       {/* DAILY FORTUNE TEASER */}
       <section className="px-4 max-w-7xl mx-auto pb-12">

@@ -122,6 +122,7 @@ export const registerWithUsername = async (username: string, password: string, n
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       bio: "Hey there! I'm using Heart Spark.",
+      loveStatus: "Single",
       blockedUsers: []
     });
 
@@ -171,6 +172,9 @@ export const getFriendlyErrorMessage = (error: any): string => {
   }
   if (code === 'auth/too-many-requests') {
     return 'Too many attempts. Please try again later.';
+  }
+  if (code === 'auth/user-disabled') {
+    return 'This account has been disabled.';
   }
   
   return error.message || 'An unexpected error occurred. Please try again.';

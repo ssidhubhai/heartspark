@@ -13,6 +13,19 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+const containerVariants: any = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants: any = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [password, setPassword] = useState('');
@@ -156,20 +169,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex overflow-y-auto p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md"
+            className="fixed inset-0 bg-zinc-950/60 backdrop-blur-md"
           />
           
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-lg overflow-hidden relative border border-white/20 dark:border-white/5"
+            className="m-auto bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-lg relative border border-white/20 dark:border-white/5 overflow-hidden"
           >
             {/* Background Decorative Elements */}
             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-transparent -z-10" />
@@ -204,8 +217,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <X className="w-6 h-6" />
             </button>
 
-            <div className="p-8 sm:p-12">
-              <div className="flex flex-col items-center text-center mb-8">
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="p-8 sm:p-12"
+            >
+              <motion.div variants={itemVariants} className="flex flex-col items-center text-center mb-8">
                 <Logo size="lg" className="mb-6" />
                 <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-2 uppercase tracking-tight">
                   {isLogin ? 'Welcome Back' : 'Join The Lab'}
@@ -213,10 +231,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <p className="text-zinc-500 dark:text-zinc-400 font-medium">
                   {isLogin ? 'Sign in to access your digital destiny.' : 'Start your journey with us today.'}
                 </p>
-              </div>
+              </motion.div>
 
               {/* Tab Switcher */}
-              <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl mb-8">
+              <motion.div variants={itemVariants} className="flex p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl mb-8">
                 <button
                   type="button"
                   onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }}
@@ -237,14 +255,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 >
                   Create Account
                 </button>
-              </div>
+              </motion.div>
 
               <AnimatePresence mode="wait">
                 {error && (
                   <motion.div
                     key="error"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                     className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl flex flex-col gap-3 text-red-600 dark:text-red-400 text-sm"
                   >
                     <div className="flex items-start gap-3">
@@ -269,8 +289,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {successMsg && (
                   <motion.div
                     key="success"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                     className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex items-start gap-3 text-emerald-600 dark:text-emerald-400 text-sm"
                   >
                     <CheckCircle2 className="w-5 h-5 shrink-0" />
@@ -283,9 +305,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <AnimatePresence mode="popLayout">
                   {!isLogin && (
                     <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
                       className="space-y-2 overflow-hidden"
                     >
                       <label className="block text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] ml-4">Display Name</label>
@@ -295,7 +318,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full h-14 pl-14 pr-6 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 focus:border-pink-500 focus:ring-8 focus:ring-pink-500/10 outline-none text-zinc-900 dark:text-white font-bold transition-all"
+                          className="w-full h-14 pl-14 pr-6 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 focus:bg-white dark:focus:bg-zinc-900 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/20 outline-none text-zinc-900 dark:text-white font-bold transition-all focus:shadow-[0_0_20px_rgba(236,72,153,0.2)]"
                           placeholder="Your Name"
                           required={!isLogin}
                         />
@@ -304,7 +327,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-2">
+                <motion.div variants={itemVariants} className="space-y-2">
                   <div className="flex justify-between items-center px-4">
                     <label className="block text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em]">Username</label>
                     {checkingUsername && !isLogin && <Loader2 className="w-3 h-3 animate-spin text-pink-500" />}
@@ -325,12 +348,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         }
                       }}
                       className={cn(
-                        "w-full h-14 pl-10 pr-6 rounded-2xl border-2 bg-zinc-50/50 dark:bg-zinc-900/50 focus:ring-8 outline-none text-zinc-900 dark:text-white font-bold transition-all",
+                        "w-full h-14 pl-10 pr-6 rounded-2xl border-2 bg-zinc-50/50 dark:bg-zinc-900/50 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 outline-none text-zinc-900 dark:text-white font-bold transition-all focus:shadow-[0_0_20px_rgba(236,72,153,0.2)]",
                         !isLogin && usernameError 
-                          ? "border-red-500 focus:ring-red-500/10" 
+                          ? "border-red-500 focus:ring-red-500/20 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
                           : (!isLogin && username.length >= 3 && !checkingUsername && !usernameError)
-                            ? "border-emerald-500/50 focus:border-emerald-500 focus:ring-emerald-500/10"
-                            : "border-zinc-100 dark:border-zinc-800 focus:border-pink-500 focus:ring-pink-500/10"
+                            ? "border-emerald-500/50 focus:border-emerald-500 focus:ring-emerald-500/20 focus:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                            : "border-zinc-100 dark:border-zinc-800 focus:border-pink-500 focus:ring-pink-500/20"
                       )}
                       placeholder="username"
                       required
@@ -342,9 +365,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   {!isLogin && !usernameError && username.length >= 3 && !checkingUsername && (
                     <p className="text-[10px] text-emerald-500 font-bold ml-4 uppercase tracking-widest">Username is available!</p>
                   )}
-                </div>
+                </motion.div>
 
-                <div className="space-y-2">
+                <motion.div variants={itemVariants} className="space-y-2">
                   <label className="block text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] ml-4">Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-pink-500 transition-colors" />
@@ -355,7 +378,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         setPassword(e.target.value);
                         if (!isLogin) calculatePasswordStrength(e.target.value);
                       }}
-                      className="w-full h-14 pl-14 pr-14 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 focus:border-pink-500 focus:ring-8 focus:ring-pink-500/10 outline-none text-zinc-900 dark:text-white font-bold transition-all"
+                      className="w-full h-14 pl-14 pr-14 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 focus:bg-white dark:focus:bg-zinc-900 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/20 outline-none text-zinc-900 dark:text-white font-bold transition-all focus:shadow-[0_0_20px_rgba(236,72,153,0.2)]"
                       placeholder="••••••••"
                       required
                       minLength={6}
@@ -385,19 +408,21 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
 
-                <Button 
-                  variant="custom" 
-                  type="submit" 
-                  className="w-full h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-x text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-pink-500/20 hover:shadow-pink-500/40 transition-all border-none hover:-translate-y-1 active:scale-95 mt-4" 
-                  disabled={loading}
-                >
-                  {isLogin ? 'Sign In' : 'Continue'}
-                  {!loading && <ArrowRight className="w-5 h-5 ml-2 inline-block" />}
-                </Button>
+                <motion.div variants={itemVariants}>
+                  <Button 
+                    variant="custom" 
+                    type="submit" 
+                    className="w-full h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-x text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-pink-500/20 hover:shadow-pink-500/40 transition-all border-none hover:-translate-y-1 active:scale-95 mt-4" 
+                    disabled={loading}
+                  >
+                    {isLogin ? 'Sign In' : 'Continue'}
+                    {!loading && <ArrowRight className="w-5 h-5 ml-2 inline-block" />}
+                  </Button>
+                </motion.div>
               </form>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       )}

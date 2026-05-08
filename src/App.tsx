@@ -5,6 +5,7 @@
 
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Layout } from './components/Layout';
 import { Analytics } from './components/Analytics';
 import { AuthProvider } from './contexts/AuthContext';
@@ -26,7 +27,6 @@ const LoveTitles = lazy(() => import('./pages/LoveTitles').then(m => ({ default:
 const CoupleStory = lazy(() => import('./pages/CoupleStory').then(m => ({ default: m.CoupleStory })));
 const DailyFortune = lazy(() => import('./pages/DailyFortune').then(m => ({ default: m.DailyFortune })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
-const CommunityStories = lazy(() => import('./pages/CommunityStories').then(m => ({ default: m.CommunityStories })));
 const Messages = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })));
 const CrushPrediction = lazy(() => import('./pages/CrushPrediction').then(m => ({ default: m.CrushPrediction })));
 const SignalAnalyzer = lazy(() => import('./pages/SignalAnalyzer').then(m => ({ default: m.SignalAnalyzer })));
@@ -81,7 +81,6 @@ export default function App() {
                   <Route path="/tools/signal-analyzer" element={<ProtectedRoute><SignalAnalyzer /></ProtectedRoute>} />
                   <Route path="/analyzer" element={<ProtectedRoute><SignalAnalyzer /></ProtectedRoute>} />
                   <Route path="/profile/:uid?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/stories" element={<ProtectedRoute><CommunityStories /></ProtectedRoute>} />
                   <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
