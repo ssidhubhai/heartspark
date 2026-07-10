@@ -64,10 +64,30 @@ if (db) {
             const recipientId = sparkData.senderId === message.senderId ? sparkData.receiverId : sparkData.senderId;
             const senderName = sparkData.senderId === message.senderId ? sparkData.senderName : sparkData.receiverName;
             
+            const isGhost = message.isGhost === true;
+            const isCapsule = message.type === 'capsule';
+            
+            let title = `New message from ${senderName}`;
+            let body = message.text || "Sent an attachment";
+            
+            if (isGhost) {
+              title = "New Anonymous Confession! 🤫✨";
+              body = "Someone sent you a secret ghost message! Tap to read...";
+            } else if (isCapsule) {
+              title = `New Time Capsule from ${senderName} 🔒`;
+              body = "A time capsule was sealed for you. Tap to view!";
+            } else if (message.text === 'Sent an image' || message.imageUrl) {
+              body = "📷 Sent an image";
+            } else if (message.text === 'Sent a video' || message.fileType?.startsWith('video/')) {
+              body = "🎥 Sent a video";
+            } else if (message.text === 'Sent a file' || message.fileUrl) {
+              body = `📁 Sent a file: ${message.fileName || 'attachment'}`;
+            }
+
             await sendPushNotification(
               recipientId,
-              `New message from ${senderName}`,
-              message.text,
+              title,
+              body,
               { sparkId, type: 'message' }
             );
           }

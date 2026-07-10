@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Send, 
@@ -30,7 +30,12 @@ import {
   Key,
   Bold,
   Italic,
-  Strikethrough
+  Strikethrough,
+  ArrowDown,
+  Info,
+  BarChart3,
+  FileText,
+  Heart
 } from 'lucide-react';
 import { 
   collection, 
@@ -51,7 +56,7 @@ import {
   writeBatch,
   arrayUnion
 } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadString, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { GoogleGenAI } from "@google/genai";
 
 import { db, storage } from '../lib/firebase';
@@ -87,6 +92,10 @@ interface Message {
   isDeleted?: boolean;
   deletedBy?: string[];
   imageUrl?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
   type?: 'text' | 'capsule';
   capsuleData?: {
     condition: 'date' | 'password';
@@ -115,6 +124,8 @@ interface Chat {
   lastMessage?: string;
   lastMessageAt?: any;
   unreadCount?: number;
+  lastMessageSenderId?: string;
+  lastMessageRead?: boolean;
   storyContent?: string;
   ghostMode?: boolean;
   isBestFriend?: boolean;
@@ -276,6 +287,43 @@ const MessageContextMenuPicker = ({
   );
 };
 
+const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800, quality = 0.5): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } else {
+        resolve(base64Str);
+      }
+    };
+    img.onerror = () => {
+      resolve(base64Str);
+    };
+  });
+};
+
 const formatMessageText = (text: string) => {
   if (!text) return null;
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|~~.*?~~)/g);
@@ -291,9 +339,64 @@ const formatMessageText = (text: string) => {
   });
 };
 
+const renderMessageContent = (text: string) => {
+  if (!text) return null;
+  if (text.startsWith("🔮 Prediction:")) {
+    const content = text.replace("🔮 Prediction:", "").trim();
+    return (
+      <div className="p-4 bg-gradient-to-br from-indigo-950/90 to-purple-950/90 backdrop-blur-md rounded-2xl border border-indigo-500/30 text-white shadow-[0_8px_32px_rgba(99,102,241,0.25)] max-w-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">🔮</span>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Crush Prediction Report</p>
+        </div>
+        <p className="text-sm leading-relaxed text-indigo-100 font-medium whitespace-pre-wrap">{content}</p>
+      </div>
+    );
+  }
+  if (text.startsWith("🔥 Flirting Test Result:")) {
+    const content = text.replace("🔥 Flirting Test Result:", "").trim();
+    return (
+      <div className="p-4 bg-gradient-to-br from-rose-950/90 to-pink-950/90 backdrop-blur-md rounded-2xl border border-rose-500/30 text-white shadow-[0_8px_32px_rgba(244,63,94,0.25)] max-w-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">🔥</span>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-300">Flirting Quotient Report</p>
+        </div>
+        <p className="text-sm leading-relaxed text-rose-100 font-medium whitespace-pre-wrap">{content}</p>
+      </div>
+    );
+  }
+  if (text.startsWith("✨ Daily Fortune:")) {
+    const content = text.replace("✨ Daily Fortune:", "").trim();
+    return (
+      <div className="p-4 bg-gradient-to-br from-violet-950/90 to-fuchsia-950/90 backdrop-blur-md rounded-2xl border border-fuchsia-500/30 text-white shadow-[0_8px_32px_rgba(168,85,247,0.25)] max-w-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">✨</span>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-300">Cosmic Love Fortune</p>
+        </div>
+        <p className="text-sm leading-relaxed text-fuchsia-100 font-medium whitespace-pre-wrap">{content}</p>
+      </div>
+    );
+  }
+  if (text.startsWith("🎮 Game Update:") || text.startsWith("🤝 Complete a Mini-Game")) {
+    const content = text.replace(/🎮 Game Update:|🤝 Complete a Mini-Game/g, "").trim();
+    return (
+      <div className="p-4 bg-gradient-to-br from-emerald-950/90 to-teal-950/90 backdrop-blur-md rounded-2xl border border-emerald-500/30 text-white shadow-[0_8px_32px_rgba(16,185,129,0.25)] max-w-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">🎮</span>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">HeartSpark Challenge</p>
+        </div>
+        <p className="text-sm leading-relaxed text-emerald-100 font-medium whitespace-pre-wrap">{content}</p>
+      </div>
+    );
+  }
+  return formatMessageText(text);
+};
+
 export function Messages() {
   const { user, userData, showToast, login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkChatId = searchParams.get('id') || searchParams.get('chatId');
 
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
@@ -325,6 +428,22 @@ export function Messages() {
     return {};
   };
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<'media' | 'insights' | 'stats'>('stats');
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
+  const scrollToMessage = (msgId: string) => {
+    setHighlightedMessageId(msgId);
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        setHighlightedMessageId(null);
+      }, 3000);
+    } else {
+      showToast("Could not find message in current view.", "info");
+    }
+  };
   
   // Toggle mobile bottom nav based on activeChat
   useEffect(() => {
@@ -337,7 +456,24 @@ export function Messages() {
       document.body.classList.remove('hide-mobile-nav');
     };
   }, [activeChat]);
+
+  // Auto-activate chat from deep link / URL search parameter
+  useEffect(() => {
+    if (deepLinkChatId && chats.length > 0 && (!activeChat || activeChat.id !== deepLinkChatId)) {
+      const targetChat = chats.find(c => c.id === deepLinkChatId);
+      if (targetChat) {
+        setActiveChat(targetChat);
+        // Clear search parameters so it doesn't trigger repeatedly if user clicks back or away
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.delete('id');
+        newParams.delete('chatId');
+        const cleanSearch = newParams.toString();
+        navigate(window.location.pathname + (cleanSearch ? '?' + cleanSearch : ''), { replace: true });
+      }
+    }
+  }, [deepLinkChatId, chats, activeChat, navigate]);
   const [isSending, setIsSending] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(-1);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [chatSearchTerm, setChatSearchTerm] = useState('');
@@ -382,8 +518,15 @@ export function Messages() {
   const [contextMenu, setContextMenu] = useState<{chatId: string, x: number, y: number} | null>(null);
   const [textSelection, setTextSelection] = useState<{ start: number, end: number, x: number, y: number } | null>(null);
 
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
+  const [showNotificationBanner, setShowNotificationBanner] = useState(true);
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Hide mobile bottom nav when a chat is active
   useEffect(() => {
@@ -395,12 +538,31 @@ export function Messages() {
     return () => document.body.classList.remove('hide-mobile-nav');
   }, [activeChat]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior: "smooth" | "auto" = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior
+      });
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    }
+  };
+
+  const handleRequestNotificationPermission = () => {
+    if (typeof Notification === 'undefined') return;
+    Notification.requestPermission().then((permission) => {
+      setNotificationPermission(permission);
+      if (permission === 'granted') {
+        showToast("Awesome! You will now receive real-time notifications for offline messages.", "success");
+      } else if (permission === 'denied') {
+        showToast("Notifications were blocked. Enable them in your browser settings to get offline alerts.", "error");
+      }
+    });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom("smooth");
   }, [messages]);
 
   // Fetch chats and their user data
@@ -601,6 +763,18 @@ export function Messages() {
       setMessages(msgs);
       setLoadingMessages(false);
       
+      // Update spark read status in real-time
+      const hasUnreadFromOther = msgs.some(m => m.senderId !== user?.uid && !m.read);
+      if (hasUnreadFromOther && activeChat.id !== AI_CHAT_ID) {
+        try {
+          updateDoc(doc(db, "sparks", activeChat.id), {
+            lastMessageRead: true
+          });
+        } catch (error) {
+          console.error("Error updating spark read status:", error);
+        }
+      }
+      
       // Mark as read and handle ghost deletion
       msgs.forEach(async (m) => {
         if (m.senderId !== user?.uid && !m.read) {
@@ -645,8 +819,29 @@ export function Messages() {
     return () => {
       unsubscribe();
       unsubTyping();
+      if (activeChat && activeChat.id !== AI_CHAT_ID && user && db) {
+        updateDoc(doc(db, 'sparks', activeChat.id), {
+          [`typingStatus.${user.uid}`]: false
+        }).catch(console.error);
+      }
     };
-  }, [activeChat?.id]);
+  }, [activeChat?.id, user?.uid]);
+
+  // Cleanup typing indicator on window unload
+  useEffect(() => {
+    const handleUnload = () => {
+      if (activeChat && activeChat.id !== AI_CHAT_ID && user && db) {
+        updateDoc(doc(db, 'sparks', activeChat.id), {
+          [`typingStatus.${user.uid}`]: false
+        }).catch(console.error);
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      handleUnload();
+    };
+  }, [activeChat?.id, user?.uid]);
 
   const lastTypingTimeRef = useRef<number>(0);
 
@@ -718,7 +913,9 @@ export function Messages() {
 
         await updateDoc(doc(db, "sparks", activeChat.id), {
           lastMessage: "🔒 Sent a Time Capsule",
-          lastMessageAt: serverTimestamp()
+          lastMessageAt: serverTimestamp(),
+          lastMessageSenderId: user.uid,
+          lastMessageRead: false
         });
         showToast("Time Capsule sealed and sent!", "success");
       }
@@ -789,7 +986,7 @@ export function Messages() {
         }
         return m;
       }));
-      setReactionPickerMessageId(null);
+      setReactionPicker(null);
       return;
     }
 
@@ -817,7 +1014,7 @@ export function Messages() {
     await updateDoc(doc(db, `sparks/${activeChat.id}/messages`, messageId), {
       reactions: newReactions
     });
-    setReactionPickerMessageId(null);
+    setReactionPicker(null);
   };
 
   const applyFormat = (formatStart: string, formatEnd: string) => {
@@ -954,7 +1151,10 @@ export function Messages() {
         if (activeChat.id !== AI_CHAT_ID) {
           await updateDoc(doc(db, "sparks", activeChat.id), {
             lastMessage: text,
-            lastMessageAt: serverTimestamp()
+            lastMessageAt: serverTimestamp(),
+            lastMessageSenderId: user.uid,
+            lastMessageRead: false,
+            [`typingStatus.${user.uid}`]: false
           });
         }
 
@@ -1318,6 +1518,35 @@ export function Messages() {
             </div>
           ) : (
             <>
+              {notificationPermission === 'default' && showNotificationBanner && (
+                <div className="mx-4 my-3 p-4 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-purple-500/10 border border-pink-500/20 rounded-3xl relative overflow-hidden shadow-sm">
+                  <div className="absolute top-2 right-2">
+                    <button 
+                      onClick={() => setShowNotificationBanner(false)}
+                      className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-pink-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-pink-500/20">
+                      <Zap className="w-5 h-5 fill-current" />
+                    </div>
+                    <div className="flex-1 pr-6">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-pink-500 mb-1">Offline Alerts</h4>
+                      <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-normal mb-3 font-medium">
+                        Get message notifications in real-time, even when your browser is closed.
+                      </p>
+                      <button
+                        onClick={handleRequestNotificationPermission}
+                        className="px-3 py-1.5 bg-pink-500 hover:bg-pink-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-pink-500/20 active:scale-95"
+                      >
+                        Enable Notifications
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {filterMode === 'archived' && (
                 <button 
                   onClick={() => setFilterMode('all')}
@@ -1345,52 +1574,84 @@ export function Messages() {
               )}
               {filteredChats.map((chat, idx) => {
                 const otherUser = chat.otherUser;
-              const otherName = otherUser?.displayName || (chat.senderId === user.uid ? chat.receiverName : chat.senderName) || 'Unknown';
-              const isActive = activeChat?.id === chat.id;
-              
-              return (
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.03 }}
-                  key={chat.id}
-                  onClick={() => setActiveChat(chat)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenu({ chatId: chat.id, x: e.clientX, y: e.clientY });
-                  }}
-                  className={cn(
-                    "w-full p-4 flex gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors border-b border-zinc-50 dark:border-zinc-900/50",
-                    isActive && "bg-pink-50 dark:bg-pink-500/5"
-                  )}
-                >
-                  <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500/10 to-purple-500/10 flex items-center justify-center text-pink-500 font-bold border border-pink-500/10 overflow-hidden">
-                      {otherUser?.photoURL ? (
-                        <img src={otherUser.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        otherName.charAt(0).toUpperCase()
+                const otherName = otherUser?.displayName || (chat.senderId === user.uid ? chat.receiverName : chat.senderName) || 'Unknown';
+                const isActive = activeChat?.id === chat.id;
+                const isUnread = chat.lastMessageSenderId && chat.lastMessageSenderId !== user.uid && chat.lastMessageRead === false;
+                
+                const otherId = chat.senderId === user.uid ? chat.receiverId : chat.senderId;
+                const isTyping = (chat as any).typingStatus?.[otherId];
+                
+                return (
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    key={chat.id}
+                    onClick={() => setActiveChat(chat)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({ chatId: chat.id, x: e.clientX, y: e.clientY });
+                    }}
+                    className={cn(
+                      "w-full p-4 flex gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors border-b border-zinc-50 dark:border-zinc-900/50",
+                      isActive && "bg-pink-50 dark:bg-pink-500/5"
+                    )}
+                  >
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500/10 to-purple-500/10 flex items-center justify-center text-pink-500 font-bold border border-pink-500/10 overflow-hidden">
+                        {otherUser?.photoURL ? (
+                          <img src={otherUser.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          otherName.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      {isUserOnline(otherUser) && (
+                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#0A0A0B] rounded-full" />
                       )}
                     </div>
-                    {isUserOnline(otherUser) && (
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#0A0A0B] rounded-full" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-bold text-zinc-900 dark:text-white truncate">
-                        {otherName}
-                        {chat.isBestFriend && <Sparkles className="w-3 h-3 text-pink-500 inline ml-1" />}
-                      </span>
-                      <span className="text-[10px] text-zinc-400">{formatTime(chat.lastMessageAt)}</span>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={cn(
+                          "text-zinc-900 dark:text-white truncate flex items-center gap-1",
+                          isUnread ? "font-extrabold" : "font-bold"
+                        )}>
+                          {otherName}
+                          {chat.isBestFriend && <Sparkles className="w-3 h-3 text-pink-500 inline ml-1" />}
+                        </span>
+                        <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                          <span className={cn("text-[10px]", isUnread ? "text-pink-500 font-bold" : "text-zinc-400")}>
+                            {formatTime(chat.lastMessageAt)}
+                          </span>
+                          {isUnread && (
+                            <span className="min-w-5 h-5 px-1.5 flex items-center justify-center bg-pink-500 text-white text-[10px] font-black rounded-full animate-pulse shadow-[0_0_12px_rgba(236,72,153,0.7)] border border-pink-400">
+                              {chat.unreadCount || 1}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className={cn(
+                        "text-xs truncate flex items-center gap-1",
+                        isUnread ? "text-zinc-950 dark:text-white font-extrabold" : "text-zinc-500"
+                      )}>
+                        {isTyping ? (
+                          <span className="text-pink-500 font-extrabold animate-pulse">💬 is typing...</span>
+                        ) : (
+                          <>
+                            {chat.lastMessageSenderId === user.uid && chat.lastMessage && (
+                              chat.lastMessageRead ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-blue-500 inline shrink-0" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5 text-zinc-400 inline shrink-0" />
+                              )
+                            )}
+                            <span className="truncate">{chat.lastMessage || "No messages yet"}</span>
+                          </>
+                        )}
+                      </p>
                     </div>
-                    <p className="text-xs text-zinc-500 truncate">
-                      {chat.lastMessage || "No messages yet"}
-                    </p>
-                  </div>
-                </motion.button>
-              );
-            })}
+                  </motion.button>
+                );
+              })}
             </>
           )}
         </div>
@@ -1607,6 +1868,16 @@ export function Messages() {
                       <Ghost className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">{isGhostMode ? "Ghost On" : "Ghost Off"}</span>
                     </button>
+                    <button 
+                      onClick={() => setShowSidebar(!showSidebar)}
+                      className={cn(
+                        "p-2 rounded-full transition-all relative",
+                        showSidebar ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20" : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      )}
+                      title="Spark Analytics & Shared Gallery"
+                    >
+                      <Info className="w-5 h-5" />
+                    </button>
                     <div className="relative group">
                       <button 
                         className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all"
@@ -1682,9 +1953,13 @@ export function Messages() {
 
             {/* Messages Area */}
             <div 
-              onScroll={() => {
+              ref={messagesContainerRef}
+              onScroll={(e) => {
                 if (reactionPicker) setReactionPicker(null);
                 if (editingCapsuleId) setEditingCapsuleId(null);
+                const container = e.currentTarget;
+                const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > 300;
+                setShowScrollButton(isScrolledUp);
               }}
               className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide relative z-0 min-h-0" style={getBackgroundStyle()}
             >
@@ -1746,7 +2021,8 @@ export function Messages() {
                         }
                       }}
                       key={msg.id} 
-                      className={cn("relative z-10", isFirstInGroup && !showTime ? "mt-4" : "mt-1")}
+                      id={`msg-${msg.id}`}
+                      className={cn("relative z-10 transition-all duration-500", isFirstInGroup && !showTime ? "mt-4" : "mt-1", highlightedMessageId === msg.id && "bg-pink-500/10 dark:bg-pink-500/25 ring-2 ring-pink-500/30 rounded-[2rem] p-2")}
                     >
                       {showTime && (
                         <div className="flex justify-center my-6">
@@ -1778,21 +2054,23 @@ export function Messages() {
                             }}
                             className={cn(
                               "px-5 py-3 text-[15px] leading-relaxed shadow-sm relative cursor-pointer active:scale-[0.98] transition-[transform,border-radius] duration-200",
-                              isMe 
-                                ? cn(
-                                    msg.isGhost ? "bg-purple-600 text-white shadow-[0_4px_20px_rgba(147,51,234,0.25)] border border-purple-400/50" : "bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/20 border border-pink-400/20",
-                                    "rounded-[24px]",
-                                    isFirstInGroup ? "rounded-tr-[24px]" : "rounded-tr-[8px]",
-                                    isLastInGroup ? "rounded-br-[24px]" : "rounded-br-[8px]"
-                                  )
-                                : cn(
-                                    msg.isGhost ? "bg-zinc-800 text-purple-100 border border-purple-500/30" : "bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] text-zinc-800 dark:text-zinc-200",
-                                    "rounded-[24px]",
-                                    isFirstInGroup ? "rounded-tl-[24px]" : "rounded-tl-[8px]",
-                                    isLastInGroup ? "rounded-bl-[24px]" : "rounded-bl-[8px]"
-                                  ),
-                              activeChat.isBestFriend && isMe && !msg.isGhost && "shadow-[0_0_25px_rgba(236,72,153,0.35)] border border-pink-400/50",
-                              activeChat.isBestFriend && !isMe && !msg.isGhost && "shadow-[0_0_25px_rgba(234,179,8,0.15)] border border-yellow-400/30"
+                              msg.text && (msg.text.startsWith("🔮 Prediction:") || msg.text.startsWith("🔥 Flirting Test Result:") || msg.text.startsWith("✨ Daily Fortune:") || msg.text.startsWith("🎮 Game Update:") || msg.text.startsWith("🤝 Complete a Mini-Game"))
+                                ? "bg-transparent shadow-none border-none !p-0"
+                                : isMe 
+                                  ? cn(
+                                      msg.isGhost ? "bg-purple-600 text-white shadow-[0_4px_20px_rgba(147,51,234,0.25)] border border-purple-400/50" : "bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/20 border border-pink-400/20",
+                                      "rounded-[24px]",
+                                      isFirstInGroup ? "rounded-tr-[24px]" : "rounded-tr-[8px]",
+                                      isLastInGroup ? "rounded-br-[24px]" : "rounded-br-[8px]"
+                                    )
+                                  : cn(
+                                      msg.isGhost ? "bg-zinc-800 text-purple-100 border border-purple-500/30" : "bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] text-zinc-800 dark:text-zinc-200",
+                                      "rounded-[24px]",
+                                      isFirstInGroup ? "rounded-tl-[24px]" : "rounded-tl-[8px]",
+                                      isLastInGroup ? "rounded-bl-[24px]" : "rounded-bl-[8px]"
+                                    ),
+                              !(msg.text && (msg.text.startsWith("🔮 Prediction:") || msg.text.startsWith("🔥 Flirting Test Result:") || msg.text.startsWith("✨ Daily Fortune:") || msg.text.startsWith("🎮 Game Update:") || msg.text.startsWith("🤝 Complete a Mini-Game"))) && activeChat.isBestFriend && isMe && !msg.isGhost && "shadow-[0_0_25px_rgba(236,72,153,0.35)] border border-pink-400/50",
+                              !(msg.text && (msg.text.startsWith("🔮 Prediction:") || msg.text.startsWith("🔥 Flirting Test Result:") || msg.text.startsWith("✨ Daily Fortune:") || msg.text.startsWith("🎮 Game Update:") || msg.text.startsWith("🤝 Complete a Mini-Game"))) && activeChat.isBestFriend && !isMe && !msg.isGhost && "shadow-[0_0_25px_rgba(234,179,8,0.15)] border border-yellow-400/30"
                             )}
                           >
                               <>
@@ -1953,7 +2231,7 @@ export function Messages() {
                                   </form>
                                 ) : (
                                   <>
-                                    {msg.text !== 'Sent an image' && formatMessageText(msg.text)}
+                                    {msg.text !== 'Sent an image' && renderMessageContent(msg.text)}
                                     {(msg as any).editedAt && (
                                       <span className="ml-2 text-[8px] opacity-50 italic">(edited)</span>
                                     )}
@@ -1993,7 +2271,28 @@ export function Messages() {
                                       <img src={msg.imageUrl} alt="attachment" className="w-full h-auto object-cover brightness-90 hover:brightness-100 transition-all cursor-pointer" onClick={() => window.open(msg.imageUrl, '_blank')} />
                                     </div>
                                   )}
-                                  {msg.text !== 'Sent an image' && formatMessageText(msg.text)}
+                                  {msg.fileUrl && !msg.imageUrl && (
+                                    msg.fileType?.startsWith('image/') ? (
+                                        <div className="mb-2 max-w-[240px] rounded-lg overflow-hidden border border-white/10 shadow-sm">
+                                          <img src={msg.fileUrl} alt="attachment" className="w-full h-auto object-cover brightness-90 hover:brightness-100 transition-all cursor-pointer" onClick={() => window.open(msg.fileUrl, '_blank')} />
+                                        </div>
+                                    ) : msg.fileType?.startsWith('video/') ? (
+                                        <div className="mb-2 max-w-[240px] rounded-lg overflow-hidden border border-white/10 shadow-sm bg-black object-cover cursor-pointer">
+                                          <video src={msg.fileUrl} controls className="w-full h-auto max-h-[300px]" />
+                                        </div>
+                                    ) : (
+                                        <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="mb-2 flex items-center gap-3 p-3 bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/40 rounded-xl transition-colors max-w-[240px] border border-white/5 dark:border-white/10 text-inherit no-underline group cursor-pointer shadow-sm">
+                                          <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/30 flex items-center justify-center shrink-0">
+                                            <svg className="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-bold truncate opacity-90">{msg.fileName || 'Attachment'}</p>
+                                            {msg.fileSize && <p className="text-[10px] opacity-60 uppercase">{Math.round(msg.fileSize / 1024)} KB</p>}
+                                          </div>
+                                        </a>
+                                    )
+                                  )}
+                                  {msg.text !== 'Sent an image' && msg.text !== 'Sent a video' && msg.text !== 'Sent a file' && renderMessageContent(msg.text)}
                                   {(msg as any).editedAt && (
                                     <span className="ml-2 text-[8px] opacity-50 italic">(edited)</span>
                                   )}
@@ -2084,6 +2383,21 @@ export function Messages() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Floating scroll to bottom arrow */}
+            <AnimatePresence>
+              {showScrollButton && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                  onClick={() => scrollToBottom("smooth")}
+                  className="absolute bottom-24 right-6 p-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-[0_4px_20px_rgba(236,72,153,0.4)] transition-all z-30 border border-pink-400 flex items-center justify-center animate-pulse"
+                >
+                  <ArrowDown className="w-5 h-5" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
             {/* Input Area */}
             <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-[#0A0A0B] border-t border-zinc-100 dark:border-zinc-900 relative shrink-0">
               {replyingTo && (
@@ -2142,49 +2456,95 @@ export function Messages() {
                   <div className="flex gap-1 shrink-0 pb-1 pl-1">
                     <input 
                       type="file" 
-                      accept="image/*" 
                       className="hidden" 
-                      id="image-upload" 
+                      id="file-upload" 
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file || !activeChat || !user) return;
-                        const reader = new FileReader();
-                        reader.onloadend = async () => {
+                        
+                        try {
+                          setIsSending(true);
+                          setUploadProgress(0);
+                          let url = '';
+                          
                           try {
-                            setIsSending(true);
-                            const base64 = reader.result as string;
                             const storageRef = ref(storage, `chats/${activeChat.id}/${Date.now()}_${file.name}`);
-                            await uploadString(storageRef, base64, 'data_url');
-                            const url = await getDownloadURL(storageRef);
-
-                            await addDoc(collection(db, `sparks/${activeChat.id}/messages`), {
-                              text: 'Sent an image',
-                              imageUrl: url,
-                              senderId: user.uid,
-                              createdAt: serverTimestamp(),
-                              read: false
+                            const uploadTask = uploadBytesResumable(storageRef, file);
+                            uploadTask.on('state_changed', (snapshot) => {
+                              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                              setUploadProgress(Math.round(progress));
                             });
-                            if (activeChat.id !== AI_CHAT_ID) {
-                              await updateDoc(doc(db, "sparks", activeChat.id), {
-                                lastMessage: "Sent an image",
-                                lastMessageAt: serverTimestamp()
-                              });
+                            await uploadTask;
+                            url = await getDownloadURL(storageRef);
+                          } catch (storageError) {
+                            console.warn("Storage upload failed, fallback to Base64 database storage:", storageError);
+                            setUploadProgress(40);
+                            
+                            if (file.size > 800 * 1024 && !file.type.startsWith('image/')) {
+                              showToast("Storage offline. Non-image files must be under 800KB.", "error");
+                              throw new Error("File too large for database fallback storage");
                             }
-                          } catch (err) {
-                            console.error(err);
-                          } finally {
-                            setIsSending(false);
+
+                            const base64Promise = new Promise<string>((resolve, reject) => {
+                              const reader = new FileReader();
+                              reader.onload = () => resolve(reader.result as string);
+                              reader.onerror = (err) => reject(err);
+                              reader.readAsDataURL(file);
+                            });
+                            
+                            let base64 = await base64Promise;
+                            setUploadProgress(70);
+
+                            if (file.type.startsWith('image/')) {
+                              base64 = await compressImage(base64, 500, 500, 0.5);
+                            }
+                            
+                            url = base64;
+                            setUploadProgress(100);
                           }
-                        };
-                        reader.readAsDataURL(file);
+
+                          let text = 'Sent a file';
+                          if (file.type.startsWith('image/')) text = 'Sent an image';
+                          else if (file.type.startsWith('video/')) text = 'Sent a video';
+
+                          await addDoc(collection(db, `sparks/${activeChat.id}/messages`), {
+                            text,
+                            fileUrl: url,
+                            fileName: file.name,
+                            fileType: file.type,
+                            fileSize: file.size,
+                            senderId: user.uid,
+                            createdAt: serverTimestamp(),
+                            read: false
+                          });
+                          
+                          if (activeChat.id !== AI_CHAT_ID) {
+                            await updateDoc(doc(db, "sparks", activeChat.id), {
+                              lastMessage: text,
+                              lastMessageAt: serverTimestamp(),
+                              lastMessageSenderId: user.uid,
+                              lastMessageRead: false,
+                              [`typingStatus.${user.uid}`]: false
+                            });
+                          }
+                          
+                          // Reset input
+                          e.target.value = '';
+                        } catch (err) {
+                          console.error(err);
+                          showToast("Failed to upload file.", "error");
+                        } finally {
+                          setIsSending(false);
+                          setUploadProgress(-1);
+                        }
                       }}
                     />
                     <label 
-                      htmlFor="image-upload" 
+                      htmlFor="file-upload" 
                       className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors rounded-xl cursor-pointer"
-                      title="Attach Image"
+                      title="Attach File"
                     >
-                      <ImageIcon className="w-5 h-5" />
+                      <Paperclip className="w-5 h-5" />
                     </label>
                     <button 
                       type="button" 
@@ -2226,7 +2586,8 @@ export function Messages() {
                           handleSendMessage(e as any);
                         }
                       }}
-                      placeholder={isGhostMode ? "Type a ghost message..." : "Type a message..."}
+                      disabled={uploadProgress >= 0}
+                      placeholder={uploadProgress >= 0 ? `Uploading file (${uploadProgress}%)...` : isGhostMode ? "Type a ghost message..." : "Type a message..."}
                       rows={1}
                       className={cn(
                         "w-full py-3 bg-transparent text-sm outline-none transition-all resize-none max-h-32 overflow-y-auto",
@@ -2236,13 +2597,14 @@ export function Messages() {
                   </div>
                   <button
                     type="submit"
-                    disabled={!newMessage.trim() || isSending}
+                    disabled={(!newMessage.trim() && uploadProgress < 0) || isSending}
                     className={cn(
                       "shrink-0 p-3 text-white rounded-2xl shadow-lg transition-all disabled:opacity-50 active:scale-95 mb-0.5 mr-0.5",
-                      isGhostMode ? "bg-purple-500 shadow-purple-500/20 hover:bg-purple-600" : "bg-pink-500 shadow-pink-500/20 hover:bg-pink-600"
+                      isGhostMode ? "bg-purple-500 shadow-purple-500/20 hover:bg-purple-600" : "bg-pink-500 shadow-pink-500/20 hover:bg-pink-600",
+                      uploadProgress >= 0 ? "w-auto px-4 font-bold text-xs" : ""
                     )}
                   >
-                    {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
+                    {uploadProgress >= 0 ? `${uploadProgress}%` : isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
                   </button>
                 </div>
               </form>
@@ -2258,6 +2620,302 @@ export function Messages() {
           </div>
         )}
       </div>
+
+      {/* Right Slide-Out Sidebar: Spark Analytics & Gallery */}
+      <AnimatePresence>
+        {activeChat && showSidebar && (() => {
+          // Dynamic metrics calculations
+          const totalMsgs = messages.length;
+          const ghostMsgs = messages.filter(m => m.isGhost).length;
+          const mediaMsgs = messages.filter(m => m.fileUrl);
+          const insightMsgs = messages.filter(m => m.text && (
+            m.text.includes('🔮 Prediction:') || 
+            m.text.includes('🔥 Flirting Test Result:') || 
+            m.text.includes('✨ Daily Fortune:') || 
+            m.text.includes('🎮 Game Update:') || 
+            m.text.includes('🤝 Complete a Mini-Game')
+          ));
+
+          // Quotient formula
+          const sparkQuota = Math.min(100, Math.round(
+            (totalMsgs * 1.5) + (insightMsgs.length * 8) + (ghostMsgs * 2)
+          ) || 5);
+
+          // Category name based on spark level
+          let levelName = "Curious Spark 🌱";
+          let levelColor = "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
+          if (sparkQuota >= 85) {
+            levelName = "Cosmic Connection 🔮";
+            levelColor = "text-purple-500 bg-purple-500/10 border-purple-500/20 animate-pulse";
+          } else if (sparkQuota >= 60) {
+            levelName = "Blooming Crush 🔥";
+            levelColor = "text-rose-500 bg-rose-500/10 border-rose-500/20";
+          } else if (sparkQuota >= 30) {
+            levelName = "Sweet Attraction 🌸";
+            levelColor = "text-pink-500 bg-pink-500/10 border-pink-500/20";
+          }
+
+          return (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ 
+                width: window.innerWidth < 768 ? "100%" : "350px", 
+                opacity: 1 
+              }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className={cn(
+                "border-l border-zinc-100 dark:border-zinc-900 bg-white dark:bg-[#0A0A0B] h-full flex flex-col shrink-0 z-40 overflow-hidden relative",
+                "fixed md:relative inset-y-0 right-0 max-w-full"
+              )}
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-zinc-900 dark:text-white uppercase tracking-tight text-sm">Spark Insights</h3>
+                  <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">Analytics & Assets</p>
+                </div>
+                <button 
+                  onClick={() => setShowSidebar(false)}
+                  className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tabs selector */}
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border-b border-zinc-100 dark:border-zinc-900 flex gap-1">
+                {[
+                  { id: 'stats', label: 'Stats', icon: BarChart3 },
+                  { id: 'insights', label: 'Vault', icon: Star },
+                  { id: 'media', label: 'Media', icon: ImageIcon }
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setSidebarTab(tab.id as any)}
+                      className={cn(
+                        "flex-1 py-2 px-1 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all",
+                        sidebarTab === tab.id 
+                          ? "bg-white dark:bg-zinc-800 text-pink-500 shadow-sm border border-pink-500/10" 
+                          : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                      )}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Content Panel */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide">
+                {sidebarTab === 'stats' && (
+                  <div className="space-y-6">
+                    {/* Spark Meter Dial */}
+                    <div className="bg-gradient-to-br from-pink-50/50 via-rose-50/30 to-purple-50/50 dark:from-pink-950/10 dark:via-zinc-900 dark:to-purple-950/10 border border-pink-500/10 rounded-[2rem] p-6 text-center flex flex-col items-center">
+                      <p className="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-4">Spark Quotient</p>
+                      
+                      <div className="relative w-36 h-36 flex items-center justify-center">
+                        {/* Circular progress bar SVG */}
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle 
+                            cx="72" cy="72" r="62" 
+                            className="text-zinc-100 dark:text-zinc-800" 
+                            strokeWidth="10" stroke="currentColor" fill="transparent" 
+                          />
+                          <circle 
+                            cx="72" cy="72" r="62" 
+                            className="text-pink-500 transition-all duration-500" 
+                            strokeWidth="10" 
+                            strokeDasharray={389.5} 
+                            strokeDashoffset={389.5 - (389.5 * sparkQuota) / 100} 
+                            strokeLinecap="round" stroke="currentColor" fill="transparent" 
+                          />
+                        </svg>
+                        <div className="absolute flex flex-col items-center justify-center">
+                          <span className="text-3xl font-black text-zinc-900 dark:text-white">{sparkQuota}%</span>
+                          <Heart className="w-5 h-5 text-pink-500 fill-current animate-pulse mt-1" />
+                        </div>
+                      </div>
+
+                      <div className={cn("mt-5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border", levelColor)}>
+                        {levelName}
+                      </div>
+                    </div>
+
+                    {/* Bento Metrics Cards */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl">
+                        <span className="text-xl font-black text-zinc-900 dark:text-white block">{totalMsgs}</span>
+                        <span className="text-[9px] text-zinc-400 font-black uppercase tracking-widest block mt-1">Total Chats</span>
+                      </div>
+                      <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl">
+                        <span className="text-xl font-black text-zinc-900 dark:text-white block">{ghostMsgs}</span>
+                        <span className="text-[9px] text-zinc-400 font-black uppercase tracking-widest block mt-1">Ghost Mode</span>
+                      </div>
+                      <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl">
+                        <span className="text-xl font-black text-zinc-900 dark:text-white block">{mediaMsgs.length}</span>
+                        <span className="text-[9px] text-zinc-400 font-black uppercase tracking-widest block mt-1">Files Sent</span>
+                      </div>
+                      <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl">
+                        <span className="text-xl font-black text-zinc-900 dark:text-white block">{insightMsgs.length}</span>
+                        <span className="text-[9px] text-zinc-400 font-black uppercase tracking-widest block mt-1">Insights Runs</span>
+                      </div>
+                    </div>
+
+                    {/* Vibe Analysis Text */}
+                    <div className="p-4 bg-gradient-to-r from-pink-500/5 to-rose-500/5 border border-pink-500/10 rounded-3xl">
+                      <h4 className="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Vibe Check
+                      </h4>
+                      <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
+                        {totalMsgs < 5 
+                          ? "A fresh new spark! Try triggering Astrology AI or initiating a Flirting Test in the bottom drawer menu to break the ice." 
+                          : sparkQuota >= 80 
+                            ? "Absolute fireworks! Your rapid chemistry and high game interactions indicate a profound, playful alignment." 
+                            : "Warm and cozy connection. Try launching a Mini-game or sealing a new Time Capsule to deepen your bond."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {sidebarTab === 'insights' && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Generated Reports</p>
+                    {insightMsgs.length === 0 ? (
+                      <div className="text-center py-12 bg-zinc-50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-6">
+                        <Sparkles className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
+                        <p className="text-xs text-zinc-500 leading-normal font-medium">No love predictions or tests generated in this chat yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {insightMsgs.map((msg) => {
+                          let title = "Spark Insight";
+                          let iconColor = "bg-pink-100 text-pink-500 dark:bg-pink-950/40";
+                          let labelText = "Report";
+
+                          if (msg.text.includes('Prediction:')) {
+                            title = "Compatibility Prediction";
+                            iconColor = "bg-purple-100 text-purple-500 dark:bg-purple-950/40";
+                            labelText = "🔮 Prediction";
+                          } else if (msg.text.includes('Flirting Test')) {
+                            title = "Flirting Chemistry Score";
+                            iconColor = "bg-orange-100 text-orange-500 dark:bg-orange-950/40";
+                            labelText = "🔥 Chemistry";
+                          } else if (msg.text.includes('Fortune:')) {
+                            title = "Daily Astrology Fortune";
+                            iconColor = "bg-amber-100 text-amber-500 dark:bg-amber-950/40";
+                            labelText = "✨ Fortune";
+                          } else if (msg.text.includes('Game Update:')) {
+                            title = "Mini-Game Update";
+                            iconColor = "bg-blue-100 text-blue-500 dark:bg-blue-950/40";
+                            labelText = "🎮 Game Result";
+                          }
+
+                          return (
+                            <button
+                              key={msg.id}
+                              onClick={() => scrollToMessage(msg.id)}
+                              className="w-full text-left p-4 bg-zinc-50 hover:bg-pink-500/5 dark:bg-zinc-900/40 dark:hover:bg-pink-500/10 border border-zinc-100 dark:border-zinc-800 hover:border-pink-500/30 dark:hover:border-pink-500/30 rounded-3xl transition-all duration-200 flex items-center justify-between group"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", iconColor)}>
+                                  <Sparkles className="w-5 h-5" />
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 block mb-0.5">{labelText}</span>
+                                  <h4 className="text-xs font-black text-zinc-900 dark:text-white truncate group-hover:text-pink-500 transition-colors">{title}</h4>
+                                </div>
+                              </div>
+                              <ChevronLeft className="w-4 h-4 text-zinc-400 group-hover:text-pink-500 rotate-180 transition-all shrink-0 ml-2" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {sidebarTab === 'media' && (
+                  <div className="space-y-4">
+                    {/* Images Grid */}
+                    <div>
+                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Images & Videos</p>
+                      {mediaMsgs.filter(m => m.fileType?.startsWith('image/') || m.text === 'Sent an image').length === 0 ? (
+                        <div className="text-center py-8 bg-zinc-50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-4">
+                          <p className="text-[11px] text-zinc-500 font-medium">No shared images in this chat.</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-2">
+                          {mediaMsgs.filter(m => m.fileType?.startsWith('image/') || m.text === 'Sent an image').map((msg) => (
+                            <a
+                              key={msg.id}
+                              href={msg.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="aspect-square rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 hover:border-pink-500 transition-all block relative group"
+                            >
+                              <img src={msg.fileUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-300" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Search className="w-4 h-4 text-white" />
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Other Files list */}
+                    <div className="pt-2">
+                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Shared Documents & Files</p>
+                      {mediaMsgs.filter(m => !m.fileType?.startsWith('image/') && m.text !== 'Sent an image').length === 0 ? (
+                        <div className="text-center py-8 bg-zinc-50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-4">
+                          <p className="text-[11px] text-zinc-500 font-medium">No other shared documents.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {mediaMsgs.filter(m => !m.fileType?.startsWith('image/') && m.text !== 'Sent an image').map((msg) => (
+                            <div 
+                              key={msg.id}
+                              className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-3 min-w-0 pr-4">
+                                <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                                  <Paperclip className="w-4 h-4 text-zinc-500" />
+                                </div>
+                                <div className="min-w-0">
+                                  <h5 className="text-xs font-bold text-zinc-900 dark:text-white truncate">{msg.fileName || "File"}</h5>
+                                  <span className="text-[9px] text-zinc-400 font-bold block mt-0.5">
+                                    {msg.fileSize ? `${(msg.fileSize / 1024).toFixed(1)} KB` : ''}
+                                  </span>
+                                </div>
+                              </div>
+                              <a
+                                href={msg.fileUrl}
+                                download={msg.fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 bg-zinc-200 hover:bg-pink-500 hover:text-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all shrink-0"
+                              >
+                                Get
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
       {/* Background Customization Modal */}
       <AnimatePresence>
         {showBackgroundModal && (
@@ -2354,21 +3012,33 @@ export function Messages() {
                             try {
                               const reader = new FileReader();
                               reader.onloadend = async () => {
-                                const base64 = reader.result as string;
-                                const storageRef = ref(storage, `backgrounds/${user.uid}`);
-                                await uploadString(storageRef, base64, 'data_url');
-                                const url = await getDownloadURL(storageRef);
-                                await updateDoc(doc(db, 'users', user.uid), { 
-                                  'chatBackground.type': 'image', 
-                                  'chatBackground.value': url 
-                                });
-                                showToast("Background updated!", "success");
+                                try {
+                                  const base64 = reader.result as string;
+                                  let url = '';
+                                  try {
+                                    const storageRef = ref(storage, `backgrounds/${user.uid}`);
+                                    await uploadString(storageRef, base64, 'data_url');
+                                    url = await getDownloadURL(storageRef);
+                                  } catch (storageError) {
+                                    console.warn("Storage upload failed, fallback to database compressed storage:", storageError);
+                                    url = await compressImage(base64, 800, 800, 0.5);
+                                  }
+                                  await updateDoc(doc(db, 'users', user.uid), { 
+                                    'chatBackground.type': 'image', 
+                                    'chatBackground.value': url 
+                                  });
+                                  showToast("Background updated!", "success");
+                                } catch (err) {
+                                  console.error(err);
+                                  showToast("Failed to upload image", "error");
+                                } finally {
+                                  setIsUploadingBg(false);
+                                }
                               };
                               reader.readAsDataURL(file);
                             } catch (err) {
                               console.error(err);
                               showToast("Failed to upload image", "error");
-                            } finally {
                               setIsUploadingBg(false);
                             }
                           }} 

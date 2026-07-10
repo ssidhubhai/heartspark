@@ -9,9 +9,7 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
   const location = useLocation();
 
   React.useEffect(() => {
-    if (!loading && user === null) {
-      window.dispatchEvent(new CustomEvent('open-auth-modal'));
-    }
+    // Intentionally removed auto-open of auth modal so user can read the message first
   }, [loading, user]);
 
   if (loading || (user && !userData)) {

@@ -6,7 +6,9 @@ import './index.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
+      console.log('ServiceWorker registered successfully with scope: ', reg.scope);
+    }).catch((err) => {
       console.log('ServiceWorker registration failed: ', err);
     });
   });

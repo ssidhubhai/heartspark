@@ -20,12 +20,22 @@ export const storage = getStorage(app);
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 
 export const requestNotificationPermission = async () => {
-  if (!messaging) return null;
+  if (!messaging || typeof window === 'undefined') return null;
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
+      let reg: ServiceWorkerRegistration | undefined;
+      if ('serviceWorker' in navigator) {
+        try {
+          reg = await navigator.serviceWorker.ready;
+        } catch (swError) {
+          console.warn("Failed to get active Service Worker registration:", swError);
+        }
+      }
+      
       const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'YOUR_VAPID_KEY' // The user will need to provide this from Firebase Console
+        serviceWorkerRegistration: reg,
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BHcOoftgQhF2g31kyW-oKdLh-bsE_xSTQ1dTNIC0fjyyz5JPSWCKzj7IpTf4DoVyjkokv4yjSKTjFmMneXHQFNM'
       });
       return token;
     }

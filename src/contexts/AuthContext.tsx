@@ -147,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Request notification permission and save token
             const token = await requestNotificationPermission();
             if (token && token !== currentPrivateData.fcmToken) {
-              await updateDoc(privateDocRef, { fcmToken: token });
+              await setDoc(privateDocRef, { fcmToken: token }, { merge: true });
             }
 
             updateCombinedUserData();
@@ -239,6 +239,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Throttling: Only update if state changed OR it's been more than 2 minutes
             // CRITICAL: Offline updates (online === false) should ALWAYS bypass throttling
             if (online === lastOnlineState && online === true && now - lastPresenceUpdate < 120000) return;
+            
+            // Only update presence if the user document actually exists / has been loaded
+            if (!currentPublicData) return;
             
             try {
               lastPresenceUpdate = now;

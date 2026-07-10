@@ -549,6 +549,43 @@ export function Profile() {
     }
   };
 
+  const compressImageBase64 = (base64Str: string, maxWidth = 300, maxHeight = 300, quality = 0.6): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } else {
+          resolve(base64Str);
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
   const handleUpdateAvatar = async () => {
     if (!auth?.currentUser || !avatarUrl.trim()) return;
     setUpdatingAvatar(true);
@@ -557,13 +594,26 @@ export function Profile() {
 
       // If it's a base64 string, upload it to Firebase Storage
       if (finalAvatarUrl.startsWith('data:image')) {
-        const storageRef = ref(storage, `avatars/${auth.currentUser.uid}_${Date.now()}.jpg`);
-        await uploadString(storageRef, finalAvatarUrl, 'data_url');
-        finalAvatarUrl = await getDownloadURL(storageRef);
+        try {
+          const storageRef = ref(storage, `avatars/${auth.currentUser.uid}_${Date.now()}.jpg`);
+          await uploadString(storageRef, finalAvatarUrl, 'data_url');
+          finalAvatarUrl = await getDownloadURL(storageRef);
+        } catch (storageError) {
+          console.warn("Firebase Storage upload failed, falling back to database compressed base64 storage:", storageError);
+          finalAvatarUrl = await compressImageBase64(finalAvatarUrl, 200, 200, 0.5);
+        }
       }
 
-      // Now we can safely update Firebase Auth because it's a short URL
-      await updateProfile(auth.currentUser, { photoURL: finalAvatarUrl });
+      // Now we can safely update Firebase Auth
+      try {
+        if (!finalAvatarUrl.startsWith('data:image')) {
+          await updateProfile(auth.currentUser, { photoURL: finalAvatarUrl });
+        } else {
+          await updateProfile(auth.currentUser, { photoURL: 'base64_avatar_fallback' });
+        }
+      } catch (authError) {
+        console.warn("Auth photoURL update failed:", authError);
+      }
       
       await setDoc(doc(db, 'users', auth.currentUser.uid), {
         photoURL: finalAvatarUrl,
